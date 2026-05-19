@@ -1,5 +1,4 @@
 {
-    // TODO 后面和fast/common中Region.json合并
     "InMapAny": {
         "desc": "在任意地图界面",
         "recognition": "And",
@@ -224,6 +223,37 @@
             }
         ]
     },
+    "InBackpack": {
+        "desc": "在背包界面",
+        "recognition": {
+            "type": "TemplateMatch",
+            "param": {
+                "roi": [
+                    700,
+                    100,
+                    250,
+                    160
+                ],
+                "template": [
+                    "SceneManager/MenuBackpack.png"
+                ]
+            }
+        }
+    },
+    "InMenuList": {
+        "desc": "在菜单列表界面",
+        "recognition": "OCR",
+        "roi": [
+            420,
+            -100,
+            450,
+            100
+        ],
+        "expected": [
+            "FIELD",
+            "ENDFIELD"
+        ]
+    },
     "InNoticeRewards": {
         "desc": "在奖励领取界面",
         "recognition": {
@@ -356,17 +386,17 @@
         "desc": "在工业计划界面",
         "recognition": "OCR",
         "roi": [
+            -250,
             0,
-            0,
-            200,
+            250,
             60
         ],
         "expected": [
-            "工业计划",
-            "工業計劃",
-            "AIC Plan",
-            "工業計画",
-            "공업 계획"
+            "工业点数",
+            "工業點",
+            "AIC Index",
+            "工業ポイント",
+            "공업 포인트"
         ],
         "pre_delay": 0,
         "post_delay": 0,

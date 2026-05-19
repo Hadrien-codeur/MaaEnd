@@ -1,17 +1,29 @@
 {
     "AutoCollectRoute7Start": {
         "desc": "本路线包含两个收集点，血菌和武陵石",
+        "enabled": false,
         "next": [
             "AutoCollectRoute7AssertLocation1",
             "[JumpBack]SceneEnterWorldWulingWulingCity1"
         ],
         "focus": {
-            "Node.Recognition.Succeeded": "开始路线7"
+            "Node.Recognition.Succeeded": "$option.AutoCollectRoute7.label"
         }
     },
     "AutoCollectRoute7End": {
         "pre_delay": 0,
         "post_delay": 0
+    },
+    "AutoCollectRoute7Wait10sec": {
+        "desc": "等待10s完成收集",
+        "pre_delay": 0,
+        "post_delay": 10000,
+        "next": [
+            "AutoCollectRoute7End"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "等待10s完成收集"
+        }
     },
     "AutoCollectError": {
         "pre_delay": 0,
@@ -1017,7 +1029,7 @@
             ]
         },
         "anchor": {
-            "AutoCollectDigAfter": "AutoCollectRoute7End"
+            "AutoCollectDigAfter": "AutoCollectRoute7Wait10sec"
         },
         "next": [
             "AutoCollectDigStart"

@@ -3,15 +3,23 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"runtime"
+	"runtime/debug"
 
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/pkg/i18n"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/pkg/pienv"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/taskersink/aspectratio"
 	"github.com/MaaXYZ/maa-framework-go/v4"
 	"github.com/bytedance/sonic"
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
+	if _, ok := os.LookupEnv("GOTRACEBACK"); !ok {
+		debug.SetTraceback("crash")
+	}
+	debug.SetPanicOnFault(true)
+
 	logFile, err := initLogger()
 	if err != nil {
 		log.Fatal().
@@ -19,6 +27,36 @@ func main() {
 			Msg("Failed to initialize logger")
 	}
 	defer logFile.Close()
+
+	defer func() {
+		if r := recover(); r != nil {
+			buf := make([]byte, 64<<10)
+			for {
+				n := runtime.Stack(buf, true)
+				if n < len(buf) {
+					buf = buf[:n]
+					break
+				}
+				buf = make([]byte, 2*len(buf))
+			}
+			log.Error().
+				Interface("panic", r).
+				Str("stack", string(buf)).
+				Msg("FATAL: go-service panicked")
+			if err := logFile.Sync(); err != nil {
+				log.Error().
+					Err(err).
+					Msg("FATAL: failed to sync log file")
+			}
+			panic(r)
+		}
+	}()
+
+	if err := redirectStderr(); err != nil {
+		log.Warn().
+			Err(err).
+			Msg("Failed to redirect stderr to file")
+	}
 
 	log.Info().
 		Str("version", Version).
@@ -82,6 +120,9 @@ func main() {
 
 	// Wait for the server to finish
 	maa.AgentServerJoin()
+
+	// Restoring any window state we changed during the session.
+	aspectratio.Cleanup()
 
 	// Shutdown
 	maa.AgentServerShutDown()

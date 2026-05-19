@@ -5,10 +5,10 @@
             "type": "OCR",
             "param": {
                 "roi": [
-                    144,
-                    105,
-                    163,
-                    75
+                    33,
+                    46,
+                    273,
+                    133
                 ],
                 "expected": [
                     "干员联络",
@@ -23,8 +23,29 @@
             "[JumpBack]GiftOperatorContacSortBy",
             "GiftOperatorSelectOp1",
             "GiftOperatorSelectSpecifiedOp",
-            "[JumpBack]GiftOperatorSwipe"
+            "[JumpBack]GiftOperatorSwipe", //滑动两次后会关闭
+            "GiftOperatorNoOperatorCanSelect" //落入无可选干员界面
         ]
+    },
+    "GiftOperatorNoOperatorCanSelect": {
+        "desc": "没有可选择的干员",
+        "recognition": {
+            "type": "OCR",
+            "param": {
+                "roi": [
+                    130,
+                    92,
+                    180,
+                    94
+                ],
+                "expected": [
+                    "干员联络",
+                    "幹員聯絡",
+                    "Operator Contact",
+                    "オペレーターの呼び出し"
+                ]
+            }
+        }
     },
     "GiftOperatorSwipe": {
         "desc": "滑动尝试找到干员",
@@ -187,12 +208,12 @@
             "param": {
                 "method": 40,
                 "lower": [
-                    28,
+                    27,
                     255,
                     255
                 ],
                 "upper": [
-                    28,
+                    30,
                     255,
                     255
                 ],
@@ -208,14 +229,14 @@
             "param": {
                 "roi": "GiftOperatorCheckSelectedLabelColor",
                 "lower": [
-                    52,
-                    52,
-                    52
+                    50,
+                    50,
+                    50
                 ],
                 "upper": [
-                    52,
-                    52,
-                    52
+                    55,
+                    55,
+                    55
                 ],
                 "connected": true,
                 "count": 10
@@ -333,19 +354,19 @@
         "desc": "点击干员联络台",
         "max_hit": 3,
         "recognition": {
-            "type": "TemplateMatch",
+            "type": "OCR",
             "param": {
                 "roi": [
                     722,
                     312,
-                    481,
+                    550,
                     362
                 ],
-                "template": [
-                    "GiftOperator/OperatorContact.png"
-                ],
-                "threshold": [
-                    0.7
+                "expected": [
+                    "干员联络台",
+                    "幹員聯絡台",
+                    "(?i)Operator\\s*Contact\\s*Panel",
+                    "連絡カウンター"
                 ]
             }
         },
@@ -354,6 +375,15 @@
             "param": {
                 "custom_action": "AutoAltClickAction"
             }
+        },
+        "post_wait_freezes": {
+            "time": 200,
+            "target": [
+                911,
+                312,
+                89,
+                121
+            ]
         },
         "next": [
             "GiftOperatorCheckContact"
@@ -384,10 +414,10 @@
             "type": "TemplateMatch",
             "param": {
                 "roi": [
-                    547,
-                    179,
-                    546,
-                    310
+                    548,
+                    178,
+                    638,
+                    318
                 ],
                 "template": [
                     "GiftOperator/TrustIcon.png"
@@ -584,10 +614,10 @@
             "type": "TemplateMatch",
             "param": {
                 "roi": [
-                    750,
-                    377,
-                    427,
-                    312
+                    641,
+                    274,
+                    538,
+                    415
                 ],
                 "template": [
                     "GiftOperator/OperatorChat.png"
@@ -632,7 +662,10 @@
                 "custom_action": "AutoAltClickAction"
             }
         },
-        "post_wait_freezes": 200,
+        "post_wait_freezes": {
+            "time": 200,
+            "timeout": 3000
+        },
         "next": [
             "GiftOperatorSkipDialog"
         ]

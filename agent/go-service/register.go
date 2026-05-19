@@ -18,6 +18,7 @@ import (
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/pipelineoverride"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/schedule"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/subtask"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/creditshopping"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/dailyrewards"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/essencefilter"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/itemtransfer"
@@ -31,6 +32,7 @@ import (
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/taskersink/hdrcheck"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/taskersink/processcheck"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/visitfriends"
+	webevent202605 "github.com/MaaXYZ/MaaEnd/agent/go-service/webevent/202605"
 	"github.com/rs/zerolog/log"
 )
 
@@ -72,6 +74,8 @@ func registerAll() {
 	autostockpile.Register()
 	itemtransfer.Register()
 	sellproduct.Register()
+	creditshopping.Register()
+	webevent202605.Register()
 	log.Info().
 		Msg("All custom components and sinks registered successfully")
 }

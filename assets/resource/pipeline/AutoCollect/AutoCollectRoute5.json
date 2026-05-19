@@ -1,11 +1,12 @@
 {
     "AutoCollectRoute5Start": {
+        "enabled": false,
         "next": [
             "AutoCollectRoute5AssertLocation",
             "[JumpBack]SceneEnterWorldValleyIVTheHub2"
         ],
         "focus": {
-            "Node.Recognition.Succeeded": "开始路线5"
+            "Node.Recognition.Succeeded": "$option.AutoCollectRoute5.label"
         }
     },
     "AutoCollectRoute5End": {
@@ -123,6 +124,7 @@
                 "custom_action_param": {
                     "map_name": "map01_lv001",
                     "fine_approach": "AllTargets",
+                    "no_ensure_initial_movement_state": true,
                     "path": [
                         [
                             487.2,
@@ -148,6 +150,7 @@
                 "custom_action_param": {
                     "map_name": "map01_lv001",
                     "fine_approach": "AllTargets",
+                    "no_ensure_initial_movement_state": true,
                     "path": [
                         [
                             486.0,
@@ -173,6 +176,7 @@
                 "custom_action_param": {
                     "map_name": "map01_lv001",
                     "fine_approach": "AllTargets",
+                    "no_ensure_initial_movement_state": true,
                     "path": [
                         [
                             487.2,
@@ -198,6 +202,7 @@
                 "custom_action_param": {
                     "map_name": "map01_lv001",
                     "fine_approach": "AllTargets",
+                    "no_ensure_initial_movement_state": true,
                     "path": [
                         [
                             479.9,

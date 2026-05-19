@@ -1,11 +1,12 @@
 {
     "AutoCollectRoute4Start": {
+        "enabled": false,
         "next": [
             "AutoCollectRoute4AssertLocation",
             "[JumpBack]SceneEnterWorldValleyIVPowerPlateau3"
         ],
         "focus": {
-            "Node.Recognition.Succeeded": "开始路线4"
+            "Node.Recognition.Succeeded": "$option.AutoCollectRoute4.label"
         }
     },
     "AutoCollectRoute4End": {
@@ -179,6 +180,7 @@
                 "custom_action_param": {
                     "map_name": "map01_lv007",
                     "fine_approach": "AllTargets",
+                    "no_ensure_initial_movement_state": true,
                     "path": [
                         [
                             482.2,
@@ -204,6 +206,7 @@
                 "custom_action_param": {
                     "map_name": "map01_lv007",
                     "fine_approach": "AllTargets",
+                    "no_ensure_initial_movement_state": true,
                     "path": [
                         [
                             481.0,
@@ -229,6 +232,7 @@
                 "custom_action_param": {
                     "map_name": "map01_lv007",
                     "fine_approach": "AllTargets",
+                    "no_ensure_initial_movement_state": true,
                     "path": [
                         [
                             477.2,
@@ -254,6 +258,7 @@
                 "custom_action_param": {
                     "map_name": "map01_lv007",
                     "fine_approach": "AllTargets",
+                    "no_ensure_initial_movement_state": true,
                     "path": [
                         [
                             476.0,
@@ -279,6 +284,7 @@
                 "custom_action_param": {
                     "map_name": "map01_lv007",
                     "fine_approach": "AllTargets",
+                    "no_ensure_initial_movement_state": true,
                     "path": [
                         [
                             473.5,
@@ -304,6 +310,7 @@
                 "custom_action_param": {
                     "map_name": "map01_lv007",
                     "fine_approach": "AllTargets",
+                    "no_ensure_initial_movement_state": true,
                     "path": [
                         [
                             476.0,
@@ -329,6 +336,7 @@
                 "custom_action_param": {
                     "map_name": "map01_lv007",
                     "fine_approach": "AllTargets",
+                    "no_ensure_initial_movement_state": true,
                     "path": [
                         [
                             478.5,

@@ -6,14 +6,15 @@
             "entry": "GiftOperatorMain",
             "description": "$task.GiftOperator.description",
             "option": [
-                "SelectOperator"
+                "StashBackpackSubTask",
+                "OnlyReceiveGift"
+            ],
+            "group": [
+                "dijiang_ship"
             ],
             "controller": [
                 "Win32-Front",
                 "Wlroots"
-            ],
-            "group": [
-                "dijiang_ship"
             ]
         }
     ],
@@ -798,6 +799,108 @@
                     }
                 }
             ]
+        },
+        "OnlyReceiveGift": {
+            "type": "switch",
+            "label": "$option.OnlyReceiveGift.label",
+            "description": "$option.OnlyReceiveGift.description",
+            "default_case": "No",
+            "cases": [
+                {
+                    "name": "Yes",
+                    "option": [
+                        "AcceptAllGifts"
+                    ],
+                    "pipeline_override": {
+                        "GiftOperatorContacSortOrder": {
+                            "enabled": false
+                        },
+                        "GiftOperatorContacSortBy": {
+                            "enabled": false
+                        },
+                        "GiftOperatorSelectOp1": {
+                            "enabled": false
+                        },
+                        "GiftOperatorSelectSpecifiedOp": {
+                            "enabled": true,
+                            "template": [
+                                "GiftOperator/Gift.png"
+                            ],
+                            "target_offset": [
+                                40,
+                                0,
+                                0,
+                                0
+                            ]
+                        },
+                        "GiftOperatorName": {
+                            "expected": [
+                                ".*"
+                            ]
+                        },
+                        "GiftOperatorReceiveDialog": {
+                            "next": []
+                        },
+                        "GiftOperatorSkipDialog": {
+                            "next": [
+                                "GiftOperatorBranchReceive",
+                                "GiftOperatorLeave"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "No",
+                    "option": [
+                        "SelectOperator",
+                        "GiftCount"
+                    ],
+                    "pipeline_override": {}
+                }
+            ]
+        },
+        "AcceptAllGifts": {
+            "type": "switch",
+            "label": "$option.AcceptAllGifts.label",
+            "description": "$option.AcceptAllGifts.description",
+            "default_case": "No",
+            "cases": [
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "GiftOperatorReceiveDialog": {
+                            "next": [
+                                "GiftOperatorMain"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "No",
+                    "pipeline_override": {}
+                }
+            ]
+        },
+        "GiftCount": {
+            "type": "input",
+            "label": "$option.GiftCount.label",
+            "description": "$option.GiftCount.description",
+            "inputs": [
+                {
+                    "name": "Count",
+                    "label": "$option.GiftCount.inputs.Count.label",
+                    "description": "$option.GiftCount.inputs.Count.description",
+                    "pipeline_type": "int",
+                    "verify": "^[1-9]\\d*$",
+                    "default": "1"
+                }
+            ],
+            "pipeline_override": {
+                "GiftOperatorClickGift": {
+                    "repeat": "{Count}",
+                    "repeat_delay": 100
+                }
+            }
         }
     }
 }
