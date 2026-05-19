@@ -227,4 +227,87 @@ debug/maa.bak.log   # 备份
 
 ---
 
+## 11. Git 工作流与多电脑协作
+
+### 11.1 远程仓库（remote）配置
+
+| Remote 名 | 地址 | 用途 |
+|-----------|------|------|
+| `origin` | `https://github.com/MaaEnd/MaaEnd.git` | 官方仓库，**只读**，拉上游更新用 |
+| `myfork` | `https://github.com/Hadrien-codeur/MaaEnd.git` | 用户的 fork，可读写，跨电脑同步用 |
+
+### 11.2 分支策略
+
+| 分支 | 用途 |
+|------|------|
+| `v2` | 跟踪官方 `origin/v2`，定期 `git pull origin v2` 拉更新 |
+| `feature/self-deliver-route` | 用户的开发分支，包含本次「自己送货」全部改动 + CLAUDE.md |
+
+### 11.3 常用操作
+
+**拉上游更新并合并到开发分支**：
+```bash
+git checkout v2
+git pull origin v2
+git submodule update --init --recursive
+git push myfork v2
+
+git checkout feature/self-deliver-route
+git merge v2
+git push myfork feature/self-deliver-route
+```
+
+**新电脑首次拉取**：
+```bash
+git clone https://github.com/Hadrien-codeur/MaaEnd.git
+cd MaaEnd
+git checkout feature/self-deliver-route
+git remote rename origin myfork
+git remote add origin https://github.com/MaaEnd/MaaEnd.git
+git submodule update --init --recursive
+pnpm install
+git config user.name "Hadrien-codeur"
+git config user.email "1648022241@qq.com"
+git config credential.helper manager   # Windows 凭据管理器
+```
+
+**两台电脑之间同步改动**：
+```bash
+# 电脑 A：提交并推
+git add . && git commit -m "..." && git push myfork feature/self-deliver-route
+
+# 电脑 B：拉
+git checkout feature/self-deliver-route
+git pull myfork feature/self-deliver-route
+```
+
+### 11.4 认证方式
+- 使用 Personal Access Token（GitHub Settings → Developer settings → Tokens）
+- 首次 push 时 Windows 凭据管理器会弹窗，输入用户名 + token 后永久缓存
+- 推送时**不要**把 token 直接写在 remote URL 里（避免泄露）
+
+### 11.5 子模块
+项目包含 3 个 git 子模块，本地切换分支时可能显示子模块"有改动"，这是子模块指针差异，不是真改动：
+- `agent/cpp-algo/MaaUtils`
+- `assets/resource/model`
+- `tests/MaaEndTestset`
+
+**不要 commit 这些子模块的变化**，除非有明确意图。同步上游时用 `git submodule update --init --recursive` 让子模块跟着上游一起更新。
+
+---
+
+## 12. 开发时间线（按会话顺序）
+
+| 阶段 | 操作 | 关键产物 |
+|------|------|---------|
+| 会话 1（Plan）| 用 Sonnet 4.6 规划，探索 AutoCollect/DeliveryJobs 现有结构 | Plan 文件 |
+| 会话 1（开发）| 切 Opus 4.7 实施 | 9 个文件改动 + 2 个新文件 |
+| 会话 1（文档）| 写 CLAUDE.md 留底 | 本文件 |
+| 会话 1（启动）| 找到客户端 `install/mxu.exe`，确认 install 是 assets 的软链接，改动立即生效 | — |
+| 会话 1（同步上游）| `git fetch origin v2` 拉 25+ 条新提交，feature 分支零冲突合并 | `MapNavigator HEADING target` 等更新到位 |
+| 会话 1（推送）| Fork 仓库 → 加 myfork remote → push feature 分支 | https://github.com/Hadrien-codeur/MaaEnd |
+
+---
+
 > 后续会话开始时，请先阅读本 CLAUDE.md，了解上下文后再继续工作。
+> 新电脑接力开发时，参考第 11 节的"新电脑首次拉取"步骤。
