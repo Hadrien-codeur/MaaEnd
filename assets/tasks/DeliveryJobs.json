@@ -10,7 +10,8 @@
                 "Wuling",
                 "PackCargoSelectItem",
                 "DeliveryJobsAcceptJobOnly",
-                "DeliveryJobsPackCargoOnly"
+                "DeliveryJobsPackCargoOnly",
+                "DeliveryJobsSelfDeliverMode"
             ],
             "group": [
                 "regional_development"
@@ -407,6 +408,32 @@
                                 "パッキング",
                                 "화물 포장"
                             ]
+                        }
+                    }
+                },
+                {
+                    "name": "No"
+                }
+            ],
+            "default_case": "No"
+        },
+        "DeliveryJobsSelfDeliverMode": {
+            "type": "switch",
+            "label": "$task.DeliveryJobs.SelfDeliverMode.label",
+            "description": "$task.DeliveryJobs.SelfDeliverMode.description",
+            "cases": [
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        // 钩入：装货完成、回到大世界后，走自己送货路线分发节点
+                        "DeliveryJobsBackToDepot": {
+                            "next": [
+                                "DeliveryJobsDeliverRouteDispatch"
+                            ]
+                        },
+                        // 互斥：禁用转交流程，避免角色亲送的同时又点了转交按钮
+                        "DeliveryJobsClickTransferJob": {
+                            "enabled": false
                         }
                     }
                 },

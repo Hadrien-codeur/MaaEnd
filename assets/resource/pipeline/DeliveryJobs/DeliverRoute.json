@@ -1,0 +1,40 @@
+{
+    // 自己送货模式：装货完成、回到大世界后，根据当前仓储节点分发到对应路线，由角色亲自送达目的地
+    // 路线入口节点通过各地区 EnterXxxCargo 节点的 anchor 字段动态映射到 DeliveryJobsDeliverRouteEntrance
+    "DeliveryJobsDeliverRouteDispatch": {
+        "desc": "送货路线分发节点，由 DeliveryJobsBackToDepot 在自己送货模式下钩入",
+        "recognition": "And",
+        "all_of": [
+            "InWorld"
+        ],
+        "pre_delay": 0,
+        "post_delay": 0,
+        "rate_limit": 0,
+        "next": [
+            "[Anchor]DeliveryJobsDeliverRouteEntrance",
+            "DeliveryJobsDeliverRouteNoRoute"
+        ]
+    },
+    "DeliveryJobsDeliverRouteEnd": {
+        "desc": "送货路线结束，跳回本地仓储节点继续主循环",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "rate_limit": 0,
+        "next": [
+            "[Anchor]DeliveryJobsGoToDepot"
+        ]
+    },
+    "DeliveryJobsDeliverRouteNoRoute": {
+        "desc": "当前仓储节点暂无路线数据，跳过该节点继续主循环",
+        "pre_delay": 0,
+        "action": "DoNothing",
+        "post_delay": 0,
+        "rate_limit": 0,
+        "next": [
+            "[Anchor]DeliveryJobsGoToDepot"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.DeliveryJobs.SelfDeliverMode.NoRoute"
+        }
+    }
+}
