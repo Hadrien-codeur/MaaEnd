@@ -1,0 +1,110 @@
+{
+    // 源石研究园 · 路线 A（MVP 占位模板，所有数据 TODO）
+    // 用 MapNavigator 录制：Assert 模式 → 导出 zone_id + target；录制模式 → 导出 path
+    // 路径含滑索时在对应点位加 "INTERACT" 标记，例如 [123, 456, "INTERACT"]
+    "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAPickupStart": {
+        "desc": "源石研究园 路线 A：取货段起点（断言 + 传送）",
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAAssertLocation",
+            "[JumpBack]SceneEnterWorldValleyIVOriginiumScienceParkInfra"
+        ]
+    },
+    "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAAssertLocation": {
+        "desc": "TODO：MapNavigator Assert 模式导出 zone_id 与 target",
+        "recognition": "Custom",
+        "custom_recognition": "MapLocateAssertLocation",
+        "custom_recognition_param": {
+            "zone_id": "TODO_FILL_ZONE_ID",
+            "target": [
+                0,
+                0,
+                20,
+                20
+            ]
+        },
+        "action": "DoNothing",
+        "timeout": 20000,
+        "next": [
+            "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAGotoPickup"
+        ],
+        "on_error": [
+            "DeliveryJobsSelfDeliverNoRoute"
+        ]
+    },
+    "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAGotoPickup": {
+        "desc": "TODO：MapNavigator 录制取货段路径（含滑索 INTERACT 点）",
+        "max_hit": 1,
+        "action": {
+            "type": "Custom",
+            "param": {
+                "custom_action": "MapNavigateAction",
+                "custom_action_param": {
+                    "path": [
+                        {
+                            "action": "ZONE",
+                            "zone_id": "TODO_FILL_ZONE_ID"
+                        }
+                    ]
+                }
+            }
+        },
+        "timeout": 600000,
+        "next": [
+            "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAPickupAction"
+        ],
+        "on_error": [
+            "DeliveryJobsSelfDeliverNoRoute"
+        ]
+    },
+    "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAPickupAction": {
+        "desc": "TODO：识别仓储取货按钮并点击（OCR 或 TemplateMatch）",
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 30000,
+        "next": [
+            "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAGotoDestination"
+        ],
+        "on_error": [
+            "DeliveryJobsSelfDeliverNoRoute"
+        ]
+    },
+    "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAGotoDestination": {
+        "desc": "TODO：MapNavigator 录制送货段路径（含滑索 INTERACT 点）",
+        "max_hit": 1,
+        "action": {
+            "type": "Custom",
+            "param": {
+                "custom_action": "MapNavigateAction",
+                "custom_action_param": {
+                    "path": [
+                        {
+                            "action": "ZONE",
+                            "zone_id": "TODO_FILL_ZONE_ID"
+                        }
+                    ]
+                }
+            }
+        },
+        "timeout": 600000,
+        "next": [
+            "DeliveryJobsSelfDeliverOriginiumScienceParkRouteASubmitAction"
+        ],
+        "on_error": [
+            "DeliveryJobsSelfDeliverNoRoute"
+        ]
+    },
+    "DeliveryJobsSelfDeliverOriginiumScienceParkRouteASubmitAction": {
+        "desc": "TODO：识别交货点提交按钮并点击",
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 30000,
+        "next": [
+            "DeliveryJobsSelfDeliverEnd"
+        ],
+        "on_error": [
+            "DeliveryJobsSelfDeliverNoRoute"
+        ]
+    }
+}

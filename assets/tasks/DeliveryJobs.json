@@ -464,13 +464,22 @@
                 {
                     "name": "Yes",
                     "pipeline_override": {
-                        // 钩入：装货完成、回到大世界后，走自己送货路线分发节点
-                        "DeliveryJobsBackToDepot": {
+                        // 1) 调度申请界面：在「开始运送」之前插入买方识别分发节点 + 兜底
+                        "DeliveryJobsInCargoRedistributionBid": {
                             "next": [
-                                "DeliveryJobsDeliverRouteDispatch"
+                                "DeliveryJobsOngoingDelivery",
+                                "DeliveryJobsSelfDeliverDispatchToBuyerA",
+                                "DeliveryJobsSelfDeliverNoBuyerMatch",
+                                "DeliveryJobsRedistributionBidNextStep"
                             ]
                         },
-                        // 互斥：禁用转交流程，避免角色亲送的同时又点了转交按钮
+                        // 2) 装货完回大世界后：跳到自动送货流程，不再回仓储 UI
+                        "DeliveryJobsBackToDepot": {
+                            "next": [
+                                "DeliveryJobsSelfDeliverPickupStart"
+                            ]
+                        },
+                        // 3) 隐含「仅接取任务」语义：禁止转交
                         "DeliveryJobsClickTransferJob": {
                             "enabled": false
                         }

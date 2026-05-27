@@ -1,0 +1,67 @@
+{
+    // 自动送货模式（v2）：在调度申请界面 OCR 买方信息列，确定送货路线后再走「开始运送」
+    // 钩入点：DeliveryJobsInCargoRedistributionBid.next（OCR 分发）+ DeliveryJobsBackToDepot.next（回大世界后跳路线）
+    // ==================== 入口分发：调度申请界面 OCR 买方信息 ====================
+    "DeliveryJobsSelfDeliverDispatchToBuyerA": {
+        "desc": "调度申请界面：识别买方 A（TODO：补充买方名称 OCR 后绑定路线）",
+        "recognition": "OCR",
+        // TODO：录制截图后填入买方信息列的 roi（参考调度申请界面截图）
+        "roi": [
+            0,
+            0,
+            1280,
+            720
+        ],
+        "expected": [
+            "TODO_BUYER_A_NAME"
+        ],
+        "pre_delay": 0,
+        "action": "DoNothing",
+        // OCR 命中后，把路线占位符绑定到买方 A 对应的路线起点
+        "anchor": {
+            "DeliveryJobsSelfDeliverPickupEntrance": "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAPickupStart"
+        },
+        "post_delay": 0,
+        "rate_limit": 0,
+        "next": [
+            "DeliveryJobsRedistributionBidNextStep"
+        ]
+    },
+    "DeliveryJobsSelfDeliverNoBuyerMatch": {
+        "desc": "调度申请界面未识别到任何已配置的买方，停止任务避免误接单",
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.DeliveryJobs.SelfDeliverMode.NoBuyerMatch"
+        }
+    },
+    // ==================== 装货完回大世界后的中继：通过 anchor 跳到对应路线 ====================
+    "DeliveryJobsSelfDeliverPickupStart": {
+        "desc": "自动送货：装货完成回到大世界后，通过 anchor 跳到买方对应的路线起点",
+        "recognition": "And",
+        "all_of": [
+            "InWorld"
+        ],
+        "pre_delay": 0,
+        "post_delay": 0,
+        "rate_limit": 0,
+        "next": [
+            "[Anchor]DeliveryJobsSelfDeliverPickupEntrance",
+            "DeliveryJobsSelfDeliverNoRoute"
+        ]
+    },
+    "DeliveryJobsSelfDeliverNoRoute": {
+        "desc": "anchor 没匹配到任何路线起点，停止任务",
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.DeliveryJobs.SelfDeliverMode.NoRoute"
+        }
+    },
+    // ==================== 流程结束 ====================
+    "DeliveryJobsSelfDeliverEnd": {
+        "desc": "自动送货完成，停止任务",
+        "recognition": "DirectHit",
+        "action": "StopTask"
+    }
+}
