@@ -306,8 +306,193 @@ git pull myfork feature/self-deliver-route
 | 会话 1（启动）| 找到客户端 `install/mxu.exe`，确认 install 是 assets 的软链接，改动立即生效 | — |
 | 会话 1（同步上游）| `git fetch origin v2` 拉 25+ 条新提交，feature 分支零冲突合并 | `MapNavigator HEADING target` 等更新到位 |
 | 会话 1（推送）| Fork 仓库 → 加 myfork remote → push feature 分支 | https://github.com/Hadrien-codeur/MaaEnd |
+| 会话 2（v2 重设计）| 把 OCR 钩入点前移到调度申请界面，重写 SelfDeliver.json 框架 | 第 13、14 节 |
+| 会话 3（阶段 1.A）| 启动 mxu.exe，验证「🚶自己送货」开关 i18n 渲染正常 | 截图（图A）通过 |
+| 会话 3（同步 push）| `.agents/` 加 ignore，提交 v2 框架 + CLAUDE.md，push 到 myfork 准备多电脑接力 | 见第 16 节 |
 
 ---
 
 > 后续会话开始时，请先阅读本 CLAUDE.md，了解上下文后再继续工作。
 > 新电脑接力开发时，参考第 11 节的"新电脑首次拉取"步骤。
+
+---
+
+## 13. v2 方案修订（2026/05/26 会话 2）
+
+> 第 3 节描述的是 v1 方案（钩在「装货完回大世界 → 重进仓储 UI 点查看任务」）。
+> v2 把 OCR 钩入点**前移**到「调度申请界面（接任务环节）」，本节为最新设计，实现以此节为准。
+
+### 13.1 关键变更
+- **OCR 钩入位置前移**：从「装货后回仓储 UI 点查看任务」改为「调度申请界面（图2）直接 OCR 买方信息列」
+- **流程更顺**：调度申请界面 OCR → 设 anchor → 点开始运送 → 装完回大世界后直接进入送货流程
+- **「自动送货」隐含「仅接取任务」**：开启自动送货时不需要再开 AcceptJobOnly 开关
+- **不再需要 ExitUi 节点**：流程不会回仓储 UI
+
+### 13.2 新钩入点
+| 节点 | pipeline_override 改写 | 作用 |
+|------|----------------------|------|
+| `DeliveryJobsInCargoRedistributionBid` | `next` 数组前面插入买方识别节点 + 兜底节点 | 调度申请界面 OCR 决定路线 |
+| `DeliveryJobsBackToDepot` | `next` 改为 `[DeliveryJobsSelfDeliverPickupStart]` | 装完回大世界后跳自动送货 |
+| `DeliveryJobsClickTransferJob` | `enabled: false` | 禁止转交（同 AcceptJobOnly 语义） |
+
+### 13.3 OCR 识别策略
+- 在调度申请界面（图2）OCR 买方信息列文本（如「采购-疏散区物资模组」）
+- 每个买方对应一个 `DeliveryJobsSelfDeliverDispatchToBuyerX` 节点（OCR 识别 + anchor 设置）
+- 通过 anchor 机制把路线起点绑定到 `DeliveryJobsSelfDeliverPickupEntrance` 占位符
+- 必要时用「查看位置」按钮辅助人工确定买方→路线映射（开发期），程序运行时只 OCR 名称即可
+
+### 13.4 默认买方选择
+游戏在调度申请界面默认选中报价最高的买方。MVP 不主动切换买方，依赖此默认行为。
+
+### 13.5 MVP 行为
+- 框架阶段所有 BuyerX 节点 OCR 都是 TODO，必然走 `DeliveryJobsSelfDeliverNoBuyerMatch` 兜底
+- 任务停在调度申请界面，**不会**点击「开始运送」，货物滞留，零道具消耗
+- 用户验证 UI 开关 + Pipeline 结构无误后再补充买方配置
+
+### 13.6 v2 文件变更清单
+**新建（2 个）**：
+- `assets/resource/pipeline/DeliveryJobs/SelfDeliver.json`（分发节点 + 兜底 + End）
+- `assets/resource/pipeline/DeliveryJobs/SelfDeliver/OriginiumSciencePark.json`（路线模板，全 TODO）
+
+**修改（6 个）**：
+- `assets/tasks/DeliveryJobs.json`（option 末尾加 `DeliveryJobsSelfDeliverMode` switch）
+- 5 个 i18n 文件，新增 4 个 key：`label` / `description` / `NoBuyerMatch` / `NoRoute`
+
+### 13.7 v2 计划文件位置
+`C:\Users\hongjiawei\.claude\plans\generic-sleeping-riddle.md`
+
+---
+
+## 14. v2 MVP 开发完成状态（2026/05/27 会话 2 收尾）
+
+### 14.1 已完成 ✅
+所有 v2 MVP 框架代码已落盘，prettier 通过。9 个文件状态：
+
+| 文件 | 状态 | 关键内容 |
+|------|------|---------|
+| `assets/resource/pipeline/DeliveryJobs/SelfDeliver.json` | ✅ 新建 | 5 节点：DispatchToBuyerA / NoBuyerMatch / PickupStart / NoRoute / End |
+| `assets/resource/pipeline/DeliveryJobs/SelfDeliver/OriginiumSciencePark.json` | ✅ 新建 | 6 节点路线A 模板（全 TODO 占位） |
+| `assets/tasks/DeliveryJobs.json` | ✅ 改写 | v2 switch + pipeline_override 三处钩入 |
+| `assets/resource/pipeline/DeliveryJobs/ValleyIV.json` | ✅ 清理 | 移除 v1 残留 `DeliveryJobsDeliverRouteEntrance` anchor |
+| 5 个 i18n 文件 | ✅ 更新 | label / description / NoBuyerMatch（新） / NoRoute |
+
+v1 残留文件（`DeliverRoute.json` 与 `DeliverRoute/OriginiumSciencePark.json`）在会话 2 开始时已删除。
+
+### 14.2 当前 TODO 占位清单（按文件 + 阶段）
+
+| 文件 | 字段 | 当前值 | 由哪个阶段填写 |
+|------|------|--------|--------------|
+| `SelfDeliver.json` | `DispatchToBuyerA.roi` | `[0, 0, 1280, 720]` | 阶段 2 |
+| `SelfDeliver.json` | `DispatchToBuyerA.expected` | `["TODO_BUYER_A_NAME"]` | 阶段 2 |
+| `SelfDeliver/OriginiumSciencePark.json` | `RouteAAssertLocation.zone_id` / `target` | `TODO_FILL_ZONE_ID` / `[0,0,20,20]` | 阶段 3.1 |
+| `SelfDeliver/OriginiumSciencePark.json` | `RouteAGotoPickup.path` | 只有 ZONE 声明 | 阶段 3.2 |
+| `SelfDeliver/OriginiumSciencePark.json` | `RouteAPickupAction` 识别+动作 | `DirectHit` + `DoNothing` | 阶段 4 |
+| `SelfDeliver/OriginiumSciencePark.json` | `RouteAGotoDestination.path` | 只有 ZONE 声明 | 阶段 3.3 |
+| `SelfDeliver/OriginiumSciencePark.json` | `RouteASubmitAction` 识别+动作 | `DirectHit` + `DoNothing` | 阶段 4 |
+
+### 14.3 测试阶段进度
+
+- [x] **阶段 1.A**：UI 框架验证（i18n 开关展示）✅ 会话 3 通过
+- [ ] **阶段 1.B**：跑一次任务，确认日志序列 `DispatchToBuyerA → NoBuyerMatch → StopTask`（**接力点**）
+- [ ] **阶段 2**：买方→路线映射（等用户提交调度申请界面截图）
+- [ ] **阶段 3**：MapNavigator 录路径（zone_id/target/取货段/送货段）
+- [ ] **阶段 4**：取货/交货动作识别（等用户提交 UI 截图）
+- [ ] **阶段 5**：端到端测试
+
+### 14.4 阶段 1 用户需要提交的物料
+- 📸 图A：MaaEnd 界面新开关截图（验证 i18n）
+- 📸 图B：游戏内**调度申请界面**截图（2~3 张不同买方，1280×720，看清买方信息列文字）
+- 📸 图C：`debug/maa.log` 跑完后尾巴 20 行（确认日志序列：DispatchToBuyerA → NoBuyerMatch → StopTask）
+
+### 14.5 安全前提（已落地，无需用户额外操作）
+- MVP 开启自己送货开关后，OCR 必然不命中 → 走 `NoBuyerMatch` → StopTask
+- 任务**不会**点击「开始运送」，**不会**真接单消耗道具
+- 所有路线节点都有 `timeout` + `on_error: [DeliveryJobsSelfDeliverNoRoute]` 兜底
+- 不开启开关时原转交流程完全不受影响
+
+### 14.6 git 状态
+- 当前分支：`feature/self-deliver-route`
+- 会话 3 已把 v2 MVP 框架代码 + CLAUDE.md 更新提交并 push 到 `myfork/feature/self-deliver-route`
+- `.agents/`（外部工具产生的 skill 镜像目录）已加入 `.gitignore`，**不入仓**
+- 同步的具体 commit 见第 12 节时间线
+
+---
+
+## 15. 下次会话快速接力指南（重要）
+
+新开窗口时，把下面这段贴给 Claude，能在 1 分钟内恢复完整上下文：
+
+```
+继续 MaaEnd「自己送货」v2 MVP 的开发。
+请先阅读 e:\TestBase2\MaaEnd\CLAUDE.md，重点看第 13、14 节。
+v2 MVP 框架代码已全部落盘并 prettier 通过，git 未提交。
+当前推进到阶段 1：等我提交 UI 截图 + 调度申请界面截图 + maa.log 尾巴。
+
+我现在的进度是：[在此填写一句你的当前状态，例如]
+- "已跑通阶段 1，提交图 A/B/C"，或
+- "阶段 1 没跑，需要你先教我怎么启动 MaaEnd"，或
+- "我直接跳到阶段 3 录了 zone_id：xxx，target：xxx"
+```
+
+> **沟通要点**：每次接力先报当前阶段（1/2/3/4/5）和你刚做了什么，Claude 就能直接从对应阶段继续，不需要重复解释方案。如果有截图或日志，直接拖到对话框里。
+
+---
+
+## 16. 多电脑接力速查表（2026/05/27 起）
+
+### 16.1 离开当前电脑前（旧电脑 push checklist）
+
+```bash
+# 在 e:\TestBase2\MaaEnd 目录下
+git status                                # 看一眼有没有遗漏
+git add -A                                # 一键加（.agents/ 等已被 ignore，不会误进）
+git commit -m "<本次进度的一句话总结>"     # 描述清楚做到哪了
+git push myfork feature/self-deliver-route
+```
+
+> 已确认 `.agents/` 被 ignore 后，`git add -A` 是安全的；子模块状态不要单独提交。
+
+### 16.2 到新电脑后（新电脑接力 checklist）
+
+**情况 A：新电脑从来没拉过这个仓库**
+按第 11.3 节"新电脑首次拉取"那段命令走一遍即可。
+
+**情况 B：新电脑之前已经 clone 过（最常见）**
+```bash
+cd <新电脑上的 MaaEnd 仓库路径>
+git fetch myfork
+git checkout feature/self-deliver-route
+git pull myfork feature/self-deliver-route
+git submodule update --init --recursive
+pnpm install                              # 只在 package.json 变过时需要
+```
+
+### 16.3 新电脑上跟 Claude 接力的对话咒语
+
+打开新电脑的 Claude Code，在 MaaEnd 仓库根目录下开一个新会话，**第一条消息**贴下面这段（按需修改最后一行）：
+
+```
+继续 MaaEnd「自己送货」v2 MVP 的开发。
+请先阅读 e:\TestBase2\MaaEnd\CLAUDE.md，重点看第 13、14、15、16 节。
+最新状态见第 14.3 节进度表和第 14.6 节 git 状态。
+
+当前阶段：[阶段 1.B / 阶段 2 / 阶段 3 / 阶段 4 / 阶段 5 中的一个]
+我刚做了：[一句话描述，例如：
+  - "我换了台电脑，已经 git pull 过最新代码，准备跑阶段 1.B 看日志"
+  - "我已经跑完阶段 1.B，日志命中预期序列，要进阶段 2"
+  - "我跳到阶段 3 录好了 zone_id=XXX、target=[...]"]
+```
+
+> 路径换行：如果新电脑的仓库路径不是 `e:\TestBase2\MaaEnd`，记得替换。
+> 不需要把整个 CLAUDE.md 内容粘贴给 Claude，让它自己读文件比手动贴更可靠。
+
+### 16.4 同步注意事项
+
+| 事项 | 说明 |
+|------|------|
+| 子模块变动 | 切分支后 `git status` 显示子模块"有改动"是指针差异，**不要 commit**，用 `git submodule update --init --recursive` 同步即可 |
+| 凭据 | 第一次 push 弹 Windows 凭据管理器，用 PAT 而不是密码 |
+| install 软链接 | 各电脑独立，新电脑不一定有 install/ 软链接；如果运行 mxu.exe 找不到 resource，要先把仓库根目录的 assets 软链/复制到 install/resource |
+| pnpm install | `package.json` 没变就不用跑，省时间 |
+| 不要同时两台电脑都改 | 推荐"一台开发，另一台 pull 之后再继续"，避免分叉后手动合并 |
+
