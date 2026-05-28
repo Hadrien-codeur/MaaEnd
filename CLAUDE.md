@@ -309,6 +309,8 @@ git pull myfork feature/self-deliver-route
 | 会话 2（v2 重设计）| 把 OCR 钩入点前移到调度申请界面，重写 SelfDeliver.json 框架 | 第 13、14 节 |
 | 会话 3（阶段 1.A）| 启动 mxu.exe，验证「🚶自己送货」开关 i18n 渲染正常 | 截图（图A）通过 |
 | 会话 3（同步 push）| `.agents/` 加 ignore，提交 v2 框架 + CLAUDE.md，push 到 myfork 准备多电脑接力 | 见第 16 节 |
+| 会话 4（阶段 1.B）| 阶段 1.B 跑通：pipeline_override 三处改写在 maafw.log 中确认生效，零道具消耗 | install/debug/2026-05-28-1.log |
+| 会话 4（v2.1 重构）| 用户决定改"OCR 买方名"为"点查看位置 + 地图模板匹配"，重写 SelfDeliver.json | 见第 13bis 节 |
 
 ---
 
@@ -363,6 +365,60 @@ git pull myfork feature/self-deliver-route
 
 ---
 
+## 13bis. v2.1 方案再修订（2026/05/28 会话 4）
+
+> 第 13 节是 v2 OCR 买方名方案，**已废弃**。会话 4 改为"点击查看位置 + 地图模板匹配"方案，更稳健。
+
+### 13bis.1 关键变更
+- **路线分发依据**：从 OCR 买方信息列文本 → 改为**点「查看位置」按钮打开地图 + TemplateMatch 取送货点连线**
+- **优势**：不受多语言/买方改名/同物资多买方影响；取货点+送货点对在地图上唯一；地图视角每次自动对准（用户确认）
+- **MVP 安全前提**：路线模板 PNG 留 TODO 占位 → TemplateMatch 必失败 → 走 `NoRouteMatch` → ESC 关地图 → StopTask，**不会**点击「开始运送」
+
+### 13bis.2 新流程
+```
+DeliveryJobsInCargoRedistributionBid（识别调度申请界面）
+  ↓
+DeliveryJobsSelfDeliverClickViewLocation（OCR「查看位置」→ Click）
+  ↓ 打开大地图弹窗
+DeliveryJobsSelfDeliverMapDispatch（DirectHit 路由）
+  ├─ MatchRouteOriginiumScienceParkA（TemplateMatch 路线 A 模板图 → 设 anchor）
+  │     ↓ 命中
+  │   CloseMapAndStartDelivery（ESC 关地图）
+  │     ↓
+  │   DeliveryJobsRedistributionBidNextStep（点开始运送，原节点）
+  │     ↓ 装货 → BackToDepot → SelfDeliverPickupStart
+  │     ↓ Anchor 解析跳到路线 A 起点
+  │   ...路线 A 取货+送货流程...
+  └─ NoRouteMatch（兜底）→ ESC 关地图 → StopTask
+```
+
+### 13bis.3 v2.1 文件变更（在 v2 基础上的增量）
+**修改**：
+- `assets/resource/pipeline/DeliveryJobs/SelfDeliver.json`：完全重写
+  - 删：`DispatchToBuyerA` / `NoBuyerMatch`
+  - 增：`ClickViewLocation` / `MapDispatch` / `MatchRouteOriginiumScienceParkA` / `CloseMapAndStartDelivery` / `NoRouteMatch` / `StopForNoRouteMatch`
+  - 保留：`PickupStart` / `NoRoute` / `End`（anchor 占位机制不变）
+- `assets/tasks/DeliveryJobs.json`：`InCargoRedistributionBid.next` 改为跳 `ClickViewLocation`
+- 5 个 i18n 文件：`NoBuyerMatch` key 改名为 `NoRouteMatch`，description 文案对齐新流程
+
+**未改动**：
+- `SelfDeliver/OriginiumSciencePark.json`（路线 A 内部流程不变，anchor 仍由模板匹配节点设置）
+- `BackToDepot.next` 改写（依然指向 `SelfDeliverPickupStart`）
+- `ClickTransferJob.enabled = false`（互斥转交逻辑不变）
+
+### 13bis.4 v2.1 TODO 占位清单
+
+| 文件 | 字段 | 当前值 | 由哪个阶段填写 |
+|------|------|--------|--------------|
+| `SelfDeliver.json` | `ClickViewLocation.roi` | `[0, 0, 1280, 720]` | 阶段 2 |
+| `SelfDeliver.json` | `MatchRouteOriginiumScienceParkA.roi` | `[0, 0, 1280, 720]` | 阶段 2 |
+| `SelfDeliver.json` | `MatchRouteOriginiumScienceParkA.template` | `OriginiumSciencePark_RouteA_Map.png`（文件不存在） | 阶段 3（模板图采集） |
+| `SelfDeliver/OriginiumSciencePark.json` | 全部 TODO | 同 14.2 节 | 阶段 4-5 |
+
+> 模板图存放路径：`assets/resource/image/DeliveryJobs/SelfDeliver/OriginiumSciencePark_RouteA_Map.png`
+
+---
+
 ## 14. v2 MVP 开发完成状态（2026/05/27 会话 2 收尾）
 
 ### 14.1 已完成 ✅
@@ -393,16 +449,17 @@ v1 残留文件（`DeliverRoute.json` 与 `DeliverRoute/OriginiumSciencePark.jso
 ### 14.3 测试阶段进度
 
 - [x] **阶段 1.A**：UI 框架验证（i18n 开关展示）✅ 会话 3 通过
-- [ ] **阶段 1.B**：跑一次任务，确认日志序列 `DispatchToBuyerA → NoBuyerMatch → StopTask`（**接力点**）
-- [ ] **阶段 2**：买方→路线映射（等用户提交调度申请界面截图）
-- [ ] **阶段 3**：MapNavigator 录路径（zone_id/target/取货段/送货段）
-- [ ] **阶段 4**：取货/交货动作识别（等用户提交 UI 截图）
-- [ ] **阶段 5**：端到端测试
+- [x] **阶段 1.B**：跑一次任务，确认 pipeline_override 生效（maafw.log 已确认 `found in override [node_name=DeliveryJobsInCargoRedistributionBid]`）✅ 会话 4 通过
+- [x] **方案 v2.1 重构**：改 OCR 买方名 → 点「查看位置」+ 模板匹配地图 ✅ 会话 4 完成
+- [ ] **阶段 2**：录制「查看位置」按钮 roi + 地图弹窗 roi（**接力点**）
+- [ ] **阶段 3**：采集路线 A 的地图模板 PNG（取货点+送货点连线区域）
+- [ ] **阶段 4**：MapNavigator 录路径（zone_id/target/取货段/送货段）
+- [ ] **阶段 5**：取货/交货动作识别（等用户提交 UI 截图）
+- [ ] **阶段 6**：端到端测试
 
-### 14.4 阶段 1 用户需要提交的物料
-- 📸 图A：MaaEnd 界面新开关截图（验证 i18n）
-- 📸 图B：游戏内**调度申请界面**截图（2~3 张不同买方，1280×720，看清买方信息列文字）
-- 📸 图C：`debug/maa.log` 跑完后尾巴 20 行（确认日志序列：DispatchToBuyerA → NoBuyerMatch → StopTask）
+### 14.4 阶段 2 用户需要提交的物料（v2.1 新方案）
+- 📸 图D：调度申请界面**完整截图**（1280×720，能看清买方下方的「查看位置」按钮位置）→ 用来填 `ClickViewLocation.roi`
+- 📸 图E：点「查看位置」打开后的**地图弹窗截图**（如本会话用户已发的那张取货点+送货点图）→ 用来填 `MatchRoute.roi` 并裁剪模板 PNG
 
 ### 14.5 安全前提（已落地，无需用户额外操作）
 - MVP 开启自己送货开关后，OCR 必然不命中 → 走 `NoBuyerMatch` → StopTask
