@@ -1,11 +1,12 @@
 {
-    // 自动送货模式（v2）：在调度申请界面 OCR 买方信息列，确定送货路线后再走「开始运送」
-    // 钩入点：DeliveryJobsInCargoRedistributionBid.next（OCR 分发）+ DeliveryJobsBackToDepot.next（回大世界后跳路线）
-    // ==================== 入口分发：调度申请界面 OCR 买方信息 ====================
-    "DeliveryJobsSelfDeliverDispatchToBuyerA": {
-        "desc": "调度申请界面：识别买方 A（TODO：补充买方名称 OCR 后绑定路线）",
+    // 自动送货模式（v2.1）：在调度申请界面点「查看位置」打开地图，TemplateMatch 取送货点连线确定路线
+    // 钩入点：DeliveryJobsInCargoRedistributionBid.next（点查看位置）+ DeliveryJobsBackToDepot.next（回大世界后跳路线）
+
+    // ==================== 入口分发：调度申请界面 → 点击「查看位置」按钮 ====================
+    "DeliveryJobsSelfDeliverClickViewLocation": {
+        "desc": "调度申请界面：识别并点击「查看位置」按钮，打开大地图弹窗",
         "recognition": "OCR",
-        // TODO：录制截图后填入买方信息列的 roi（参考调度申请界面截图）
+        // TODO：录制截图后填入「查看位置」按钮的 roi（默认买方下方那个）
         "roi": [
             0,
             0,
@@ -13,51 +14,117 @@
             720
         ],
         "expected": [
-            "TODO_BUYER_A_NAME"
+            "查看位置",
+            "查看位置",
+            "(?i)View\\s*Location",
+            "位置を確認",
+            "위치 확인"
         ],
-        "pre_delay": 0,
+        "action": "Click",
+        "post_wait_freezes": 200,
+        "timeout": 10000,
+        "next": [
+            "DeliveryJobsSelfDeliverMapDispatch"
+        ],
+        "on_error": [
+            "DeliveryJobsSelfDeliverNoRouteMatch"
+        ]
+    },
+
+    // ==================== 地图弹窗：按取送货点连线模板分发到具体路线 ====================
+    "DeliveryJobsSelfDeliverMapDispatch": {
+        "desc": "地图弹窗：识别取送货点对，分发到对应路线（命中后续节点会负责关闭地图 + anchor）",
+        "recognition": "DirectHit",
         "action": "DoNothing",
-        // OCR 命中后，把路线占位符绑定到买方 A 对应的路线起点
+        "next": [
+            "DeliveryJobsSelfDeliverMatchRouteOriginiumScienceParkA",
+            "DeliveryJobsSelfDeliverNoRouteMatch"
+        ]
+    },
+    "DeliveryJobsSelfDeliverMatchRouteOriginiumScienceParkA": {
+        "desc": "TemplateMatch 路线 A 的「取货点+送货点」地图模板（TODO：补 PNG）",
+        "recognition": "TemplateMatch",
+        // TODO：填入地图弹窗的可视区域 roi
+        "roi": [
+            0,
+            0,
+            1280,
+            720
+        ],
+        // TODO：录制后填入截取「取货点 + 送货点 + 连线」区域的 PNG 路径
+        "template": "DeliveryJobs/SelfDeliver/OriginiumSciencePark_RouteA_Map.png",
+        "threshold": 0.85,
+        "action": "DoNothing",
+        // 命中后把 PickupEntrance 锚定到路线 A 的起点，关地图后由 PickupStart 跳过去
         "anchor": {
             "DeliveryJobsSelfDeliverPickupEntrance": "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAPickupStart"
         },
-        "post_delay": 0,
-        "rate_limit": 0,
+        "next": [
+            "DeliveryJobsSelfDeliverCloseMapAndStartDelivery"
+        ]
+    },
+
+    // ==================== 命中路线后：关闭地图 → 回到调度申请界面 → 让原流程继续点开始运送 ====================
+    "DeliveryJobsSelfDeliverCloseMapAndStartDelivery": {
+        "desc": "ESC 关闭地图弹窗，回到调度申请界面，由原流程继续点击「开始运送」",
+        "recognition": "DirectHit",
+        "action": {
+            "type": "ClickKey",
+            "param": {
+                "key": 27 // ESC
+            }
+        },
+        "post_wait_freezes": 200,
         "next": [
             "DeliveryJobsRedistributionBidNextStep"
         ]
     },
-    "DeliveryJobsSelfDeliverNoBuyerMatch": {
-        "desc": "调度申请界面未识别到任何已配置的买方，停止任务避免误接单",
+
+    // ==================== 兜底：未匹配到任何路线 ====================
+    "DeliveryJobsSelfDeliverNoRouteMatch": {
+        "desc": "调度申请界面或地图弹窗未匹配到已配置路线，关闭地图后停止任务（避免误接单）",
+        "recognition": "DirectHit",
+        "action": {
+            "type": "ClickKey",
+            "param": {
+                "key": 27 // ESC
+            }
+        },
+        "post_wait_freezes": 200,
+        "next": [
+            "DeliveryJobsSelfDeliverStopForNoRouteMatch"
+        ]
+    },
+    "DeliveryJobsSelfDeliverStopForNoRouteMatch": {
+        "desc": "正式 StopTask（提示文案）",
         "recognition": "DirectHit",
         "action": "StopTask",
         "focus": {
-            "Node.Recognition.Succeeded": "$task.DeliveryJobs.SelfDeliverMode.NoBuyerMatch"
+            "Node.Recognition.Succeeded": "$task.DeliveryJobs.SelfDeliverMode.NoRouteMatch"
         }
     },
-    // ==================== 装货完回大世界后的中继：通过 anchor 跳到对应路线 ====================
+
+    // ==================== 装货完回大世界后：通过 anchor 跳到对应路线 ====================
     "DeliveryJobsSelfDeliverPickupStart": {
-        "desc": "自动送货：装货完成回到大世界后，通过 anchor 跳到买方对应的路线起点",
+        "desc": "自动送货：装货完回到大世界后，通过 anchor 跳到匹配到的路线起点",
         "recognition": "And",
         "all_of": [
             "InWorld"
         ],
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "[Anchor]DeliveryJobsSelfDeliverPickupEntrance",
             "DeliveryJobsSelfDeliverNoRoute"
         ]
     },
     "DeliveryJobsSelfDeliverNoRoute": {
-        "desc": "anchor 没匹配到任何路线起点，停止任务",
+        "desc": "anchor 没匹配到任何路线起点（理论上不会到这里），停止任务",
         "recognition": "DirectHit",
         "action": "StopTask",
         "focus": {
             "Node.Recognition.Succeeded": "$task.DeliveryJobs.SelfDeliverMode.NoRoute"
         }
     },
+
     // ==================== 流程结束 ====================
     "DeliveryJobsSelfDeliverEnd": {
         "desc": "自动送货完成，停止任务",

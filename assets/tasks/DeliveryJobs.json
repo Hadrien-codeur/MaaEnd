@@ -464,12 +464,11 @@
                 {
                     "name": "Yes",
                     "pipeline_override": {
-                        // 1) 调度申请界面：在「开始运送」之前插入买方识别分发节点 + 兜底
+                        // 1) 调度申请界面：在「开始运送」之前先点「查看位置」打开地图，模板匹配确定路线
                         "DeliveryJobsInCargoRedistributionBid": {
                             "next": [
                                 "DeliveryJobsOngoingDelivery",
-                                "DeliveryJobsSelfDeliverDispatchToBuyerA",
-                                "DeliveryJobsSelfDeliverNoBuyerMatch",
+                                "DeliveryJobsSelfDeliverClickViewLocation",
                                 "DeliveryJobsRedistributionBidNextStep"
                             ]
                         },
