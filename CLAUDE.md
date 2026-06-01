@@ -408,14 +408,15 @@ DeliveryJobsSelfDeliverMapDispatch（DirectHit 路由）
 
 ### 13bis.4 v2.1 TODO 占位清单
 
+> ⚠️ **本表中的 `MatchRouteOriginiumScienceParkA`（TemplateMatch + PNG 模板图）已在会话 6 废弃**，
+> 改为 OCR「送货点」坐标落点方案。最新 TODO 占位清单见 **第 18.3 节**。
+
 | 文件 | 字段 | 当前值 | 由哪个阶段填写 |
 |------|------|--------|--------------|
 | `SelfDeliver.json` | `ClickViewLocation.roi` | `[0, 0, 1280, 720]` | 阶段 2 |
-| `SelfDeliver.json` | `MatchRouteOriginiumScienceParkA.roi` | `[0, 0, 1280, 720]` | 阶段 2 |
-| `SelfDeliver.json` | `MatchRouteOriginiumScienceParkA.template` | `OriginiumSciencePark_RouteA_Map.png`（文件不存在） | 阶段 3（模板图采集） |
+| ~~`SelfDeliver.json`~~ | ~~`MatchRouteOriginiumScienceParkA.roi`~~ | ~~`[0, 0, 1280, 720]`~~ | ❌ 废弃，见 18.3 |
+| ~~`SelfDeliver.json`~~ | ~~`MatchRouteOriginiumScienceParkA.template`~~ | ~~`OriginiumSciencePark_RouteA_Map.png`~~ | ❌ 废弃，不再需要 PNG |
 | `SelfDeliver/OriginiumSciencePark.json` | 全部 TODO | 同 14.2 节 | 阶段 4-5 |
-
-> 模板图存放路径：`assets/resource/image/DeliveryJobs/SelfDeliver/OriginiumSciencePark_RouteA_Map.png`
 
 ---
 
@@ -450,19 +451,21 @@ v1 残留文件（`DeliverRoute.json` 与 `DeliverRoute/OriginiumSciencePark.jso
 
 - [x] **阶段 1.A**：UI 框架验证（i18n 开关展示）✅ 会话 3 通过
 - [x] **阶段 1.B**：跑一次任务，确认 pipeline_override 生效（maafw.log 已确认 `found in override [node_name=DeliveryJobsInCargoRedistributionBid]`）✅ 会话 4 通过
-- [x] **方案 v2.1 重构**：改 OCR 买方名 → 点「查看位置」+ 模板匹配地图 ✅ 会话 4 完成
-- [ ] **阶段 2**：录制「查看位置」按钮 roi + 地图弹窗 roi（**接力点**）
-- [ ] **阶段 3**：采集路线 A 的地图模板 PNG（取货点+送货点连线区域）
+- [x] **方案 v2.1 重构**：改 OCR 买方名 → 点「查看位置」+ 识别地图标签 ✅ 会话 4 完成
+- [x] **识别策略确定**：会话 5 对比两条路线截图，确定用 OCR「送货点」标签坐标落点判区间（见第 17 节）✅
+- [x] **阶段 2（代码部分）**：会话 6 重写 `SelfDeliver.json` 的 MapDispatch 逻辑（TemplateMatch → OCR 落点），5 个 i18n 文案同步去掉"模板图"措辞 ✅（见第 18 节）
+- [ ] **阶段 2（量参数）**：录制「查看位置」按钮 roi（填 `ClickViewLocation.roi`）→ 等图D
+- [ ] **阶段 3**：为每条路线确定「送货点」标签坐标区间（填 `CheckRouteX.roi`）→ 等图E 系列
 - [ ] **阶段 4**：MapNavigator 录路径（zone_id/target/取货段/送货段）
 - [ ] **阶段 5**：取货/交货动作识别（等用户提交 UI 截图）
 - [ ] **阶段 6**：端到端测试
 
-### 14.4 阶段 2 用户需要提交的物料（v2.1 新方案）
+### 14.4 阶段 2 用户需要提交的物料（识别策略更新后）
 - 📸 图D：调度申请界面**完整截图**（1280×720，能看清买方下方的「查看位置」按钮位置）→ 用来填 `ClickViewLocation.roi`
-- 📸 图E：点「查看位置」打开后的**地图弹窗截图**（如本会话用户已发的那张取货点+送货点图）→ 用来填 `MatchRoute.roi` 并裁剪模板 PNG
+- 📸 图E：点「查看位置」后，**源石研究园每条路线的地图弹窗截图**（至少两张不同送货目的地）→ 量「送货点」标签 Y 坐标区间阈值
 
 ### 14.5 安全前提（已落地，无需用户额外操作）
-- MVP 开启自己送货开关后，OCR 必然不命中 → 走 `NoBuyerMatch` → StopTask
+- MVP 开启自己送货开关后，送货点 OCR 不命中 → 走 `NoRouteMatch` → ESC 关地图 → StopTask
 - 任务**不会**点击「开始运送」，**不会**真接单消耗道具
 - 所有路线节点都有 `timeout` + `on_error: [DeliveryJobsSelfDeliverNoRoute]` 兜底
 - 不开启开关时原转交流程完全不受影响
@@ -553,3 +556,128 @@ pnpm install                              # 只在 package.json 变过时需要
 | pnpm install | `package.json` 没变就不用跑，省时间 |
 | 不要同时两台电脑都改 | 推荐"一台开发，另一台 pull 之后再继续"，避免分叉后手动合并 |
 
+
+---
+
+## 17. 识别策略最终决定（2026/06/01 会话 5）
+
+### 17.1 从截图观察到的地图行为
+
+用户提供了供能高地两条不同路线的地图弹窗截图（适用所有地区）：
+
+| 属性 | 结论 |
+|------|------|
+| 地图缩放比例 | **固定不变**（两张背景完全像素一致） |
+| 取货点位置 | **同地区固定**（同一地区取货点永远在同一屏幕位置） |
+| 送货点位置 | **随路线变化**，且可能超出屏幕边缘 |
+| 取货点/送货点标识 | 橙色文字标签「取货点」/「送货点」+ 箭头图标 |
+
+### 17.2 为什么放弃 TemplateMatch 整图方案
+
+- 同地区地图背景完全相同 → 无法区分路线
+- 能区分路线的送货点标签位置 → 可能跑出屏幕，TemplateMatch 会匹配失败
+- 整图模板匹配需要裁 PNG → 维护成本高，且取货/送货点距离太远时框太大失去意义
+
+### 17.3 最终采用策略：OCR「送货点」标签坐标落点判区间
+
+**核心思路**：
+1. 地图弹窗打开后，OCR 识别「送货点」标签文字，获取其在屏幕上的 **Y 坐标**
+2. 不同路线的「送货点」Y 坐标落在不同区间 → 判断对应哪条路线
+3. OCR 找不到「送货点」（超出屏幕）→ 直接走 `NoRouteMatch` → 安全兜底
+
+**优势**：
+- OCR 认字，对画面轻微变化容忍度高
+- 取货点固定不用识别，只需识别送货点一个元素
+- 送货点跑出屏幕 → 自然兜底，不会误接单
+- 不需要裁 PNG，维护成本低
+
+### 17.4 v2.2 SelfDeliver.json 节点设计（待会话 6 实施）
+
+替换 `MatchRouteOriginiumScienceParkA`（TemplateMatch）为基于坐标落点的分发逻辑：
+
+```
+DeliveryJobsSelfDeliverClickViewLocation
+  ↓ 地图弹窗打开
+DeliveryJobsSelfDeliverOCRDeliveryPointLabel   ← OCR「送货点」标签，获取坐标
+  ├─ 命中且 Y < 阈值A → DeliveryJobsSelfDeliverRouteDispatchByCoord（按坐标判路线）
+  └─ 不命中 → DeliveryJobsSelfDeliverNoRouteMatch（ESC + StopTask）
+
+DeliveryJobsSelfDeliverRouteDispatchByCoord（DirectHit 路由节点）
+  ├─ CheckRouteA（OCR roi 限定在「送货点」坐标区间A 内）→ anchor RouteA → CloseMap
+  ├─ CheckRouteB（OCR roi 限定在区间B 内）→ anchor RouteB → CloseMap
+  └─ NoRouteMatch（兜底）
+```
+
+**具体阈值**：需要用户提供源石研究园各路线的地图弹窗截图，Claude 量出各送货点 Y 坐标后确定分界线。
+
+### 17.5 待用户提供的物料（阶段 2 接力点）
+
+1. 📸 **图D**：调度申请界面完整截图（1280×720）→ 量「查看位置」按钮 roi
+2. 📸 **图E 系列**：源石研究园**每条路线**的地图弹窗截图 → 量各「送货点」标签 Y 坐标
+   - 每张截图游戏内截图，1280×720，不加水印
+   - 需要：有几条路线就截几张（每次「查看位置」对应不同买方）
+3. 告知每张图对应的买方/目的地名称（例如"这张对应矿区营地"）
+
+### 17.6 时间线更新
+
+| 阶段 | 操作 | 关键产物 |
+|------|------|---------|
+| 会话 1-4 | v2.1 框架搭建完成，阶段 1.A/1.B 通过 | 见第 12 节 |
+| 会话 5 | 对比供能高地两条路线截图，确定 OCR 落点识别策略，放弃 TemplateMatch 方案 | 本节 |
+| 会话 6 | 落地 v2.2：重写 SelfDeliver.json 的 MapDispatch（TemplateMatch → OCR 落点），5 个 i18n 去模板图措辞，prettier 通过，push 到 myfork | 见第 18 节 |
+
+---
+
+## 18. v2.2 落地（2026/06/01 会话 6）
+
+> 第 17 节是识别策略决定，本节是**实际落地的代码**。实现比 17.4 草图更简：
+> 不另写"先 OCR 取坐标再按坐标路由"两段，而是**每条路线一个 OCR 节点，把该路线「送货点」的坐标区间直接写进它自己的 `roi`**——
+> 标签落在哪个区间，哪个节点的 OCR 就命中，自然分流。无需自定义识别器算 Y 坐标。
+
+### 18.1 SelfDeliver.json 最终节点结构
+
+```
+DeliveryJobsSelfDeliverClickViewLocation（OCR「查看位置」→ Click 打开地图）
+  ↓
+DeliveryJobsSelfDeliverMapDispatch（DirectHit 路由）
+  ├─ DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkA
+  │     （OCR「送货点」，roi 限定在路线 A 坐标区间 → 命中即设 anchor RouteA）
+  │        ↓ 命中
+  │   DeliveryJobsSelfDeliverCloseMapAndStartDelivery（ESC 关地图）
+  │        ↓
+  │   DeliveryJobsRedistributionBidNextStep（原节点，点开始运送）
+  └─ DeliveryJobsSelfDeliverNoRouteMatch（兜底 → ESC → StopForNoRouteMatch）
+```
+
+未改动：`PickupStart` / `NoRoute` / `End`（anchor 占位机制不变），`OriginiumSciencePark.json` 路线内部流程，`BackToDepot.next`，`ClickTransferJob.enabled=false`。
+
+### 18.2 增删节点对照（相对 v2.1）
+
+| 操作 | 节点 |
+|------|------|
+| 删 | `DeliveryJobsSelfDeliverMatchRouteOriginiumScienceParkA`（TemplateMatch + PNG） |
+| 增 | `DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkA`（OCR「送货点」+ roi 区间） |
+| 改 | `MapDispatch.next` → `[CheckRouteOriginiumScienceParkA, NoRouteMatch]` |
+
+新增路线时：复制一个 `CheckRouteXxx` 节点，填它自己的 `roi` 区间 + anchor，插进 `MapDispatch.next`（兜底节点排最后）。
+
+### 18.3 v2.2 TODO 占位清单（最新，取代 13bis.4 / 14.2 的模板图行）
+
+| 文件 | 字段 | 当前值 | 安全性 | 由哪个阶段填 |
+|------|------|--------|--------|------------|
+| `SelfDeliver.json` | `ClickViewLocation.roi` | `[0, 0, 1280, 720]` | 全屏找「查看位置」，能用但偏慢 | 阶段 2（图D） |
+| `SelfDeliver.json` | `CheckRouteOriginiumScienceParkA.roi` | `[0, 0, 1, 1]` | **1px → OCR 必失败 → 走兜底，零道具** | 阶段 3（图E） |
+| `SelfDeliver/OriginiumSciencePark.json` | 全部 TODO | 同 14.2 节 | path 空 → on_error 兜底 | 阶段 4-5 |
+
+### 18.4 i18n 文案变更
+5 个语言文件的 `SelfDeliverMode.description` 与 `NoRouteMatch`：
+- 「地图模板匹配」/「map template matching」→「识别『送货点』标签位置」
+- 「请补充路线模板图」/「add a route template image」→「请补充路线坐标区间」
+
+### 18.5 安全前提（v2.2 仍成立）
+`CheckRouteOriginiumScienceParkA.roi = [0,0,1,1]` → OCR 必然不命中 → `MapDispatch` 走 `NoRouteMatch` → ESC 关地图 → `StopForNoRouteMatch`（StopTask）。**绝不点「开始运送」，零道具消耗。** 填入真实区间前可放心反复跑。
+
+### 18.6 阶段 2/3 接力：等用户提供的物料
+1. 📸 **图D**：调度申请界面完整截图（1280×720）→ 量「查看位置」按钮 roi → 填 `ClickViewLocation.roi`
+2. 📸 **图E 系列**：源石研究园**每条路线**的地图弹窗截图（送货点标签可见）→ 量各路线「送货点」标签 `[x, y, w, h]` → 填 `CheckRouteXxx.roi`
+   - 多条路线就多截几张，并告知每张对应的买方/目的地名称

@@ -1,12 +1,15 @@
 {
-    // 自动送货模式（v2.1）：在调度申请界面点「查看位置」打开地图，TemplateMatch 取送货点连线确定路线
+    // 自动送货模式（v2.2）：在调度申请界面点「查看位置」打开地图，OCR「送货点」标签落点判区间确定路线
     // 钩入点：DeliveryJobsInCargoRedistributionBid.next（点查看位置）+ DeliveryJobsBackToDepot.next（回大世界后跳路线）
+    // 识别策略（见 CLAUDE.md 第 17 节）：地图缩放与取货点位置固定，仅「送货点」标签随路线移动。
+    // 用 roi 把 OCR 限定在各路线「送货点」的 Y 坐标区间内：标签落在哪个区间就命中哪条路线；
+    // 都不在（送货点跑出屏幕或地区无配置）则走 NoRouteMatch 安全兜底。
 
     // ==================== 入口分发：调度申请界面 → 点击「查看位置」按钮 ====================
     "DeliveryJobsSelfDeliverClickViewLocation": {
         "desc": "调度申请界面：识别并点击「查看位置」按钮，打开大地图弹窗",
         "recognition": "OCR",
-        // TODO：录制截图后填入「查看位置」按钮的 roi（默认买方下方那个）
+        // TODO（阶段 2）：录制图D 后填入「查看位置」按钮的 roi（默认买方下方那个）
         "roi": [
             0,
             0,
@@ -31,29 +34,30 @@
         ]
     },
 
-    // ==================== 地图弹窗：按取送货点连线模板分发到具体路线 ====================
+    // ==================== 地图弹窗：按「送货点」标签坐标落点分发到具体路线 ====================
     "DeliveryJobsSelfDeliverMapDispatch": {
-        "desc": "地图弹窗：识别取送货点对，分发到对应路线（命中后续节点会负责关闭地图 + anchor）",
+        "desc": "地图弹窗：依次用各路线的「送货点」坐标区间 OCR 节点判路线，全不中走 NoRouteMatch 兜底",
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
-            "DeliveryJobsSelfDeliverMatchRouteOriginiumScienceParkA",
+            "DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkA",
             "DeliveryJobsSelfDeliverNoRouteMatch"
         ]
     },
-    "DeliveryJobsSelfDeliverMatchRouteOriginiumScienceParkA": {
-        "desc": "TemplateMatch 路线 A 的「取货点+送货点」地图模板（TODO：补 PNG）",
-        "recognition": "TemplateMatch",
-        // TODO：填入地图弹窗的可视区域 roi
+    "DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkA": {
+        "desc": "源石研究园 路线 A：OCR「送货点」标签，roi 限定在路线 A 的坐标区间内；命中即判为本路线",
+        "recognition": "OCR",
+        // TODO（阶段 3）：填入路线 A「送货点」标签所在的坐标区间 [x, y, w, h]
+        // MVP 安全占位：1px roi 必然 OCR 失败 → 走 NoRouteMatch → ESC → StopTask，绝不点「开始运送」
         "roi": [
             0,
             0,
-            1280,
-            720
+            1,
+            1
         ],
-        // TODO：录制后填入截取「取货点 + 送货点 + 连线」区域的 PNG 路径
-        "template": "DeliveryJobs/SelfDeliver/OriginiumSciencePark_RouteA_Map.png",
-        "threshold": 0.85,
+        "expected": [
+            "送货点"
+        ],
         "action": "DoNothing",
         // 命中后把 PickupEntrance 锚定到路线 A 的起点，关地图后由 PickupStart 跳过去
         "anchor": {
