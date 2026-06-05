@@ -723,4 +723,31 @@ MaaFW pipeline 跑在 **1280×720**。所以从「我在显示图上量到的坐
 
 ### 19.5 下次接力第一步
 用户发**路线 B 地图截图**（2K 直接发，标注对应买方/目的地）+ 确认显示宽度仍是 2000 → Claude 量 B → 确认不重叠 → 一次性把 A/B 两个 `CheckRouteXxx.roi` 写进 `SelfDeliver.json`。
-（注：`ClickViewLocation.roi` 仍缺图D「调度申请界面完整截图」，可与图 B 一并补。）
+（注：`ClickViewLocation.roi` 已在会话 6 阶段 2 填好 = `[1040,150,140,50]`，见 SelfDeliver.json 第 14 行；图D 不再缺。）
+
+---
+
+## 19bis. 会话 8（2026/06/05）：识别方式改 OCR → ColorMatch + 边缘识别讨论
+
+### 19bis.1 本会话决定（重要，下次别退回 OCR）
+1. **识别方式从 OCR「送货点」文字 → 改为 ColorMatch 橙色标记**。
+   - 起因：用户问「取货点/送货点标签处于地图边缘时会显示不全或边缘变暗，能否仍识别」。
+   - 结论：**边缘变暗/文字被裁断** → ColorMatch 比 OCR 稳得多（橙色在灰绿地图上独特，露几个像素即可命中；变暗只需放宽橙色亮度下限）。送货点图标下还有一个橙色小图标 → 多一块橙色证据。
+   - **标签真跑出屏幕外**（不在视野）→ 任何截图识别都救不了，仍走 NoRouteMatch 兜底（不写地图拖动，不进 MVP）。
+2. ⚠️ **ColorMatch 解决「变暗」但解决不了「重叠」**：两条路线送货点挤在屏幕同一块 → 坐标区间重叠问题，需换区分维度（如 OCR 送货点旁的**地区名**灰字标签：研究所/生态种植区/崖边山道…）。变暗与重叠是两件事，要一起定。
+
+### 19bis.2 ColorMatch 写法参考（仓库现成范例）
+- `assets/resource/pipeline/SceneManager/SceneMap.json` 第 287 行、第 352 行：
+  - 第 352 行匹配**黄橙色**：`lower:[245,229,0]` `upper:[255,249,10]` + `connected:true` + `count:10` —— 与「送货点」橙色同类，可直接借鉴。
+- 字段：`lower`/`upper`（RGB 上下界）、`connected`（连通域）、`count`（最小连通像素数，防误判）。
+- **橙色精确 RGB 范围 + count 阈值要对着真实截图像素调**，故未写死，等路线 B 图一起定。
+
+### 19bis.3 待落地的节点改动（等路线 B 图后一次性做）
+把 `DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkA` 由 OCR 改 ColorMatch：
+- `recognition: "OCR"` + `expected:["送货点"]` → `recognition:"ColorMatch"` + `lower/upper/connected/count`
+- `roi` 仍是该路线送货点所在的坐标区间（落点判区间逻辑不变，只是把"认字"换成"认橙色"）
+- 安全占位：当前 `roi:[0,0,1,1]` 改 ColorMatch 后 1px 内不可能有 count 个橙色像素 → 仍必然不命中 → 走兜底，零道具消耗（安全前提 18.5 不变）。
+- i18n 第 18.4 节的「识别『送货点』标签位置」措辞仍贴切，无需再改。
+
+### 19bis.4 本会话收到的图
+用户发的「源石研究园」地图截图，量出送货点游戏坐标约 (728,371)，与会话 7 路线 A (725,371) **重合** → 经确认是**路线 A 重发**，非新数据。手头仍只有 1 条路线，卡点不变：**等真·路线 B（目的地明显不同）截图**。

@@ -42,31 +42,100 @@
         "action": "DoNothing",
         "next": [
             "DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkA",
+            "DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkB",
             "DeliveryJobsSelfDeliverNoRouteMatch"
         ]
     },
+    // 识别方式：ColorMatch 橙色「送货点」标签（会话 8/9 决定，抗边缘变暗；OCR 在地图散布橙色传送点图标场景也可用，但统一用颜色）
+    // roi 来源：会话 9 量图（2560×1440 → 1280×720，显示宽 2000 × 0.64）
+    //   路线 A 送货点游戏中心 (725, 371) → roi y 区间 348–394
+    //   路线 B 送货点游戏中心 (655, 522) → roi y 区间 500–546，与 A 留 ~106px 缓冲带不重叠
+    // ⚠ lower/upper/count 是估计值，必须对真实截图像素调（跑日志看匹配像素数后收紧，避免误中橙色传送点图标）
     "DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkA": {
-        "desc": "源石研究园 路线 A：OCR「送货点」标签，roi 限定在路线 A 的坐标区间内；命中即判为本路线",
-        "recognition": "OCR",
-        // TODO（阶段 3）：填入路线 A「送货点」标签所在的坐标区间 [x, y, w, h]
-        // MVP 安全占位：1px roi 必然 OCR 失败 → 走 NoRouteMatch → ESC → StopTask，绝不点「开始运送」
+        "desc": "源石研究园 路线 A（醇化物工厂以外/右中部目的地）：ColorMatch 橙色「送货点」标签，roi 限定路线 A 坐标区间；命中即判本路线",
+        "recognition": "ColorMatch",
         "roi": [
-            0,
-            0,
-            1,
-            1
+            676,
+            348,
+            100,
+            46
         ],
-        "expected": [
-            "送货点"
+        "lower": [
+            200,
+            90,
+            0
         ],
+        "upper": [
+            255,
+            180,
+            80
+        ],
+        "connected": true,
+        "count": 30,
         "action": "DoNothing",
         // 命中后把 PickupEntrance 锚定到路线 A 的起点，关地图后由 PickupStart 跳过去
         "anchor": {
             "DeliveryJobsSelfDeliverPickupEntrance": "DeliveryJobsSelfDeliverOriginiumScienceParkRouteAPickupStart"
         },
+        // 【空跑验证临时接线（会话 9）】命中先不接单：跳 VerifyRouteHit（ESC 关地图 + StopTask），看日志哪个 CheckRoute 命中。
+        // 验证 A/B 各自命中且不误中后，删 VerifyRouteHit，把本 next 改回 ["DeliveryJobsSelfDeliverCloseMapAndStartDelivery"]
         "next": [
-            "DeliveryJobsSelfDeliverCloseMapAndStartDelivery"
+            "DeliveryJobsSelfDeliverVerifyRouteHit"
         ]
+    },
+    "DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkB": {
+        "desc": "源石研究园 路线 B（醇化物工厂）：ColorMatch 橙色「送货点」标签，roi 限定路线 B 坐标区间；命中即判本路线",
+        "recognition": "ColorMatch",
+        "roi": [
+            604,
+            500,
+            104,
+            46
+        ],
+        "lower": [
+            200,
+            90,
+            0
+        ],
+        "upper": [
+            255,
+            180,
+            80
+        ],
+        "connected": true,
+        "count": 30,
+        "action": "DoNothing",
+        // TODO：路线 B 的取货/送货流程文件尚未建（SelfDeliver/OriginiumSciencePark.json 仅有 RouteA）。
+        // 空跑验证阶段不接单、不走 anchor，此处指向待建节点不影响验证。
+        "anchor": {
+            "DeliveryJobsSelfDeliverPickupEntrance": "DeliveryJobsSelfDeliverOriginiumScienceParkRouteBPickupStart"
+        },
+        "next": [
+            "DeliveryJobsSelfDeliverVerifyRouteHit"
+        ]
+    },
+
+    // ==================== 【空跑验证临时节点（会话 9）】命中路线后不接单，只关地图 + StopTask ====================
+    // 目的：填入真 roi 后第一次脱离零道具安全网前，先确认 ColorMatch 落点分发正确（A 图命中 CheckRouteA、B 图命中 CheckRouteB，且不误中橙色传送点图标）。
+    // 验证通过后整组删除，各 CheckRoute.next 改回 DeliveryJobsSelfDeliverCloseMapAndStartDelivery。
+    "DeliveryJobsSelfDeliverVerifyRouteHit": {
+        "desc": "【空跑验证临时】命中某路线后 ESC 关地图，不接单。日志里上一个命中的 CheckRoute 节点名即所判路线",
+        "recognition": "DirectHit",
+        "action": {
+            "type": "ClickKey",
+            "param": {
+                "key": 27 // ESC
+            }
+        },
+        "post_wait_freezes": 200,
+        "next": [
+            "DeliveryJobsSelfDeliverStopForVerify"
+        ]
+    },
+    "DeliveryJobsSelfDeliverStopForVerify": {
+        "desc": "【空跑验证临时】StopTask，零道具消耗。看日志确认哪条 CheckRoute 命中后再翻正式接单",
+        "recognition": "DirectHit",
+        "action": "StopTask"
     },
 
     // ==================== 命中路线后：关闭地图 → 回到调度申请界面 → 让原流程继续点开始运送 ====================
