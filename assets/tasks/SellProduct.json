@@ -3,12 +3,18 @@
         {
             "name": "SellProduct",
             "label": "$task.SellProduct.label",
-            "entry": "SellProductMain",
+            "entry": "SellProductSchedule",
             "description": "$task.SellProduct.description",
             "option": [
+                "SellProductSchedule",
                 "SellBeyondAidQuota",
                 "ValleyIVSell",
                 "WulingSell"
+            ],
+            "controller": [
+                "Win32-Front",
+                "ADB",
+                "Wlroots"
             ],
             "group": [
                 "regional_development"
@@ -16,6 +22,98 @@
         }
     ],
     "option": {
+        "SellProductSchedule": {
+            "type": "checkbox",
+            "label": "$option.TaskSchedule.label",
+            "default_case": [
+                "SellProductScheduleMonday",
+                "SellProductScheduleTuesday",
+                "SellProductScheduleWednesday",
+                "SellProductScheduleThursday",
+                "SellProductScheduleFriday",
+                "SellProductScheduleSaturday",
+                "SellProductScheduleSunday"
+            ],
+            "cases": [
+                {
+                    "name": "SellProductScheduleMonday",
+                    "label": "$option.TaskScheduleMonday.label",
+                    "pipeline_override": {
+                        "SellProductScheduleEnabled": {
+                            "attach": {
+                                "monday": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "SellProductScheduleTuesday",
+                    "label": "$option.TaskScheduleTuesday.label",
+                    "pipeline_override": {
+                        "SellProductScheduleEnabled": {
+                            "attach": {
+                                "tuesday": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "SellProductScheduleWednesday",
+                    "label": "$option.TaskScheduleWednesday.label",
+                    "pipeline_override": {
+                        "SellProductScheduleEnabled": {
+                            "attach": {
+                                "wednesday": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "SellProductScheduleThursday",
+                    "label": "$option.TaskScheduleThursday.label",
+                    "pipeline_override": {
+                        "SellProductScheduleEnabled": {
+                            "attach": {
+                                "thursday": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "SellProductScheduleFriday",
+                    "label": "$option.TaskScheduleFriday.label",
+                    "pipeline_override": {
+                        "SellProductScheduleEnabled": {
+                            "attach": {
+                                "friday": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "SellProductScheduleSaturday",
+                    "label": "$option.TaskScheduleSaturday.label",
+                    "pipeline_override": {
+                        "SellProductScheduleEnabled": {
+                            "attach": {
+                                "saturday": true
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "SellProductScheduleSunday",
+                    "label": "$option.TaskScheduleSunday.label",
+                    "pipeline_override": {
+                        "SellProductScheduleEnabled": {
+                            "attach": {
+                                "sunday": true
+                            }
+                        }
+                    }
+                }
+            ]
+        },
         "SellBeyondAidQuota": {
             "type": "switch",
             "label": "$task.SellProduct.option.SellBeyondAidQuota.label",
@@ -3888,28 +3986,6 @@
                     }
                 },
                 {
-                    "name": "息壤玉葫芦",
-                    "pipeline_override": {
-                        "SellProductSkyKingFlatsSelectItem1": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤玉葫芦",
-                                    "息壤玉葫蘆",
-                                    "息壌玉ひょうたん",
-                                    "Xiranite Jade Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductSkyKingFlatsSellAttempt1SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteJadeGourd"
-                },
-                {
                     "name": "中容武陵电池",
                     "pipeline_override": {
                         "SellProductSkyKingFlatsSelectItem1": {
@@ -3954,28 +4030,6 @@
                     "label": "$item.HetonitePart"
                 },
                 {
-                    "name": "息壤葫芦",
-                    "pipeline_override": {
-                        "SellProductSkyKingFlatsSelectItem1": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤葫芦",
-                                    "息壤葫蘆",
-                                    "息壌ひょうたん",
-                                    "Xiranite Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductSkyKingFlatsSellAttempt1SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteGourd"
-                },
-                {
                     "name": "低容武陵电池",
                     "pipeline_override": {
                         "SellProductSkyKingFlatsSelectItem1": {
@@ -4018,6 +4072,50 @@
                         }
                     },
                     "label": "$item.YazhenSyringeA"
+                },
+                {
+                    "name": "优质锦草软饮",
+                    "pipeline_override": {
+                        "SellProductSkyKingFlatsSelectItem1": {
+                            "enabled": true,
+                            "custom_recognition_param": {
+                                "candidates": [
+                                    "优质锦草软饮",
+                                    "優質錦草飲料",
+                                    "錦草ソーダⅡ",
+                                    "Jincao Tea"
+                                ]
+                            }
+                        },
+                        "SellProductSkyKingFlatsSellAttempt1SetMissHandler": {
+                            "anchor": {
+                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
+                            }
+                        }
+                    },
+                    "label": "$item.JincaoTea"
+                },
+                {
+                    "name": "重息壤",
+                    "pipeline_override": {
+                        "SellProductSkyKingFlatsSelectItem1": {
+                            "enabled": true,
+                            "custom_recognition_param": {
+                                "candidates": [
+                                    "重息壤",
+                                    "重息壤",
+                                    "重息壌",
+                                    "Heavy Xiranite"
+                                ]
+                            }
+                        },
+                        "SellProductSkyKingFlatsSellAttempt1SetMissHandler": {
+                            "anchor": {
+                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
+                            }
+                        }
+                    },
+                    "label": "$item.HeavyXiranite"
                 },
                 {
                     "name": "芽针针剂",
@@ -4128,28 +4226,6 @@
                     }
                 },
                 {
-                    "name": "息壤玉葫芦",
-                    "pipeline_override": {
-                        "SellProductSkyKingFlatsSelectItem2": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤玉葫芦",
-                                    "息壤玉葫蘆",
-                                    "息壌玉ひょうたん",
-                                    "Xiranite Jade Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductSkyKingFlatsSellAttempt2SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteJadeGourd"
-                },
-                {
                     "name": "中容武陵电池",
                     "pipeline_override": {
                         "SellProductSkyKingFlatsSelectItem2": {
@@ -4194,28 +4270,6 @@
                     "label": "$item.HetonitePart"
                 },
                 {
-                    "name": "息壤葫芦",
-                    "pipeline_override": {
-                        "SellProductSkyKingFlatsSelectItem2": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤葫芦",
-                                    "息壤葫蘆",
-                                    "息壌ひょうたん",
-                                    "Xiranite Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductSkyKingFlatsSellAttempt2SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteGourd"
-                },
-                {
                     "name": "低容武陵电池",
                     "pipeline_override": {
                         "SellProductSkyKingFlatsSelectItem2": {
@@ -4258,6 +4312,50 @@
                         }
                     },
                     "label": "$item.YazhenSyringeA"
+                },
+                {
+                    "name": "优质锦草软饮",
+                    "pipeline_override": {
+                        "SellProductSkyKingFlatsSelectItem2": {
+                            "enabled": true,
+                            "custom_recognition_param": {
+                                "candidates": [
+                                    "优质锦草软饮",
+                                    "優質錦草飲料",
+                                    "錦草ソーダⅡ",
+                                    "Jincao Tea"
+                                ]
+                            }
+                        },
+                        "SellProductSkyKingFlatsSellAttempt2SetMissHandler": {
+                            "anchor": {
+                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
+                            }
+                        }
+                    },
+                    "label": "$item.JincaoTea"
+                },
+                {
+                    "name": "重息壤",
+                    "pipeline_override": {
+                        "SellProductSkyKingFlatsSelectItem2": {
+                            "enabled": true,
+                            "custom_recognition_param": {
+                                "candidates": [
+                                    "重息壤",
+                                    "重息壤",
+                                    "重息壌",
+                                    "Heavy Xiranite"
+                                ]
+                            }
+                        },
+                        "SellProductSkyKingFlatsSellAttempt2SetMissHandler": {
+                            "anchor": {
+                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
+                            }
+                        }
+                    },
+                    "label": "$item.HeavyXiranite"
                 },
                 {
                     "name": "芽针针剂",
@@ -4368,28 +4466,6 @@
                     }
                 },
                 {
-                    "name": "息壤玉葫芦",
-                    "pipeline_override": {
-                        "SellProductSkyKingFlatsSelectItem3": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤玉葫芦",
-                                    "息壤玉葫蘆",
-                                    "息壌玉ひょうたん",
-                                    "Xiranite Jade Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductSkyKingFlatsSellAttempt3SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteJadeGourd"
-                },
-                {
                     "name": "中容武陵电池",
                     "pipeline_override": {
                         "SellProductSkyKingFlatsSelectItem3": {
@@ -4434,28 +4510,6 @@
                     "label": "$item.HetonitePart"
                 },
                 {
-                    "name": "息壤葫芦",
-                    "pipeline_override": {
-                        "SellProductSkyKingFlatsSelectItem3": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤葫芦",
-                                    "息壤葫蘆",
-                                    "息壌ひょうたん",
-                                    "Xiranite Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductSkyKingFlatsSellAttempt3SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteGourd"
-                },
-                {
                     "name": "低容武陵电池",
                     "pipeline_override": {
                         "SellProductSkyKingFlatsSelectItem3": {
@@ -4498,6 +4552,50 @@
                         }
                     },
                     "label": "$item.YazhenSyringeA"
+                },
+                {
+                    "name": "优质锦草软饮",
+                    "pipeline_override": {
+                        "SellProductSkyKingFlatsSelectItem3": {
+                            "enabled": true,
+                            "custom_recognition_param": {
+                                "candidates": [
+                                    "优质锦草软饮",
+                                    "優質錦草飲料",
+                                    "錦草ソーダⅡ",
+                                    "Jincao Tea"
+                                ]
+                            }
+                        },
+                        "SellProductSkyKingFlatsSellAttempt3SetMissHandler": {
+                            "anchor": {
+                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
+                            }
+                        }
+                    },
+                    "label": "$item.JincaoTea"
+                },
+                {
+                    "name": "重息壤",
+                    "pipeline_override": {
+                        "SellProductSkyKingFlatsSelectItem3": {
+                            "enabled": true,
+                            "custom_recognition_param": {
+                                "candidates": [
+                                    "重息壤",
+                                    "重息壤",
+                                    "重息壌",
+                                    "Heavy Xiranite"
+                                ]
+                            }
+                        },
+                        "SellProductSkyKingFlatsSellAttempt3SetMissHandler": {
+                            "anchor": {
+                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
+                            }
+                        }
+                    },
+                    "label": "$item.HeavyXiranite"
                 },
                 {
                     "name": "芽针针剂",
@@ -4608,28 +4706,6 @@
                     }
                 },
                 {
-                    "name": "息壤玉葫芦",
-                    "pipeline_override": {
-                        "SellProductSkyKingFlatsSelectItem4": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤玉葫芦",
-                                    "息壤玉葫蘆",
-                                    "息壌玉ひょうたん",
-                                    "Xiranite Jade Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductSkyKingFlatsSellAttempt4SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteJadeGourd"
-                },
-                {
                     "name": "中容武陵电池",
                     "pipeline_override": {
                         "SellProductSkyKingFlatsSelectItem4": {
@@ -4674,28 +4750,6 @@
                     "label": "$item.HetonitePart"
                 },
                 {
-                    "name": "息壤葫芦",
-                    "pipeline_override": {
-                        "SellProductSkyKingFlatsSelectItem4": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤葫芦",
-                                    "息壤葫蘆",
-                                    "息壌ひょうたん",
-                                    "Xiranite Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductSkyKingFlatsSellAttempt4SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteGourd"
-                },
-                {
                     "name": "低容武陵电池",
                     "pipeline_override": {
                         "SellProductSkyKingFlatsSelectItem4": {
@@ -4738,6 +4792,50 @@
                         }
                     },
                     "label": "$item.YazhenSyringeA"
+                },
+                {
+                    "name": "优质锦草软饮",
+                    "pipeline_override": {
+                        "SellProductSkyKingFlatsSelectItem4": {
+                            "enabled": true,
+                            "custom_recognition_param": {
+                                "candidates": [
+                                    "优质锦草软饮",
+                                    "優質錦草飲料",
+                                    "錦草ソーダⅡ",
+                                    "Jincao Tea"
+                                ]
+                            }
+                        },
+                        "SellProductSkyKingFlatsSellAttempt4SetMissHandler": {
+                            "anchor": {
+                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
+                            }
+                        }
+                    },
+                    "label": "$item.JincaoTea"
+                },
+                {
+                    "name": "重息壤",
+                    "pipeline_override": {
+                        "SellProductSkyKingFlatsSelectItem4": {
+                            "enabled": true,
+                            "custom_recognition_param": {
+                                "candidates": [
+                                    "重息壤",
+                                    "重息壤",
+                                    "重息壌",
+                                    "Heavy Xiranite"
+                                ]
+                            }
+                        },
+                        "SellProductSkyKingFlatsSellAttempt4SetMissHandler": {
+                            "anchor": {
+                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
+                            }
+                        }
+                    },
+                    "label": "$item.HeavyXiranite"
                 },
                 {
                     "name": "芽针针剂",
@@ -5154,28 +5252,6 @@
                     }
                 },
                 {
-                    "name": "息壤玉葫芦",
-                    "pipeline_override": {
-                        "SellProductCardiacRemediationStationSelectItem1": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤玉葫芦",
-                                    "息壤玉葫蘆",
-                                    "息壌玉ひょうたん",
-                                    "Xiranite Jade Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductCardiacRemediationStationSellAttempt1SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteJadeGourd"
-                },
-                {
                     "name": "中容武陵电池",
                     "pipeline_override": {
                         "SellProductCardiacRemediationStationSelectItem1": {
@@ -5218,28 +5294,6 @@
                         }
                     },
                     "label": "$item.HetonitePart"
-                },
-                {
-                    "name": "息壤葫芦",
-                    "pipeline_override": {
-                        "SellProductCardiacRemediationStationSelectItem1": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤葫芦",
-                                    "息壤葫蘆",
-                                    "息壌ひょうたん",
-                                    "Xiranite Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductCardiacRemediationStationSellAttempt1SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteGourd"
                 },
                 {
                     "name": "低容武陵电池",
@@ -5372,28 +5426,6 @@
                     }
                 },
                 {
-                    "name": "息壤玉葫芦",
-                    "pipeline_override": {
-                        "SellProductCardiacRemediationStationSelectItem2": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤玉葫芦",
-                                    "息壤玉葫蘆",
-                                    "息壌玉ひょうたん",
-                                    "Xiranite Jade Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductCardiacRemediationStationSellAttempt2SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteJadeGourd"
-                },
-                {
                     "name": "中容武陵电池",
                     "pipeline_override": {
                         "SellProductCardiacRemediationStationSelectItem2": {
@@ -5436,28 +5468,6 @@
                         }
                     },
                     "label": "$item.HetonitePart"
-                },
-                {
-                    "name": "息壤葫芦",
-                    "pipeline_override": {
-                        "SellProductCardiacRemediationStationSelectItem2": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤葫芦",
-                                    "息壤葫蘆",
-                                    "息壌ひょうたん",
-                                    "Xiranite Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductCardiacRemediationStationSellAttempt2SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteGourd"
                 },
                 {
                     "name": "低容武陵电池",
@@ -5590,28 +5600,6 @@
                     }
                 },
                 {
-                    "name": "息壤玉葫芦",
-                    "pipeline_override": {
-                        "SellProductCardiacRemediationStationSelectItem3": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤玉葫芦",
-                                    "息壤玉葫蘆",
-                                    "息壌玉ひょうたん",
-                                    "Xiranite Jade Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductCardiacRemediationStationSellAttempt3SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteJadeGourd"
-                },
-                {
                     "name": "中容武陵电池",
                     "pipeline_override": {
                         "SellProductCardiacRemediationStationSelectItem3": {
@@ -5654,28 +5642,6 @@
                         }
                     },
                     "label": "$item.HetonitePart"
-                },
-                {
-                    "name": "息壤葫芦",
-                    "pipeline_override": {
-                        "SellProductCardiacRemediationStationSelectItem3": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤葫芦",
-                                    "息壤葫蘆",
-                                    "息壌ひょうたん",
-                                    "Xiranite Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductCardiacRemediationStationSellAttempt3SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteGourd"
                 },
                 {
                     "name": "低容武陵电池",
@@ -5808,28 +5774,6 @@
                     }
                 },
                 {
-                    "name": "息壤玉葫芦",
-                    "pipeline_override": {
-                        "SellProductCardiacRemediationStationSelectItem4": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤玉葫芦",
-                                    "息壤玉葫蘆",
-                                    "息壌玉ひょうたん",
-                                    "Xiranite Jade Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductCardiacRemediationStationSellAttempt4SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteJadeGourd"
-                },
-                {
                     "name": "中容武陵电池",
                     "pipeline_override": {
                         "SellProductCardiacRemediationStationSelectItem4": {
@@ -5872,28 +5816,6 @@
                         }
                     },
                     "label": "$item.HetonitePart"
-                },
-                {
-                    "name": "息壤葫芦",
-                    "pipeline_override": {
-                        "SellProductCardiacRemediationStationSelectItem4": {
-                            "enabled": true,
-                            "custom_recognition_param": {
-                                "candidates": [
-                                    "息壤葫芦",
-                                    "息壤葫蘆",
-                                    "息壌ひょうたん",
-                                    "Xiranite Gourd"
-                                ]
-                            }
-                        },
-                        "SellProductCardiacRemediationStationSellAttempt4SetMissHandler": {
-                            "anchor": {
-                                "SellProductPriorityGoodMissHandler": "SellProductPriorityGoodMissWarning"
-                            }
-                        }
-                    },
-                    "label": "$item.XiraniteGourd"
                 },
                 {
                     "name": "低容武陵电池",

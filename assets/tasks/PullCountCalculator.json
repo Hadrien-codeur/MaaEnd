@@ -1,0 +1,18 @@
+{
+    "task": [
+        {
+            "name": "PullCountCalculator",
+            "label": "$task.PullCountCalculator.label",
+            "entry": "PullCountCalculatorMain",
+            "description": "$task.PullCountCalculator.description",
+            "controller": [
+                "ADB",
+                "Win32-Front",
+                "Wlroots"
+            ],
+            "group": [
+                "other_menu"
+            ]
+        }
+    ]
+}

@@ -117,7 +117,7 @@
         "expected": [
             "拍摄倒塌的天师桩",
             "拍攝倒塌的天師樁",
-            "(?i)Photograph\\s*the\\s*collapsed\\s*Tianshi\\s*Pillar",
+            "(?i)Photo:\\s*Collapsed\\s*Tianshi\\s*Pillar",
             "倒れた天師杭の写真を撮る",
             "무너진 천사장을 촬영하기"
         ]
@@ -226,7 +226,7 @@
         ]
     },
     "GoToCollapsedTianshiPillarNotAtStartPos": {
-        "desc": "不在倒塌的天师桩任务开始位置附近，先传送再复核落点",
+        "desc": "不在倒塌的天师桩任务开始位置附近，先传送再检查落点",
         "action": "Custom",
         "custom_action": "SubTask",
         "custom_action_param": {
@@ -235,63 +235,7 @@
             ]
         },
         "next": [
-            "GoToCollapsedTianshiPillarRecheckStartPos",
-            "GoToCollapsedTianshiPillarReEnterMap"
-        ]
-    },
-    "GoToCollapsedTianshiPillarRecheckStartPos": {
-        "desc": "传送后再次检查是否已在倒塌的天师桩任务开始位置附近",
-        "recognition": "Custom",
-        "custom_recognition": "MapTrackerAssertLocation",
-        "custom_recognition_param": {
-            "expected": [
-                {
-                    "map_name": "map02_lv001",
-                    "target": [
-                        210,
-                        635,
-                        15,
-                        15
-                    ]
-                }
-            ]
-        },
-        "next": [
-            "GoToCollapsedTianshiPillarMapTrackerMove"
-        ]
-    },
-    "GoToCollapsedTianshiPillarReEnterMap": {
-        "desc": "传送后仍未到达倒塌的天师桩任务开始位置附近，重试一次传送",
-        "action": "Custom",
-        "custom_action": "SubTask",
-        "custom_action_param": {
-            "sub": [
-                "SceneEnterWorldWulingJingyuValley8"
-            ]
-        },
-        "next": [
-            "GoToCollapsedTianshiPillarFinalCheckStartPos"
-        ]
-    },
-    "GoToCollapsedTianshiPillarFinalCheckStartPos": {
-        "desc": "二次传送后再次检查是否已在倒塌的天师桩任务开始位置附近",
-        "recognition": "Custom",
-        "custom_recognition": "MapTrackerAssertLocation",
-        "custom_recognition_param": {
-            "expected": [
-                {
-                    "map_name": "map02_lv001",
-                    "target": [
-                        210,
-                        635,
-                        15,
-                        15
-                    ]
-                }
-            ]
-        },
-        "next": [
-            "GoToCollapsedTianshiPillarMapTrackerMove"
+            "GoToCollapsedTianshiPillarStartPos"
         ]
     },
     "GoToCollapsedTianshiPillarMapTrackerMove": {
@@ -328,8 +272,18 @@
         ]
     },
     "CollapsedTianshiPillarAdjustHeading": {
-        "desc": "倒塌的天师桩任务无需调整角色朝向",
+        "desc": "倒塌的天师桩任务中调整角色朝向",
         "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "path": [
+                {
+                    "action": "HEADING",
+                    "angle": 300
+                }
+            ]
+        },
         "post_delay": 0,
         "rate_limit": 0,
         "next": [

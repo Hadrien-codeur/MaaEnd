@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/accountswitch"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/autoecofarm"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/autofight"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/autosell"
@@ -9,6 +10,7 @@ import (
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/batchaddfriends"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/bettersliding"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/blueprintimport"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/captureuid"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/attachregex"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/autoaltclick"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/charactercontroller"
@@ -24,8 +26,10 @@ import (
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/itemtransfer"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/maptracker"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/pkg/resource"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/pullcount"
 	puzzle "github.com/MaaXYZ/MaaEnd/agent/go-service/puzzle-solver"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/scenemanager"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/seizedeliveryjobs"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/sellproduct"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/taskersink/aspectratio"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/taskersink/cursormove"
@@ -58,6 +62,8 @@ func registerAll() {
 	schedule.Register()
 
 	// Business Custom
+	accountswitch.Register()
+	captureuid.Register()
 	autosell.Register()
 	blueprintimport.Register()
 	puzzle.Register()
@@ -70,12 +76,14 @@ func registerAll() {
 	autofight.Register()
 	visitfriends.Register()
 	scenemanager.Register()
+	seizedeliveryjobs.Register()
 	autostockstaple.Register()
 	autostockpile.Register()
 	itemtransfer.Register()
 	sellproduct.Register()
 	creditshopping.Register()
 	webevent202605.Register()
+	pullcount.Register()
 	log.Info().
 		Msg("All custom components and sinks registered successfully")
 }

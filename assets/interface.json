@@ -19,16 +19,16 @@
     },
     "controller": [
         {
-            "name": "Win32-Window",
-            "label": "$controller.Win32-Window.label",
-            "description": "$controller.Win32-Window.description",
+            "name": "Win32-Front",
+            "label": "$controller.Win32-Front.label",
+            "description": "$controller.Win32-Front.description",
             "type": "Win32",
             "win32": {
                 "class_regex": "UnityWndClass",
                 "window_regex": "Endfield",
-                "screencap": "Background",
-                "mouse": "SendMessageWithCursorPos",
-                "keyboard": "PostMessage"
+                "screencap": "ScreenDC",
+                "mouse": "Seize",
+                "keyboard": "Seize"
             },
             "permission_required": true
         },
@@ -43,20 +43,6 @@
                 "screencap": "PrintWindow",
                 "mouse": "SendMessageWithWindowPos",
                 "keyboard": "PostMessage"
-            },
-            "permission_required": true
-        },
-        {
-            "name": "Win32-Front",
-            "label": "$controller.Win32-Front.label",
-            "description": "$controller.Win32-Front.description",
-            "type": "Win32",
-            "win32": {
-                "class_regex": "UnityWndClass",
-                "window_regex": "Endfield",
-                "screencap": "ScreenDC",
-                "mouse": "Seize",
-                "keyboard": "Seize"
             },
             "permission_required": true
         },
@@ -154,7 +140,7 @@
     "import": [
         // group: regional_development
         "tasks/SellProduct.json",
-        "tasks/SeizeEntrustTask.json",
+        "tasks/SeizeDeliveryJobs.json",
         "tasks/DeliveryJobs.json",
         "tasks/AutoStockpile.json",
         "tasks/AutoStockStaple.json",
@@ -166,7 +152,6 @@
         "tasks/BatchUseDetector.json",
         "tasks/AutoUseSpMedication.json",
         "tasks/EssenceFilter.json",
-        "tasks/AutoArtificing.json",
         // group: open_world
         "tasks/ResourceRecycleStation.json",
         "tasks/AutoCollect.json",
@@ -182,11 +167,13 @@
         "tasks/GiftOperator.json",
         "tasks/BatchAddFriends.json",
         // group: other_menu
+        "tasks/PullCountCalculator.json",
         "tasks/BakerEntry.json",
         "tasks/ReadAllWiki.json",
         "tasks/DailyRewards.json",
         "tasks/ClaimSimulationRewards.json",
         "tasks/CreditShopping.json",
+        "tasks/AccountSwitch.json",
         "tasks/WebEvent202605.json",
         "tasks/AndroidOpenGame.json",
         // group: realtime

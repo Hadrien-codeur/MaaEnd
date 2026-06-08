@@ -21,7 +21,9 @@
             "_AutoEcoFarmGotoEcoFarmCppAnchor": "_AutoEcoFarmGotoEcoFarmCppWulin",
             //AutoEcoFarmFindFarmland.json 寻找标记部分
             "_AutoEcoFarmFindEcoFarmAnchor": "_AutoEcoFarmFindEcoFarmWulin",
-            "_AutoEcoFarmBlindWalkStartAnchor": "_AutoEcoFarmBlindWalkStartWulin"
+            "_AutoEcoFarmBlindWalkStartAnchor": "_AutoEcoFarmBlindWalkStartWulin",
+            //AutoEcoFarmMoveAndWork.json 工作循环部分
+            "_AutoEcoFarmLeftFarmAnchor": "_AutoEcoFarmLeftFarmWulin"
         },
         "next": [
             "[JumpBack][Anchor]_AutoEcoFarmTeleportToFarmAnchor",
@@ -51,55 +53,55 @@
             "fine_approach": "Never",
             "path": [
                 [
-                    386.2,
+                    387.2,
                     250.0
                 ],
                 [
-                    386.2,
+                    387.2,
                     238.3
                 ],
                 [
-                    397.4,
+                    398.4,
                     234.5
                 ],
                 [
-                    403.8,
+                    404.8,
                     232.0
                 ],
                 [
-                    412.4,
+                    413.4,
                     228.3
                 ],
                 [
-                    426.3,
+                    427.3,
                     229.5
                 ],
                 [
-                    430.0,
+                    431.0,
                     225.8
                 ],
                 [
-                    431.2,
+                    432.2,
                     218.1
                 ],
                 [
-                    428.8,
+                    429.8,
                     209.4
                 ],
                 [
-                    428.8,
+                    429.8,
                     192.0
                 ],
                 [
-                    433.7,
+                    434.7,
                     189.5
                 ],
                 [
-                    438.7,
+                    439.7,
                     189.4
                 ],
                 [
-                    443.7,
+                    444.7,
                     193.2
                 ]
             ]
@@ -250,6 +252,31 @@
         },
         "next": [
             //JumpBack
+        ]
+    },
+    //确认是否离开武陵农场，离开则退出工作循环。如需更换目标农场，请修改下方 target 坐标，
+    //将矩形范围扩大至覆盖整块目标农场的地图区域
+    "_AutoEcoFarmLeftFarmWulin": {
+        "desc": "确认是否离开武陵农场, 离开则退出工作循环",
+        "recognition": "Custom",
+        "custom_recognition": "MapTrackerAssertLocation",
+        "custom_recognition_param": {
+            "expected": [
+                {
+                    "map_name": "map02_lv002",
+                    "target": [
+                        413,
+                        164,
+                        33,
+                        32
+                    ]
+                }
+            ],
+            "precision": 1
+        },
+        "inverse": true,
+        "next": [
+            "_AutoEcoFarmCancelMove"
         ]
     },
     //识别地图上农田标题的节点，改recognition内容

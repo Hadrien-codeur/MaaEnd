@@ -5,7 +5,7 @@
         "post_delay": 0,
         "next": [
             "AutoUseSpMedicationInStashValuablesTab",
-            "[JumpBack]SceneStashValuablesTab"
+            "[JumpBack]SceneEnterMenuValuablesValuableTab"
         ],
         "focus": {
             "Node.Action.Starting": "即将进入珍贵物品标签页"
@@ -50,7 +50,7 @@
                 "template": "Valuables/EmergencySpBooster.png",
                 "green_mask": true,
                 "threshold": 0.84,
-                "order_by": "Score"
+                "order_by": "Vertical"
             }
         },
         "action": "Click",
@@ -98,7 +98,7 @@
                 "template": "Valuables/EmergencySpBoosterExpireSoon.png",
                 "green_mask": true,
                 "threshold": 0.84,
-                "order_by": "Score"
+                "order_by": "Vertical"
             }
         }
     },
@@ -194,10 +194,8 @@
             }
         },
         "action": "Click",
-        "post_wait_freezes": 300,
-        "timeout": 4000,
         "next": [
-            "CloseRewardsButton"
+            "SceneNoticeRewardsConfirm"
         ]
     },
     "AutoUseSpMedicationQuickUseError": {

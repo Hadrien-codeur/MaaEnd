@@ -117,7 +117,7 @@
         "expected": [
             "拍摄储备站周围的生态环境",
             "拍攝儲備站周圍的生態環境",
-            "(?i)Photograph\\s*the\\s*ecology\\s*near\\s*the\\s*Field\\s*Logistics\\s*Depot",
+            "(?i)Photo:\\s*Field\\s*Logistics\\s*Depot\\s*Ecology",
             "備蓄施設周辺の生態環境の写真を撮る",
             "보급소 주변의 생태 환경을 촬영하기"
         ]
@@ -213,10 +213,10 @@
                 {
                     "map_name": "map02_lv002",
                     "target": [
-                        689.6,
-                        917.3,
-                        6,
-                        5.5
+                        684.3,
+                        910.9,
+                        20.5,
+                        20.5
                     ]
                 }
             ]
@@ -226,7 +226,7 @@
         ]
     },
     "GoToEcologyNearTheFieldLogisticsDepotNotAtStartPos": {
-        "desc": "不在储备站周围的生态环境任务开始位置附近，先传送再复核落点",
+        "desc": "不在储备站周围的生态环境任务开始位置附近，先传送再检查落点",
         "action": "Custom",
         "custom_action": "SubTask",
         "custom_action_param": {
@@ -235,63 +235,7 @@
             ]
         },
         "next": [
-            "GoToEcologyNearTheFieldLogisticsDepotRecheckStartPos",
-            "GoToEcologyNearTheFieldLogisticsDepotReEnterMap"
-        ]
-    },
-    "GoToEcologyNearTheFieldLogisticsDepotRecheckStartPos": {
-        "desc": "传送后再次检查是否已在储备站周围的生态环境任务开始位置附近",
-        "recognition": "Custom",
-        "custom_recognition": "MapTrackerAssertLocation",
-        "custom_recognition_param": {
-            "expected": [
-                {
-                    "map_name": "map02_lv002",
-                    "target": [
-                        689.6,
-                        917.3,
-                        6,
-                        5.5
-                    ]
-                }
-            ]
-        },
-        "next": [
-            "GoToEcologyNearTheFieldLogisticsDepotMapTrackerMove"
-        ]
-    },
-    "GoToEcologyNearTheFieldLogisticsDepotReEnterMap": {
-        "desc": "传送后仍未到达储备站周围的生态环境任务开始位置附近，重试一次传送",
-        "action": "Custom",
-        "custom_action": "SubTask",
-        "custom_action_param": {
-            "sub": [
-                "SceneEnterWorldWulingWulingCity8"
-            ]
-        },
-        "next": [
-            "GoToEcologyNearTheFieldLogisticsDepotFinalCheckStartPos"
-        ]
-    },
-    "GoToEcologyNearTheFieldLogisticsDepotFinalCheckStartPos": {
-        "desc": "二次传送后再次检查是否已在储备站周围的生态环境任务开始位置附近",
-        "recognition": "Custom",
-        "custom_recognition": "MapTrackerAssertLocation",
-        "custom_recognition_param": {
-            "expected": [
-                {
-                    "map_name": "map02_lv002",
-                    "target": [
-                        689.6,
-                        917.3,
-                        6,
-                        5.5
-                    ]
-                }
-            ]
-        },
-        "next": [
-            "GoToEcologyNearTheFieldLogisticsDepotMapTrackerMove"
+            "GoToEcologyNearTheFieldLogisticsDepotStartPos"
         ]
     },
     "GoToEcologyNearTheFieldLogisticsDepotMapTrackerMove": {
@@ -302,47 +246,47 @@
             "map_name": "map02_lv002",
             "path": [
                 [
-                    691.3,
+                    692.3,
                     922.7
                 ],
                 [
-                    678.3,
+                    679.3,
                     925.9
                 ],
                 [
-                    672.5,
+                    673.5,
                     918.3
                 ],
                 [
-                    648.4,
+                    649.4,
                     916.3
                 ],
                 [
-                    648.7,
+                    649.7,
                     928.2
                 ],
                 [
-                    653.1,
+                    654.1,
                     931.8
                 ],
                 [
-                    666.8,
+                    667.8,
                     907.8
                 ],
                 [
-                    664.6,
+                    665.6,
                     897.7
                 ],
                 [
-                    661.4,
-                    892.6
+                    663,
+                    891.5
                 ],
                 [
-                    627.7,
-                    898.2
+                    628.7,
+                    896.4
                 ],
                 [
-                    617.8,
+                    618.8,
                     901.6
                 ]
             ]
