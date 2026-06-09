@@ -430,6 +430,10 @@ FodyWeavers.xsd
 # Claude Code
 .claude/*
 !.claude/skills/
+!.claude/settings.json
+!.claude/hooks/
+.claude/hooks/.cache/
+.claude/settings.local.json
 .agents/
 
 # Windows Installer files from build outputs
