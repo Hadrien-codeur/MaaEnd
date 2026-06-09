@@ -43,6 +43,7 @@
         "next": [
             "DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkA",
             "DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkB",
+            "DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkC",
             "DeliveryJobsSelfDeliverNoRouteMatch"
         ]
     },
@@ -109,6 +110,40 @@
         // 空跑验证阶段不接单、不走 anchor，此处指向待建节点不影响验证。
         "anchor": {
             "DeliveryJobsSelfDeliverPickupEntrance": "DeliveryJobsSelfDeliverOriginiumScienceParkRouteBPickupStart"
+        },
+        "next": [
+            "DeliveryJobsSelfDeliverVerifyRouteHit"
+        ]
+    },
+    // 路线 C：会话 11 用真实 1280×720 截图标定（非 2K 估算）。
+    // 送货点橙色标签游戏 box (180,258)~(225,279)，中心 (202,268)，屏幕左上偏中。
+    // roi y 区间 248–294，与 A(348–394)、B(500–546) 不重叠。颜色阈值与 A/B 相同（实测 avg RGB(238,109,1)，roi 内 431 橙色像素 ≫ count 30）。
+    "DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkC": {
+        "desc": "源石研究园 路线 C（会话 11 实测目的地，左上偏中）：ColorMatch 橙色「送货点」标签，roi 限定路线 C 坐标区间；命中即判本路线",
+        "recognition": "ColorMatch",
+        "roi": [
+            165,
+            248,
+            80,
+            46
+        ],
+        "lower": [
+            200,
+            90,
+            0
+        ],
+        "upper": [
+            255,
+            180,
+            80
+        ],
+        "connected": true,
+        "count": 30,
+        "action": "DoNothing",
+        // TODO：路线 C 的取货/送货流程文件尚未建（送货路线留空，后续录制再补）。
+        // 空跑验证阶段不接单、不走 anchor，此处指向待建节点不影响验证。
+        "anchor": {
+            "DeliveryJobsSelfDeliverPickupEntrance": "DeliveryJobsSelfDeliverOriginiumScienceParkRouteCPickupStart"
         },
         "next": [
             "DeliveryJobsSelfDeliverVerifyRouteHit"

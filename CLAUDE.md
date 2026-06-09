@@ -942,3 +942,84 @@ python -c "import json;d=json.load(open('rel.json',encoding='utf-8'));print(d['t
     - 能开 → 删旧 `mxu.exe`，跑前置流程看 1.3 卡 bug 是否解决
     - 报错 → 用 `install/_backup_pre_v2.13/` 回退
 2. 然后进入会话 9 留下的**空跑验证**（跑任务 → 看日志确认 ColorMatch 命中哪条 CheckRoute）
+
+---
+
+## 22. 会话 11（2026/06/09）：空跑验证通过 + 真实坐标校准 + 装 MaaDebugger
+
+### 22.1 里程碑 ✅：ColorMatch 落点分发空跑验证跑通
+
+会话 10 的 v2.13 二进制 + 1.3 适配生效，前置卡 bug 解决。本会话完成会话 9 留下的核心待办——**空跑验证**：
+
+- `MaaEnd.exe` 正常启动（旧 `mxu.exe`/`mxu.pdb` 仍未删，备份在 `install/_backup_pre_v2.13/`，可继续保留）
+- 完整链路 100% 走通，零道具消耗：
+  `ClickViewLocation`(OCR查看位置 score0.996) → 开地图 → `MapDispatch` → `CheckRouteC` **命中 count=676** → `VerifyRouteHit`(ESC) → `StopForVerify`(StopTask)
+- **A/B 均未误中**（all_results 空），证明落点分区 + ColorMatch 颜色阈值都正确可用
+
+### 22.2 关键教训：roi 必须在真实 1280×720 内部图上标定，禁止 2K 换算
+
+会话 7/9 的路线 A(roi y348–394)、B(roi y500–546) 坐标是「2K截图→压2000宽→×0.64」估算的，**实测全错**（真实送货任务的送货点根本不落在那两个区间）。
+
+- 用户手动发的截图尺寸每次都变（1282×752 带边框 / 1000×975 裁过），换算系数不可靠
+- **MaaFramework 内部截图固定是纯客户端 1280×720（无边框无标题栏无压缩）**，量坐标必须以它为准
+- 换算关系（仅当被迫用带框截图时）：游戏坐标 = 截图坐标 − (左边框1px, 标题栏31px)；但**最佳实践是直接用 MaaDebugger 或 on_error/ 里的内部图，零换算**
+
+### 22.3 新增路线 C（真实标定，已验证命中）
+
+`SelfDeliver.json` 新增 `DeliveryJobsSelfDeliverCheckRouteOriginiumScienceParkC`：
+
+- **roi `[165,248,80,46]`**（x165–245 y248–294），送货点橙标签实测 box(183,258,40,22) 命中，count=676
+- 颜色阈值 `lower[200,90,0]`/`upper[255,180,80]`/`count30`/`connected:true`（与 A/B 同，实测 avg RGB(238,109,1)）
+- 三路线 Y 区间互不重叠：**C[248,294] / A[348,394] / B[500,546]**
+- anchor 指向待建 `...RouteCPickupStart`（送货流程留空，空跑不走）
+- 已插进 `MapDispatch.next`（C 排在 B 后、兜底前）
+- ⚠️ A/B 旧 roi 仍是 2K 估算的**未验证值**，等录到对应真实送货任务时按 C 的方式重新标定
+
+### 22.4 ⚠️ 重要操作认知：改 pipeline JSON 后必须**整个重启 MaaEnd.exe** 才生效
+
+本会话踩坑：加完 C 节点直接跑，日志显示 MapDispatch 派发列表仍只有 A/B/兜底（无C），客户端报「没匹配到」。
+
+- 根因：**resource(pipeline JSON) 只在任务启动时「加载资源」读进内存一次**，之后改文件不自动重载
+- install/resource 软链接保证**文件内容**实时最新，但**已运行进程的内存**仍是旧的
+- 光在 UI 里「停止→开始」通常**不重载** resource → 必须**完全关闭 MaaEnd.exe 再打开**
+- 重启后验证：MapDispatch 派发列表变 4 项(A/B/C/兜底)、CheckRouteC 出现 analyze 行且命中
+
+### 22.5 MaaDebugger 已安装（官方可视化调试器）
+
+- 版本 1.20.1，自带 MaaFw 绑定 **v5.10.5**（与 install 一致，能正确解析 pipeline）
+- **启动**：仓库根目录或任意目录跑 `python -m MaaDebugger`，自动开浏览器 UI（localhost）
+  - 可选：`--port 8080` 换端口、`--hide` 不自动开浏览器、`--dark`/`--light` 主题
+- **连接步骤（会话 11 实测通过）**：
+  1. WIN32 标签页：Window Name 填 `Endfield` → 点 `SCAN`（自动填 HWND）→ `CONNECT`（Screencap 自动选 PrintWindow，能出图即可）
+  2. Resource Directory 填 `E:\TestBase2\MaaEnd\install\resource` → `LOAD`
+  3. Agent / Task Entry **标定 roi 时不用管**（只用截图+点选，不跑 START）
+  4. ⚠️ Debugger 与 MaaEnd 都用 Seize 抢窗口，调试前先停掉 MaaEnd 任务
+- **量 roi 的实际用法（本版本只支持"点击取坐标点"，不支持拖框）**：
+  - 点图上任意点 → **终端**打印 `on_click_image: x, y`（已是 1280×720 游戏坐标，**零换算**）
+  - 量矩形 roi：**点左上角 (x1,y1) + 点右下角 (x2,y2)** → `roi = [x1, y1, x2-x1, y2-y1]`
+  - 报坐标给 Claude 时说明"最后两行"是哪两个（终端坐标会累积往下打）
+  - 已用路线 C 校准过点选准确性 ✅
+- **官方后继**：MaaDebugger 正在用 Vue3+Go 重写（issue #163「new MaaDebugger coming soon」），正式版未发布，旧 Python 版（1.20.1）官方承诺持续维护，**继续用即可**，不必折腾预览版
+- 后续所有路线 roi 标定改用 MaaDebugger，告别手动截图换算
+
+### 22.6 当前进度与下次接力
+
+- ✅ 空跑验证通过（路线 C），框架 + ColorMatch 分发机制确认可用
+- ✅ MaaDebugger 搭好、连接通过、点选取坐标可用（见 22.5）
+- ⏳ **下次会话第一件事：开始做路线 C 的取货/送货流程**
+  - 现状：`SelfDeliver/OriginiumSciencePark.json` 只有 RouteA 模板（全 TODO），**路线 C 的送货流程文件还没建**
+  - CheckRouteC.anchor 指向 `DeliveryJobsSelfDeliverOriginiumScienceParkRouteCPickupStart`（节点尚不存在）
+  - 要做：用 MapNavigator 录 C 的 zone_id / target / 取货段 path / 送货段 path，并写出 RouteC 一整套节点（PickupStart → AssertLocation → Goto取货 → 取货动作 → Goto送货 → 交货动作 → End）
+  - 可参考 RouteA 模板结构 + `assets/resource/pipeline/AutoCollect/AutoCollectRoute6.json`
+- ⏳ A/B 旧 roi 待用真实送货任务重新标定（现值是 2K 估算，未验证）；新路线用 MaaDebugger 点两角量 roi
+- ⏳ 验证节点 `VerifyRouteHit`/`StopForVerify` 仍在——**确认所有要接单的路线都命中无误后**，才删这两节点、把各 CheckRoute 的 next 改回 `DeliveryJobsSelfDeliverCloseMapAndStartDelivery`（恢复正式接单）。在送货流程录好前**不要**翻这个开关，保持零道具安全网
+- ⚠️ **改完 pipeline JSON 必须整个重启 MaaEnd.exe 才生效**（见 22.4，本会话踩过坑）
+
+### 22.7 下次接力咒语
+
+```
+继续 MaaEnd「自己送货」开发。先读 e:\TestBase2\MaaEnd\CLAUDE.md，重点第 22 节。
+进度：空跑验证已通过（路线 C ColorMatch 命中 count=676），MaaDebugger 搭好可用。
+今天开始做路线 C 的取货/送货流程（MapNavigator 录路径 + 写 RouteC 节点）。
+我现在：[一句话，例如"已用 MapNavigator 录好 zone_id=xxx"或"先教我怎么用 MapNavigator 录路径"]
+```
