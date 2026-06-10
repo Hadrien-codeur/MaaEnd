@@ -1018,8 +1018,63 @@ python -c "import json;d=json.load(open('rel.json',encoding='utf-8'));print(d['t
 ### 22.7 下次接力咒语
 
 ```
-继续 MaaEnd「自己送货」开发。先读 e:\TestBase2\MaaEnd\CLAUDE.md，重点第 22 节。
+继续 MaaEnd「自己送货」开发。先读 e:\TestBase2\MaaEnd\CLAUDE.md，重点第 22、23 节。
 进度：空跑验证已通过（路线 C ColorMatch 命中 count=676），MaaDebugger 搭好可用。
 今天开始做路线 C 的取货/送货流程（MapNavigator 录路径 + 写 RouteC 节点）。
 我现在：[一句话，例如"已用 MapNavigator 录好 zone_id=xxx"或"先教我怎么用 MapNavigator 录路径"]
 ```
+
+---
+
+## 23. 官方编码规范要点（会话 12 / 2026-06-10 提炼，Claude 后续必守）
+
+> 来源：`docs/zh_cn/developers/coding-standards.md`（仓库自带，README 标注「提交任何代码前必须通读，不合规 PR 直接打回」）。
+> 本节是从该规范里提炼出的、与「自己送货」最相关的硬条款 + 当前代码的合规缺口清单。**写路线 C 及之后所有节点都要遵守。**
+
+### 23.1 必守硬条款（违反会被上游打回）
+
+1. **禁止硬延迟，少用 `timeout`/`on_error`/`max_hit`/`pre_delay`/`post_delay`**
+   - 「延迟是在掩盖问题，高延迟设备上仍不稳定」。只在等画面静止时用 `pre_wait_freezes`/`post_wait_freezes`。
+   - 死循环不是靠 `max_hit` 截断，而是查识别/逻辑根因。
+2. **识别 → 操作 → 再识别**（最重要，我们目前最缺）
+   - 推荐：识别 A → 点 A → **识别 B（确认已跳转）** → 点 B。
+   - 禁止：识别一次 → 连点 A/B/C。
+   - 界面跳转、改账号数据的按钮，点击后**必须有一个识别节点确认跳转/提交成功**才能继续。
+3. **`next` 第一轮即命中**：扩充 `next` 列表覆盖所有可能画面，一次截图命中目标。**项目拒绝一切重试机制**（无法解决的才进开发群讨论）。
+4. **处理弹窗和加载**：`next` 里挂 `[JumpBack]SceneDialogConfirm` / `[JumpBack]SceneWaitLoadingExit` / `[JumpBack]SceneAnyEnterWorld`，把弹窗/加载/不在目标场景视为正常情况。
+5. **先复用再新增**：写新节点前先查 `docs/zh_cn/developers/components-guide.md` 和 `common-buttons.md`/`in-scene.md`/`scene-manager.md`，有现成节点就别造轮子。
+6. **OCR 写完整文本**：`expected` 写整句（如「查看位置」），多语言交给 i18n 工具链；**手写正则/片段必须在数组里加 `// @i18n-skip`**。
+7. **分辨率 720p 基准**：所有 `roi`/`target`/`box`/模板图以 1280×720 为准（已落实，用 MaaDebugger 直接取，见 22.5）。
+8. **Pipeline 管流程，Go/Cpp 管难点**：复杂图像算法才下沉到 go-service/cpp-algo，禁止在 Go 里写大量流程代码。本功能纯 pipeline 即可，无需碰 Go。
+
+### 23.2 提交前检查（取代第 6.4 节「只跑 prettier」）
+
+改完 JSON / 任务后，**依次跑**（CI 也跑这些）：
+
+```bash
+pnpm format        # JSON/YAML 格式化（= 原来的 prettier，但用项目封装命令）
+pnpm check         # 资源和 schema 检查（python tools/validate_schema.py）
+pnpm test          # 节点测试
+```
+
+> 改了 Go 才需要 `python tools/build_and_install.py`；本功能不涉及。
+> 「编写识别节点时请尽量添加测试用例」——见 `docs/zh_cn/developers/node-testing.md`。
+
+### 23.3 配套文件清单（新增/改任务时别漏）
+
+规范《配套文件》节列出，一个任务改动通常要动：
+`assets/tasks/*.json` + `assets/resource/pipeline/**/*.json` + `assets/locales/interface/zh_cn.json`（+其余 4 语言）+ `assets/interface.json` + `tests/**/*.json`。
+
+- ✅ 我们的 `DeliveryJobsSelfDeliverMode` 开关定义在 `tasks/DeliveryJobs.json` 内部，`interface.json` 通过 `include "tasks/DeliveryJobs.json"` 引用，**无需单独在 interface.json 注册**（已确认 144 行 include 存在）。
+- ⏳ `tests/` 下目前无 SelfDeliver 测试用例——路线 C 的识别节点（ColorMatch / 取货 / 交货识别）写好后应补测试。
+
+### 23.4 当前代码合规缺口（写路线 C 时一并修，按严重度）
+
+| # | 缺口 | 位置 | 处理 |
+| - | ---- | ---- | ---- |
+| 1 | 大量 `timeout:600000`+`on_error`+`max_hit:1` 盲兜底（违 23.1-1） | `SelfDeliver/OriginiumSciencePark.json` RouteA 模板 | MVP 安全网可暂留；正式版用中间识别节点替代，删冗余 timeout/on_error |
+| 2 | 点击后无「跳转完成」确认节点（违 23.1-2，最重要） | `ClickViewLocation`→`MapDispatch` 中间缺「地图已打开」确认；`CloseMapAndStartDelivery` 关图后缺「已回调度界面」确认 | 写路线 C 时补识别节点 |
+| 3 | 全流程未挂弹窗/加载 JumpBack（违 23.1-4） | `SelfDeliver.json` 各 `next` | 适当挂 `[JumpBack]SceneWaitLoadingExit` 等 |
+| 4 | 英文 `(?i)View\\s*Location` 手写正则未加 `// @i18n-skip`（违 23.1-6） | `SelfDeliver.json` ClickViewLocation.expected | 跑 `pnpm format` 看 i18n 工具是否报错；按需补 skip 或改写完整英文 |
+
+> ⚠️ **第 1 条注意**：CLAUDE.md 第 3.3 节的「道具保护靠 timeout+on_error 双保险」是 v1 设计思路，与官方规范 23.1-1 有张力。MVP/空跑验证期可保留作安全网，但**正式接单流程必须改成「中间识别节点判断」**，否则上游不收。
