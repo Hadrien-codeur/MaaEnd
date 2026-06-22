@@ -437,9 +437,13 @@ python tools/build_and_install.py
 
 > ⚠️ **接力操作说明**：新会话开始后，Claude 先把本节内容完整发出来让博士确认，确认无误后删除本节，再继续讨论/开发。
 
-### 18.1 状态：计划已审批通过，待开始实施
+### 18.1 状态：取货段 Pipeline 骨架已写好，博士已实机录了一遍坐标，待下次回来提供参数填入
 
-完整实施计划见 `.claude/plans/zipline-fast-plan.md`（已通过博士审批）。下次接力直接进入**实施阶段**。
+完整实施计划见 `.claude/plans/zipline-fast-plan.md`（已通过博士审批）。
+
+**接力提醒**：博士已用 `map_tracker_editor.py` 录了一遍取货坐标，下次回来会把录好的 Point List 参数贴出来，Claude 直接填入下方 3 个节点的占位 `0.0` 处即可。
+- 取货只有 **1 段滑索**（已确认）。
+- 工具启动坑：脚本需要 `opencv-python`（`pip install opencv-python`），`maafw` 已装；或用 `uv run` 自动装依赖。必须在项目根目录运行。
 
 ### 18.2 方案总览（方案 B：预录固定滑索路线）
 
@@ -457,15 +461,22 @@ python tools/build_and_install.py
 
 ### 18.4 实施顺序（每步可独立测试）
 
-1. **取货**（最简单，先做）：改 `SeizeDeliveryJobsPost.json` 的 `SeizeDeliveryJobsWalkToDepotNodeWulingCity`（`MapTrackerGoal`→`SubTask` 滑索序列）→ 博士实机录坐标 → 重启测试。
-2. **送货 Go 骨架**：改 `departure.go`（加坐标表占位、`nearestEndpoint`、`runDeliverRoute`、缓存加 Endpoint、`Run()` 第5步换函数）+ 新建 `SeizeDeliveryJobsDeliverRoutes.json`（4 个 `SubTask` 入口）→ 编译。
-3. **录送货坐标**：博士实机录 4 条路线 + 4 终点世界坐标 → 填入 → 重新编译。
-4. **联调**：4 终点逐一验证。
+1. ✅ **取货 Pipeline 骨架**（已完成）：`SeizeDeliveryJobsPost.json` 的 `SeizeDeliveryJobsWalkToDepotNodeWulingCity` 已由 `MapTrackerGoal` 改为 `SubTask` 滑索序列，新增 3 个子节点：
+   - `SeizeDeliveryJobsWulingCityWalkToZipline`（步行到起点滑索）
+   - `SeizeDeliveryJobsWulingCityZipline`（滑行到②号滑索）
+   - `SeizeDeliveryJobsWulingCityWalkFromZipline`（步行到取货点 [674.9,789.2]）
+   - 上/下索复用 `MapTrackerOpenWorld_GetOnZipline`/`GetOffZipline`。
+   - **坐标全是 0.0 占位，标了 TODO，等博士实机录入后才能测试**。
+   - `pnpm check` 已通过。
+2. **（下一步）录取货坐标**：博士用 `map_tracker_editor.py` 录 3 个坐标点位填入 → 重启测试。
+3. **送货 Go 骨架**：改 `departure.go`（加坐标表占位、`nearestEndpoint`、`runDeliverRoute`、缓存加 Endpoint、`Run()` 第5步换函数）+ 新建 `SeizeDeliveryJobsDeliverRoutes.json`（4 个 `SubTask` 入口）→ 编译。
+4. **录送货坐标**：博士实机录 4 条路线 + 4 终点世界坐标 → 填入 → 重新编译。
+5. **联调**：4 终点逐一验证。
 
 ### 18.5 待博士实机录入的坐标
 
 用 `python tools/map_tracker/map_tracker_editor.py`（地图 map02_lv002）：
-- 取货：落点→起点滑索步行 / 滑索 target / 滑索落点→取货点[674.9,789.2]步行。
+- **取货（当前急需）**：① 传送落点坐标 ② 起点滑索架前坐标（这两点填 `WulingCityWalkToZipline` 的 path）③ ②号滑索架坐标（填 `WulingCityZipline` 的 target）④ ②号滑索落点坐标（填 `WulingCityWalkFromZipline` 的 path 起点；终点 [674.9,789.2] 已写好）。
 - 送货：起点滑索步行（共用）/ 4 终点各自滑索 target 序列 / 4 终点下索→NPC 步行 / 4 个送货点世界坐标。
 
 ### 18.6 复用节点速查
