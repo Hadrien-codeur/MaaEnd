@@ -39,6 +39,8 @@
 
 - `threshold`: 介于 $(0, 1]$ 的实数，默认 `0.4`。控制匹配的置信度阈值。低于此值的匹配结果将不命中识别。
 
+- `allowed_modes`: 整数，默认 `3`。高级参数，控制允许使用的定位推断模式，取值为 `INFER_MODE_FULL_SEARCH = 1` 与 `INFER_MODE_FAST_SEARCH = 2` 的按位或结果。该参数必须包含 `INFER_MODE_FULL_SEARCH`。
+
 ### Recognition: MapTrackerBigMapInfer
 
 🗺️ 在大地图界面中推断当前视野区域在地图中的坐标与地图缩放。
@@ -49,7 +51,39 @@
 
 #### 节点参数
 
-请参见具体代码中 `MapTrackerBigMapInferParam` 的类型定义。
+请参见具体代码中 `MapTrackerBigMapInferParam` 的类型定义，参数包括 `map_name_regex` 和 `threshold`。这些参数也被内嵌到 `MapTrackerBigMapFindImage` 节点的 `MapTrackerBigMapFindImageParam` 中，以控制其内部的大地图推断行为。
+
+## 算法解释
+
+### 点密度-偏转权衡算法
+
+> [!TIP]
+>
+> 此算法仅用于路网录制工具中，并非在 Go 主业务中使用。
+
+给定三个点 $p1$、$p2$、$p3$，我们希望判断 $p3$ 是否应该被添加到路径中，并且要求：
+
+- 如果 $p3$ 与 $p2$ 的距离 $d$ 过近，则倾向于不添加 $p3$，以避免点位过于稠密；
+- 如果 $p2$ 到 $p3$ 的方向角 $\theta_1$ 与 $p1$ 到 $p2$ 的方向角 $\theta_0$ 之间的偏差过大，则倾向于添加 $p3$，以避免丢失偏转信息。
+
+为了解决该“点密度-偏转”的权衡问题，一个简单的启发式方法是考虑它们之间的三角学特征。
+
+若 $\theta_1$ 和 $\theta_0$ 的差值为 $\Delta\theta$，那么函数 $f(d, \Delta\theta) = (d + 1) \cdot |\sin\Delta\theta|$ 具有特性“当 $d$ 较大且 $\Delta\theta$ 较大时，$f(d, \Delta\theta)$ 的值较大”，符合我们的需求。
+
+可以设置一个阈值 $k$，当 $f(d, \Delta\theta) < k$ 时，我们就认为 $p3$ 不应该被添加到路径中；反之，则应该被添加到路径中。
+
+## 其他设定
+
+### 滑索相关常量
+
+`MapTrackerGoal` 会将 `zipline_policy` 解析为内部滑索策略，其中三类运行时边的权值系数如下（距离乘算）：
+
+| 策略         | 启用滑索 | 接近滑索点 | 离开滑索点 | 滑索点之间 |
+| ------------ | -------- | ---------: | ---------: | ---------: |
+| `Never`      | 否       |       `64` |       `16` |      `2.0` |
+| `Lazy`       | 是       |       `64` |       `16` |      `2.0` |
+| `Active`     | 是       |        `8` |        `4` |      `0.5` |
+| `Aggressive` | 是       |        `1` |        `1` |     `0.25` |
 
 ## 维护办法
 

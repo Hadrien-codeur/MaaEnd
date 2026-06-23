@@ -133,7 +133,7 @@
                 ]
             }
         },
-        "pre_delay": 1000, // 3d移动，pre_wait_freeze不生效
+        "pre_delay": 1200, // 3d移动，pre_wait_freeze不生效
         "action": {
             "type": "Click"
         }

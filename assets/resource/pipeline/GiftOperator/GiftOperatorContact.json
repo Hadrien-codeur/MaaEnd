@@ -110,7 +110,8 @@
                     309
                 ],
                 "template": [
-                    "GiftOperator/Gift.png"
+                    "GiftOperator/Gift.png",
+                    "GiftOperator/Gift_2.png"
                 ],
                 "green_mask": true
             }
@@ -152,7 +153,8 @@
             "GiftOperatorSelect_Estella",
             "GiftOperatorSelect_Rossi",
             "GiftOperatorSelect_Tangtang",
-            "GiftOperatorSelect_ZhuangFangyi"
+            "GiftOperatorSelect_ZhuangFangyi",
+            "GiftOperatorSelect_MiFu"
         ]
     },
     "GiftOperatorSelectSpecifiedOp": {
@@ -306,14 +308,14 @@
             "param": {
                 "roi": "GiftOperatorCheckSelectedLabelColor",
                 "lower": [
-                    52,
-                    52,
+                    40,
+                    40,
                     45
                 ],
                 "upper": [
                     80,
                     78,
-                    52
+                    53
                 ],
                 "count": 10
             }
@@ -389,8 +391,8 @@
             }
         },
         "next": [
-            "GiftOperatorSelectOp2"
-            //"GiftOperatorTrustFull"
+            "GiftOperatorSelectOp2",
+            "GiftOperatorSelectTrustFull"
         ]
     },
     "GiftOperatorCheckSelected2": {
@@ -406,8 +408,8 @@
             }
         },
         "next": [
-            "GiftOperatorSelectOp3"
-            //"GiftOperatorTrustFull"
+            "GiftOperatorSelectOp3",
+            "GiftOperatorSelectTrustFull"
         ]
     },
     "GiftOperatorCheckSelected3": {
@@ -484,6 +486,15 @@
             "[JumpBack]GiftOperatorMoveAhead"
         ]
     },
+    "GiftOperatorSelectTrustFull": {
+        "desc": "选择干员阶段信赖已满",
+        "next": [
+            "GiftOperatorConfirmSelect"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.GiftOperator.focus.select_trust_full"
+        }
+    },
     "GiftOperatorTrustIcon": {
         "desc": "干员信赖度图标",
         "recognition": {
@@ -502,65 +513,65 @@
             }
         }
     },
-    "GiftOperatorTrustValue": {
-        "desc": "干员信赖度数值",
-        "recognition": {
-            "type": "OCR",
-            "param": {
-                "roi": "GiftOperatorTrustIcon",
-                "roi_offset": [
-                    14,
-                    1,
-                    19,
-                    -2
-                ],
-                "expected": [
-                    "^((?!200).)*$"
-                ],
-                "only_rec": true,
-                "order_by": "Vertical"
-            }
-        }
-    },
     "GiftOperatorNotSelect": {
         "desc": "干员未被选择",
         "recognition": {
             "type": "ColorMatch",
             "param": {
-                "roi": "GiftOperatorTrustValue",
+                "roi": "GiftOperatorTrustIcon",
                 "roi_offset": [
-                    27,
-                    -84,
-                    -24,
-                    0
+                    40,
+                    -85,
+                    5,
+                    5
                 ],
                 "method": 40,
                 "lower": [
                     [
-                        0,
+                        29,
                         0,
                         0
                     ],
                     [
-                        29,
+                        0,
                         0,
                         0
                     ]
                 ],
                 "upper": [
                     [
-                        27,
+                        179,
                         255,
                         255
                     ],
                     [
-                        180,
+                        27,
                         255,
                         255
                     ]
                 ],
                 "connected": true,
-                "count": 100,
+                "count": 150,
+                "order_by": "Vertical"
+            }
+        }
+    },
+    "GiftOperatorTrustValue": {
+        "desc": "干员信赖度数值",
+        "recognition": {
+            "type": "OCR",
+            "param": {
+                "roi": "GiftOperatorNotSelect",
+                "roi_offset": [
+                    -25,
+                    87,
+                    7,
+                    -8
+                ],
+                "expected": [
+                    "^((?!200).)*$"
+                ],
+                "only_rec": true,
                 "order_by": "Vertical"
             }
         }
@@ -606,26 +617,22 @@
             "param": {
                 "all_of": [
                     "GiftOperatorTrustIcon",
-                    "GiftOperatorTrustValue",
-                    "GiftOperatorNotSelect"
+                    "GiftOperatorNotSelect",
+                    "GiftOperatorTrustValue"
                 ],
                 "box_index": 2
             }
         },
         "action": {
-            "type": "Click",
-            "param": {
-                "target_offset": [
-                    -30,
-                    50,
-                    0,
-                    0
-                ]
-            }
+            "type": "Click"
         },
+        "timeout": 7000,
         "next": [
             "GiftOperatorCheckSelected1"
-        ]
+        ],
+        "focus": {
+            "Tasker.Task.Failed": "$task.GiftOperator.focus.select_op1"
+        }
     },
     "GiftOperatorSelectOp2": {
         "desc": "选择第二个干员",
@@ -634,22 +641,14 @@
             "param": {
                 "all_of": [
                     "GiftOperatorTrustIcon",
-                    "GiftOperatorTrustValue",
-                    "GiftOperatorNotSelect"
+                    "GiftOperatorNotSelect",
+                    "GiftOperatorTrustValue"
                 ],
                 "box_index": 2
             }
         },
         "action": {
-            "type": "Click",
-            "param": {
-                "target_offset": [
-                    -30,
-                    50,
-                    0,
-                    0
-                ]
-            }
+            "type": "Click"
         },
         "next": [
             "GiftOperatorCheckSelected2"
@@ -662,22 +661,14 @@
             "param": {
                 "all_of": [
                     "GiftOperatorTrustIcon",
-                    "GiftOperatorTrustValue",
-                    "GiftOperatorNotSelect"
+                    "GiftOperatorNotSelect",
+                    "GiftOperatorTrustValue"
                 ],
                 "box_index": 2
             }
         },
         "action": {
-            "type": "Click",
-            "param": {
-                "target_offset": [
-                    -30,
-                    50,
-                    0,
-                    0
-                ]
-            }
+            "type": "Click"
         },
         "next": [
             "GiftOperatorCheckSelected3"

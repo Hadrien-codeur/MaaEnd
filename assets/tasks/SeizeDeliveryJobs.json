@@ -2,10 +2,12 @@
     "task": [
         {
             "name": "SeizeDeliveryJobs",
+            "description": "$task.SeizeDeliveryJobs.description",
             "label": "$task.SeizeDeliveryJobs.label",
             "entry": "SeizeDeliveryJobsMain",
             "option": [
-                "SeizeDeliveryJobsCommissionSource"
+                "SeizeDeliveryJobsCommissionSource",
+                "SeizeDeliveryJobsPostProcessing"
             ],
             "controller": [
                 "Win32-Front",
@@ -26,7 +28,7 @@
                     "name": "WulingCity",
                     "label": "$task.SeizeDeliveryJobsCommissionSource.cases.WulingCity.label",
                     "option": [
-                        "SeizeDeliveryJobsPostProcessing",
+                        "SeizeDeliveryJobsRewardWulingCity",
                         "SeizeDeliveryJobsSpecifyDeliveryPointWulingCity"
                     ]
                 },
@@ -34,100 +36,50 @@
                     "name": "TestArea",
                     "label": "$task.SeizeDeliveryJobsCommissionSource.cases.TestArea.label",
                     "option": [
-                        "SeizeDeliveryJobsPostProcessing",
+                        "SeizeDeliveryJobsRewardTestArea",
                         "SeizeDeliveryJobsSpecifyDeliveryPointTestArea"
-                    ],
+                    ]
+                }
+            ]
+        },
+        "SeizeDeliveryJobsRewardWulingCity": {
+            "type": "select",
+            "default_case": "Sixteen3",
+            "label": "$task.SeizeDeliveryJobsRewardWulingCity.label",
+            "cases": [
+                {
+                    "name": "Sixteen3",
+                    "label": "$task.SeizeDeliveryJobsRewardWulingCity.cases.Sixteen3.label"
+                },
+                {
+                    "name": "Sixteen3OrEleven9",
+                    "label": "$task.SeizeDeliveryJobsRewardWulingCity.cases.Sixteen3OrEleven9.label",
                     "pipeline_override": {
-                        "SeizeDeliveryJobsPostProcessingEntry": {
-                            "next": [
-                                "SeizeDeliveryJobsTestAreaDeparture"
-                            ]
-                        },
                         "SeizeDeliveryJobsFindTarget": {
-                            "all_of": [
-                                {
-                                    "sub_name": "WulingToken",
-                                    "recognition": "TemplateMatch",
-                                    "roi": [
-                                        840,
-                                        190,
-                                        50,
-                                        430
-                                    ],
-                                    "template": [
-                                        "SeizeDeliveryJobs/WulingToken.png"
-                                    ]
-                                },
-                                {
-                                    "sub_name": "RewardOcr",
-                                    "recognition": "OCR",
-                                    "roi": "WulingToken",
-                                    "roi_offset": [
-                                        0,
-                                        30,
-                                        0,
-                                        -20
-                                    ],
-                                    "expected": [
-                                        "10.6"
-                                    ],
-                                    "only_rec": true
-                                },
-                                {
-                                    "sub_name": "OriginOcr",
-                                    "recognition": "OCR",
-                                    "roi": "RewardOcr",
-                                    "roi_offset": [
-                                        -229,
-                                        -38,
-                                        50,
-                                        14
-                                    ],
-                                    "expected": [
-                                        "试验园区",
-                                        "實驗園區",
-                                        "(?i)Test\\s*Area",
-                                        "実験区域",
-                                        "실험 구역"
-                                    ]
-                                },
-                                {
-                                    "sub_name": "AcceptOcr",
-                                    "recognition": "OCR",
-                                    "roi": "RewardOcr",
-                                    "roi_offset": [
-                                        226,
-                                        -4,
-                                        70,
-                                        12
-                                    ],
-                                    "expected": [
-                                        "接取运送委托",
-                                        "接取運送委託",
-                                        "(?i)Accept\\s*Delivery\\s*Job",
-                                        "配達依頼を受ける",
-                                        "輸送依頼を受注",
-                                        "輸送依頼を受ける"
-                                    ]
-                                },
-                                {
-                                    "sub_name": "ViewLocationOcr",
-                                    "recognition": "OCR",
-                                    "roi": "RewardOcr",
-                                    "roi_offset": [
-                                        -215,
-                                        -8,
-                                        34,
-                                        10
-                                    ],
-                                    "expected": [
-                                        "查看位置",
-                                        "查看地點",
-                                        "(?i)View\\s*Location",
-                                        "位置を確認",
-                                        "위치 확인"
-                                    ]
-                                }
+                            "any_of": [
+                                "__SeizeDeliveryJobsFindTarget16_3",
+                                "__SeizeDeliveryJobsFindTarget11_9"
+                            ],
+                            "focus": {
+                                "Node.Recognition.Succeeded": "$task.SeizeDeliveryJobs.focus.wulingCityOrFound"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsRewardTestArea": {
+            "type": "select",
+            "default_case": "Ten6",
+            "label": "$task.SeizeDeliveryJobsRewardTestArea.label",
+            "cases": [
+                {
+                    "name": "Ten6",
+                    "label": "$task.SeizeDeliveryJobsRewardTestArea.cases.Ten6.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsFindTarget": {
+                            "any_of": [
+                                "__SeizeDeliveryJobsFindTarget10_6"
                             ],
                             "focus": {
                                 "Node.Recognition.Succeeded": "$task.SeizeDeliveryJobs.focus.testAreaFound"
@@ -141,15 +93,11 @@
             "type": "select",
             "default_case": "Disable",
             "label": "$task.SeizeDeliveryJobsPostProcessing.label",
+            "description": "$task.SeizeDeliveryJobsPostProcessing.description",
             "cases": [
                 {
                     "name": "Disable",
-                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.Disable.label",
-                    "pipeline_override": {
-                        "SeizeDeliveryJobsPostProcessingEntry": {
-                            "enabled": false
-                        }
-                    }
+                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.Disable.label"
                 },
                 {
                     "name": "Tele",
@@ -158,15 +106,8 @@
                         "SeizeDeliveryJobsPostProcessingEntry": {
                             "enabled": true
                         },
-                        "SeizeDeliveryJobsTeleportWulingCityNorth": {
-                            "next": [
-                                "SeizeDeliveryJobsStopTask1"
-                            ]
-                        },
-                        "SeizeDeliveryJobsTeleportTestArea": {
-                            "next": [
-                                "SeizeDeliveryJobsStopTask1"
-                            ]
+                        "SeizeDeliveryJobsSuccessTeleportDone": {
+                            "enabled": true
                         }
                     }
                 },
@@ -177,24 +118,102 @@
                         "SeizeDeliveryJobsPostProcessingEntry": {
                             "enabled": true
                         },
-                        "SeizeDeliveryJobsWalkToDepotNodeWulingCity": {
-                            "next": [
-                                "SeizeDeliveryJobsStopTask1"
-                            ]
-                        },
-                        "SeizeDeliveryJobsWalkToDepotNodeTestArea": {
-                            "next": [
-                                "SeizeDeliveryJobsStopTask1"
-                            ]
+                        "SeizeDeliveryJobsSuccessWalkDone": {
+                            "enabled": true
                         }
                     }
                 },
                 {
-                    "name": "TeleWalkFetch",
-                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.TeleWalkFetch.label",
+                    "name": "TeleWalkFetchDeliver",
+                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.TeleWalkFetchDeliver.label",
+                    "option": [
+                        "SeizeDeliveryJobsPostDepartureRiskAcknowledgement",
+                        "SeizeDeliveryJobsPostDeparturePreferZipline",
+                        "SeizeDeliveryJobsRepeatCount"
+                    ],
                     "pipeline_override": {
                         "SeizeDeliveryJobsPostProcessingEntry": {
                             "enabled": true
+                        },
+                        "SeizeDeliveryJobsPostDepartureEntry": {
+                            "enabled": true
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsPostDepartureRiskAcknowledgement": {
+            "type": "switch",
+            "label": "$task.SeizeDeliveryJobsPostDepartureRiskAcknowledgement.label",
+            "description": "$task.SeizeDeliveryJobsPostDepartureRiskAcknowledgement.description",
+            "default_case": "No",
+            "cases": [
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsGuard": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "Yes"
+                }
+            ]
+        },
+        "SeizeDeliveryJobsPostDeparturePreferZipline": {
+            "type": "switch",
+            "label": "$task.SeizeDeliveryJobsPostDeparturePreferZipline.label",
+            "description": "$task.SeizeDeliveryJobsPostDeparturePreferZipline.description",
+            "default_case": "No",
+            "cases": [
+                {
+                    "name": "No"
+                },
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsRunDeparture": {
+                            "custom_action_param": {
+                                "map_name_regex": "map02_lv002|map02_lv005", // 所有可用的送货地图名称（后续增加新地区需要更新此值）
+                                "zipline_policy": "Active",
+                                "is_retry": false
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsRepeatCount": {
+            "type": "select",
+            "default_case": "1",
+            "label": "$task.SeizeDeliveryJobsRepeatCount.label",
+            "description": "$task.SeizeDeliveryJobsRepeatCount.description",
+            "cases": [
+                {
+                    "name": "1",
+                    "label": "$task.SeizeDeliveryJobsRepeatCount.cases.1.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsMain": {
+                            "max_hit": 1
+                        }
+                    }
+                },
+                {
+                    "name": "2",
+                    "label": "$task.SeizeDeliveryJobsRepeatCount.cases.2.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsMain": {
+                            "max_hit": 2
+                        }
+                    }
+                },
+                {
+                    "name": "3",
+                    "label": "$task.SeizeDeliveryJobsRepeatCount.cases.3.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsMain": {
+                            "max_hit": 3
                         }
                     }
                 }

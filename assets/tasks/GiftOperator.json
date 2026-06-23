@@ -15,7 +15,8 @@
             "controller": [
                 "Win32-Front",
                 "Wlroots",
-                "ADB"
+                "ADB",
+                "PlayCover"
             ]
         }
     ],
@@ -798,6 +799,36 @@
                             ]
                         }
                     }
+                },
+                {
+                    "name": "MiFu",
+                    "label": "$operator.MiFu",
+                    "pipeline_override": {
+                        "GiftOperatorContacSortOrder": {
+                            "enabled": false
+                        },
+                        "GiftOperatorContacSortBy": {
+                            "enabled": false
+                        },
+                        "GiftOperatorSelectOp1": {
+                            "enabled": false
+                        },
+                        "GiftOperatorSelectSpecifiedOp": {
+                            "enabled": true,
+                            "template": [
+                                "GiftOperator/Operators/MiFu.png"
+                            ]
+                        },
+                        "GiftOperatorName": {
+                            "expected": [
+                                "弭弗",
+                                "弭弗",
+                                "Mi Fu",
+                                "ミ・フ",
+                                "미푸"
+                            ]
+                        }
+                    }
                 }
             ]
         },
@@ -848,7 +879,7 @@
                     "name": "No",
                     "option": [
                         "SelectOperator",
-                        "GiftCount"
+                        "SendWrongGift"
                     ],
                     "pipeline_override": {}
                 }
@@ -896,6 +927,36 @@
                     "repeat_delay": 100
                 }
             }
+        },
+        "SendWrongGift": {
+            "type": "switch",
+            "label": "$option.SendWrongGift.label",
+            "description": "$option.SendWrongGift.description",
+            "default_case": "No",
+            "cases": [
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "GiftOperatorClickGift": {
+                            "repeat": 1
+                        },
+                        "GiftOperatorClickGiftColorNumber": {
+                            "recognition": {
+                                "param": {
+                                    "index": -1
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "No",
+                    "option": [
+                        "GiftCount"
+                    ],
+                    "pipeline_override": {}
+                }
+            ]
         }
     }
 }

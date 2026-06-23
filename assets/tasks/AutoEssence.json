@@ -7,6 +7,7 @@
             "description": "$task.AutoEssence.description",
             "controller": [
                 "ADB",
+                "PlayCover",
                 "Win32-Front",
                 "Wlroots"
             ],
@@ -106,6 +107,28 @@
                             ]
                         }
                     }
+                },
+                {
+                    "name": "WLSwordVaultDale",
+                    "label": "$global.region.SwordVaultDale",
+                    "pipeline_override": {
+                        "AutoEssenceSpecifiedLocation": {
+                            "next": [
+                                "WLSwordVaultDaleMoveToTriggerPointAuto"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "WLTestArea",
+                    "label": "$global.region.TestArea",
+                    "pipeline_override": {
+                        "AutoEssenceSpecifiedLocation": {
+                            "next": [
+                                "WLTestAreaMoveToTriggerPointAuto"
+                            ]
+                        }
+                    }
                 }
             ]
         },
@@ -131,7 +154,7 @@
                     "name": "AutoFight",
                     "label": "$option.AutoEssenceChallengeMode.cases.AutoFight.label",
                     "option": [
-                        "AutoFightSetting"
+                        "AutoFightSettingFull"
                     ],
                     "pipeline_override": {
                         "AutoEssenceClickEssenceChallengeUsingWalk": {

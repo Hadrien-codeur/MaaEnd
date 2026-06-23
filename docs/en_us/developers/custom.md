@@ -68,6 +68,12 @@ Example file: [`ClearHitCount.json`](../../../assets/resource/pipeline/Interface
 
 Example file: [`PipelineOverride.json`](../../../assets/resource/pipeline/Interface/Example/PipelineOverride.json)
 
+### PostStop
+
+`PostStop` is implemented in `agent/go-service/common/poststop`. It calls `Tasker.PostStop()` to asynchronously stop the current task. Use it when a certain condition in the pipeline warrants terminating the entire task proactively.
+
+- Parameters: none.
+
 ### AttachToExpectedRegexAction
 
 `AttachToExpectedRegexAction` is implemented in `agent/go-service/common/attachregex`. It generically reads keywords from the target node's own `attach`, then writes the merged whitelist regex back into that target OCR node's `expected`.
@@ -183,6 +189,7 @@ Notes:
 - The final expression result must be boolean, otherwise the recognition fails.
 - Referenced nodes must currently produce OCR results that can be parsed as numeric values, otherwise evaluation fails.
 - For `And` nodes, the child result selected by `box_index` in that run must directly contain OCR results that can be parsed as numeric values.
+- Integer literals in the expression, and OCR values after unit normalization, are clamped to the platform `int` maximum or minimum when they exceed the representable range (positive overflow uses the maximum, negative overflow uses the minimum). A warning is logged and evaluation continues instead of failing immediately.
 - This recognizer is only responsible for expression evaluation. Business semantics should remain in Pipeline design.
 
 ## Summary
@@ -193,6 +200,7 @@ When writing Pipeline, the built-in `TemplateMatch` / `OCR` / `Click` / `Swipe` 
 | ------------------------------------------------------------------- | ----------------------------- |
 | Run a sequence of subtasks                                          | `SubTask`                     |
 | Clear a node's hit count                                            | `ClearHitCount`               |
+| Proactively stop the current task                                   | `PostStop`                    |
 | Change node parameters at runtime                                   | `PipelineOverride`            |
 | Build a regex whitelist from keywords and write it into an OCR node | `AttachToExpectedRegexAction` |
 | Evaluate OCR numeric expressions                                    | `ExpressionRecognition`       |

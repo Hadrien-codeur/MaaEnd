@@ -24,6 +24,7 @@ type autoFightAttach struct {
 	EnableAttack                 bool   `json:"enable_attack"`
 	EnableCombo                  bool   `json:"enable_combo"`
 	EnableDodge                  bool   `json:"enable_dodge"`
+	EnableDodgeCompat            bool   `json:"enable_dodge_compat"`
 	EnableHealthDangerousSwitch  bool   `json:"enable_health_dangerous_switch"`
 	EnableBreakAccumulatingPower bool   `json:"enable_break_accumulating_power"`
 	EnableSkill                  bool   `json:"enable_skill"`
@@ -87,8 +88,52 @@ func getCharactorLevelShow(ctx *maa.Context, img image.Image) bool {
 	return detail.Hit
 }
 
+// captureDurationTracker 统计截图识别的平均耗时：每 reportWindow 计算一次窗口内平均值并重置，
+// 若平均耗时超过 alertThreshold，则通过 maafocus 提醒用户降低显卡资源占用。
+type captureDurationTracker struct {
+	reportWindow   time.Duration
+	alertThreshold time.Duration
+	total          time.Duration
+	count          int
+	windowStart    time.Time
+}
+
+// record 累计一次耗时，并在窗口结束时返回该窗口的平均耗时（毫秒）；
+// 仅当窗口刚结束时 ok 为 true，否则 ok 为 false。
+func (t *captureDurationTracker) record(d time.Duration) (avgMs int64, ok bool) {
+	now := time.Now()
+	if t.windowStart.IsZero() {
+		t.windowStart = now
+	}
+	t.total += d
+	t.count++
+
+	if now.Sub(t.windowStart) < t.reportWindow {
+		return 0, false
+	}
+
+	avg := t.total / time.Duration(t.count)
+	t.total = 0
+	t.count = 0
+	t.windowStart = now
+	return avg.Milliseconds(), true
+}
+
+var capturePerf = &captureDurationTracker{
+	reportWindow:   5 * time.Second,
+	alertThreshold: 500 * time.Millisecond,
+}
+
 // captureAndUpdateScreenDetail 因 DirectHit 耗时 50ms，在 action 里直接截图并更新屏幕分析状态。
 func captureAndUpdateScreenDetail(ctx *maa.Context) (image.Image, bool) {
+	start := time.Now()
+	defer func() {
+		if avgMs, ok := capturePerf.record(time.Since(start)); ok &&
+			time.Duration(avgMs)*time.Millisecond > capturePerf.alertThreshold {
+			maafocus.Print(ctx, i18n.T("autofight.capture_slow", avgMs))
+		}
+	}()
+
 	ctx.GetTasker().GetController().PostScreencap().Wait()
 	img, err := ctx.GetTasker().GetController().CacheImage()
 	if err != nil {
@@ -211,11 +256,19 @@ type fightAction struct {
 
 var actionQueue []fightAction
 
+// lastDodgeAt 记录最近一次入队闪避/移动动作的时间（含移动动作内置的闪避），
+// 用于在 EnableLockTarget 中判断一段时间内是否发生过闪避。
+var lastDodgeAt time.Time
+
 func enqueueAction(a fightAction) {
 	actionQueue = append(actionQueue, a)
 	sort.Slice(actionQueue, func(i, j int) bool {
 		return actionQueue[i].executeAt.Before(actionQueue[j].executeAt)
 	})
+	switch a.action {
+	case ActionDodge, ActionMoveBack, ActionMoveForward, ActionMoveLeft, ActionMoveRight:
+		lastDodgeAt = time.Now()
+	}
 }
 
 func dequeueAction() (fightAction, bool) {
@@ -292,6 +345,7 @@ func (a *AutoFightMainAction) Run(ctx *maa.Context, arg *maa.CustomActionArg) bo
 	var lastLevelShowCheck time.Time
 	var noLockStart time.Time
 	var lockTargetStage lockStage
+	lastDodgeAt = time.Now()
 	firstNoLockIteration := true
 	characterCount := -1
 	skillCycleIndex := 1
@@ -384,11 +438,18 @@ func (a *AutoFightMainAction) Run(ctx *maa.Context, arg *maa.CustomActionArg) bo
 			maafocus.Print(ctx, i18n.T("autofight.character_count", characterCount))
 		}
 
-		if params.EnableDodge && (screenAnalyzer.GetEnemyDodge() || screenAnalyzer.GetEnemyAttackGroundDodge()) {
-			enqueueAction(fightAction{
-				executeAt: time.Now().Add(time.Millisecond),
-				action:    ActionDodge,
-			})
+		if params.EnableDodge {
+			// 地面攻击必闪；否则按是否启用兼容模式选择普通/兼容闪避检测
+			dodgeCheck := screenAnalyzer.GetEnemyDodge
+			if params.EnableDodgeCompat {
+				dodgeCheck = screenAnalyzer.GetEnemyDodgeCompat
+			}
+			if screenAnalyzer.GetEnemyAttackGroundDodge() || dodgeCheck() {
+				enqueueAction(fightAction{
+					executeAt: time.Now().Add(time.Millisecond),
+					action:    ActionDodge,
+				})
+			}
 		}
 
 		if params.EnableLockTarget {
@@ -405,6 +466,14 @@ func (a *AutoFightMainAction) Run(ctx *maa.Context, arg *maa.CustomActionArg) bo
 				noLockStart = time.Now()
 				lockTargetStage = lockStageLocked
 				firstNoLockIteration = false
+				// 5秒内没有闪避/冲刺则向前冲刺一次，防止怪跑远
+				if time.Since(lastDodgeAt) >= 5*time.Second {
+					maafocus.Print(ctx, i18n.T("autofight.approach_enemy"))
+					enqueueAction(fightAction{
+						executeAt: time.Now().Add(time.Millisecond),
+						action:    ActionMoveForward,
+					})
+				}
 			} else {
 				if noLockStart.IsZero() {
 					noLockStart = time.Now()

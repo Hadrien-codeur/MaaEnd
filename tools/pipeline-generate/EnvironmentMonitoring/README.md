@@ -43,16 +43,24 @@ npx @joebao/maa-pipeline-generate --config terminals-config.json
         // 不要写 "SceneAnyEnterWorld" 等占位值。
     "MapName": "map02_lv001",
         // 地图标识：使用 MapPath 时填 MapTracker 的 map_name（支持正则）；
+        // 使用 MapGoal 时填可加载 NavMesh 的精确 MapTracker map_name；
         // 使用 MapTarget 时填 MapLocate 的 zone_id。必须与录制工具保持一致。
     "MapAssert": [x, y, w, h],
-        // 目标矩形；MapPath 使用 MapTrackerAssertLocation 判断，MapTarget 使用 MapLocateAssertLocation 判断。
+        // 目标矩形；MapPath / MapGoal 使用 MapTrackerAssertLocation 判断，MapTarget 使用 MapLocateAssertLocation 判断。
     "MapPath": [[x1, y1], [x2, y2]],
         // 寻路路径（小地图坐标序列），由 MapTrackerMove 逐点跟随。
-        // 与 MapTarget 二选一，用 tools/MapNavigator/ 的 GUI 工具录制。
+        // 与 MapTarget / MapGoal 三选一，用 tools/MapNavigator/ 的 GUI 工具录制。
     // "MapTarget": [x, y],
-    //     MapNavigateAction 目标点。生成时会在 path 前置 ZONE 声明，再追加该坐标点：
-    //     [{ "action": "ZONE", "zone_id": "Wuling_Base" }, [x, y]]
-    //     与 MapPath 二选一，适合不依赖交互、过图、机关的普通可达路线。
+    //     MapNavigateAction 的 NAVMESH 目标点。默认按 base 坐标解释：
+    //     [{ "action": "NAVMESH", "target": [x, y] }]
+    //     与 MapPath / MapGoal 三选一，适合不依赖交互、过图、机关的普通可达路线。
+    // "MapTargetTier": "ValleyIV_L1_171",
+    //     可选，仅用于 MapTarget 路线。目标点与起点不在同一 tier，且 MapTarget 是在
+    //     tier 底图上直接点出的坐标时填写；生成时会透传为 NAVMESH 的 target_tier。
+    // "MapGoal": [x, y],
+    //     MapTrackerGoal 目标点。生成时会自动使用 MapTrackerGoal：
+    //     { "map_name": "map02_lv001", "target": [x, y] }
+    //     与 MapPath / MapTarget 三选一，适合已有 NavMesh 的 MapTracker 路线。
     "CameraSwipeDirection": "EnvironmentMonitoringSwipeScreenUp",
         // 摄像头朝向调整方向，四选一：Up / Down / Left / Right。
     "CameraMaxHit": 2,
@@ -68,7 +76,7 @@ npx @joebao/maa-pipeline-generate --config terminals-config.json
 }
 ```
 
-> `routes.json` 是严格 JSON：不允许行内注释、不允许尾随逗号。上面的注释只是文档示意，实际文件里要去掉。`MapPath` 与 `MapTarget` 必须且只能填写其中一个。
+> `routes.json` 是严格 JSON：不允许行内注释、不允许尾随逗号。上面的注释只是文档示意，实际文件里要去掉。`MapPath` / `MapTarget` / `MapGoal` 必须且只能填写其中一个。
 
 > 重新生成 EnvironmentMonitoring 时，生成器会自动同步 `MissionId` / `Name` / `Id` 并按 `MissionId` 排序。手动新增条目时必须填写 `MissionId`；如果 zmdmap 中存在新任务但 `routes.json` 没有对应条目，生成器会自动追加仅含 `MissionId` / `Name` / `Id` 的未适配占位条目，方便维护者看到待补路线。
 

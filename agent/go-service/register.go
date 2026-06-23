@@ -12,12 +12,13 @@ import (
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/blueprintimport"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/captureuid"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/attachregex"
-	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/autoaltclick"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/autoalt"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/charactercontroller"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/clearhitcount"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/expressionrecognition"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/falseaction"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/pipelineoverride"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/poststop"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/schedule"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/subtask"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/creditshopping"
@@ -35,6 +36,7 @@ import (
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/taskersink/cursormove"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/taskersink/hdrcheck"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/taskersink/processcheck"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/trialofswordmancy"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/visitfriends"
 	webevent202605 "github.com/MaaXYZ/MaaEnd/agent/go-service/webevent/202605"
 	"github.com/rs/zerolog/log"
@@ -56,9 +58,10 @@ func registerAll() {
 	pipelineoverride.Register()
 	expressionrecognition.Register()
 	attachregex.Register()
-	autoaltclick.Register()
+	autoalt.Register()
 	charactercontroller.Register()
 	falseaction.Register()
+	poststop.Register()
 	schedule.Register()
 
 	// Business Custom
@@ -84,6 +87,7 @@ func registerAll() {
 	creditshopping.Register()
 	webevent202605.Register()
 	pullcount.Register()
+	trialofswordmancy.Register()
 	log.Info().
 		Msg("All custom components and sinks registered successfully")
 }
