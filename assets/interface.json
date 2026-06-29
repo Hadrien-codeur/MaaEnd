@@ -145,6 +145,7 @@
         // group: regional_development
         "tasks/SellProduct.json",
         "tasks/SeizeDeliveryJobs.json",
+        "tasks/SeizeDeliveryJobsTestPickup.json",
         "tasks/DeliveryJobs.json",
         "tasks/AutoStockpile.json",
         "tasks/AutoStockStaple.json",

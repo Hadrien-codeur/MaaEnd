@@ -1,0 +1,22 @@
+{
+    "task": [
+        {
+            "name": "SeizeDeliveryJobsTestPickup",
+            "description": "$task.SeizeDeliveryJobsTestPickup.description",
+            "label": "$task.SeizeDeliveryJobsTestPickup.label",
+            "entry": "SeizeDeliveryJobsTestPickupEntry",
+            "controller": [
+                "Win32-Front",
+                "Wlroots"
+            ],
+            "group": [
+                "regional_development"
+            ],
+            "pipeline_override": {
+                "SeizeDeliveryJobsSuccessFetchGoods": {
+                    "enabled": true
+                }
+            }
+        }
+    ]
+}

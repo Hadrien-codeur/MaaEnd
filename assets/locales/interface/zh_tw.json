@@ -483,6 +483,8 @@
     "task.AndroidOpenGame.description": "安卓端打開遊戲，需先手動打開模擬器",
     "task.SeizeDeliveryJobs.label": "🏍️搶委託與送貨",
     "task.SeizeDeliveryJobs.description": "自動搶武陵城倉儲節點送貨委託",
+    "task.SeizeDeliveryJobsTestPickup.label": "🧪取貨段測試(武陵城)",
+    "task.SeizeDeliveryJobsTestPickup.description": "除錯用：跳過搶單，直接傳送武陵城走滑索路線到取貨點接貨",
     "task.SeizeDeliveryJobsCommissionSource.label": "委託接收點",
     "task.SeizeDeliveryJobsCommissionSource.cases.WulingCity.label": "武陵城",
     "task.SeizeDeliveryJobsCommissionSource.cases.TestArea.label": "實驗園區",

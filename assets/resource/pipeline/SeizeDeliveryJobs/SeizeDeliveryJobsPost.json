@@ -144,6 +144,18 @@
         }
     },
     // ===== 武陵城部分 =====
+    "SeizeDeliveryJobsTestPickupEntry": {
+        "desc": "取货段独立测试入口（仅调试用）：先确保回到大世界，再走传送→滑索路线→接货",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTeleportWulingCity"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**取货段独立测试开始**"
+        }
+    },
     "SeizeDeliveryJobsTeleportWulingCity": {
         "desc": "传送到武陵城仓储节点锚点（北侧锚点）",
         "pre_delay": 0,
@@ -211,7 +223,6 @@
     },
     "SeizeDeliveryJobsWulingCityWalkToZipline": {
         "desc": "取货-滑索路线 步骤1：从传送落点步行到起点滑索架前",
-        // TODO 待实机录入：传送落点 → 起点滑索架前的步行路径
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapTrackerMove",
@@ -219,12 +230,16 @@
             "map_name": "map02_lv002",
             "path": [
                 [
-                    0.0, // TODO 落点坐标
-                    0.0
+                    664.5,
+                    734.2
                 ],
                 [
-                    0.0, // TODO 起点滑索架前坐标
-                    0.0
+                    665.7,
+                    733.1
+                ],
+                [
+                    673.2,
+                    732.9
                 ]
             ]
         },
@@ -234,15 +249,14 @@
     },
     "SeizeDeliveryJobsWulingCityZipline": {
         "desc": "取货-滑索路线 步骤3：滑行到下一个滑索架（②号）",
-        // TODO 待实机录入：②号滑索架地图坐标
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "target": [
-                0.0, // TODO ②号滑索架坐标
-                0.0
+                673.2,
+                731.9
             ]
         },
         "focus": {
@@ -251,7 +265,6 @@
     },
     "SeizeDeliveryJobsWulingCityWalkFromZipline": {
         "desc": "取货-滑索路线 步骤5：从②号滑索落点步行到取货点",
-        // TODO 待实机录入：②号滑索落点 → 取货点的步行路径（终点固定 [674.9, 789.2]）
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapTrackerMove",
@@ -259,11 +272,27 @@
             "map_name": "map02_lv002",
             "path": [
                 [
-                    0.0, // TODO ②号滑索落点坐标
-                    0.0
+                    684.4,
+                    785.5
                 ],
                 [
-                    674.9, // 取货点（沿用原 MapTrackerGoal 终点）
+                    683.3,
+                    785.5
+                ],
+                [
+                    683.3,
+                    786.8
+                ],
+                [
+                    684.4,
+                    787.9
+                ],
+                [
+                    675.8,
+                    788.1
+                ],
+                [
+                    674.9,
                     789.2
                 ]
             ]

@@ -479,6 +479,8 @@
     "task.AndroidOpenGame.description": "Androidでゲームを起動します。事前にエミュレーターを手動で起動してください。",
     "task.SeizeDeliveryJobs.label": "🏍️依頼受注と配送",
     "task.SeizeDeliveryJobs.description": "武陵城倉庫ノードの配送依頼を自動で受注します",
+    "task.SeizeDeliveryJobsTestPickup.label": "🧪集荷ルートテスト(武陵城)",
+    "task.SeizeDeliveryJobsTestPickup.description": "デバッグ用：受注をスキップし、武陵城へ直接転送してジップラインルートで集荷地点まで移動します",
     "task.SeizeDeliveryJobsCommissionSource.label": "依頼荷受場所",
     "task.SeizeDeliveryJobsCommissionSource.cases.WulingCity.label": "武陵城",
     "task.SeizeDeliveryJobsCommissionSource.cases.TestArea.label": "実験区域",

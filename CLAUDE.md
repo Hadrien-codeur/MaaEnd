@@ -50,11 +50,11 @@
 
 ### 3.2 分支策略
 
-| 分支                    | 用途                                              |
-| ----------------------- | ------------------------------------------------- |
-| `v2`                    | 跟踪官方 `origin/v2`，定期 `git pull origin v2`   |
-| `feature/zipline-fast`  | 本次开发分支（当前）                              |
-| `feature/self-deliver-route` | 旧方案存档，保留不动                         |
+| 分支                         | 用途                                            |
+| ---------------------------- | ----------------------------------------------- |
+| `v2`                         | 跟踪官方 `origin/v2`，定期 `git pull origin v2` |
+| `feature/zipline-fast`       | 本次开发分支（当前）                            |
+| `feature/self-deliver-route` | 旧方案存档，保留不动                            |
 
 ### 3.3 常用操作
 
@@ -90,13 +90,13 @@ git pull myfork feature/zipline-fast
 
 ### 3.5 Commit 规范（Conventional Commits）
 
-| 前缀 | 用途 |
-|---|---|
-| `feat:` | 新增功能 |
-| `fix:` | 修复 Bug |
-| `docs:` | 仅文档更改 |
+| 前缀     | 用途                 |
+| -------- | -------------------- |
+| `feat:`  | 新增功能             |
+| `fix:`   | 修复 Bug             |
+| `docs:`  | 仅文档更改           |
 | `style:` | 格式调整，不影响逻辑 |
-| `chore:` | 构建/工具变动 |
+| `chore:` | 构建/工具变动        |
 
 示例：`feat(SeizeDeliveryJobs): 新增滑索策略用户选项`
 
@@ -113,12 +113,12 @@ agent/go-service/**                # 复杂逻辑（复杂识别、计算、特�
 
 **判断该改哪里：**
 
-| 改动类型 | 文件位置 |
-|---|---|
-| 界面文案、任务名、选项文案 | `assets/locales/interface/zh_cn.json` (+其余4语言) |
-| 任务选项、入口节点 | `assets/tasks/**/*.json` |
-| 识别、点击、跳转流程 | `assets/resource/pipeline/**/*.json` |
-| 复杂逻辑（算法、遍历、计算） | `agent/go-service/**` |
+| 改动类型                     | 文件位置                                           |
+| ---------------------------- | -------------------------------------------------- |
+| 界面文案、任务名、选项文案   | `assets/locales/interface/zh_cn.json` (+其余4语言) |
+| 任务选项、入口节点           | `assets/tasks/**/*.json`                           |
+| 识别、点击、跳转流程         | `assets/resource/pipeline/**/*.json`               |
+| 复杂逻辑（算法、遍历、计算） | `agent/go-service/**`                              |
 
 **大原则：Pipeline 管流程，Go 管难点。** 禁止在 Go 中编写大量流程代码。
 
@@ -186,16 +186,16 @@ agent/go-service/**                # 复杂逻辑（复杂识别、计算、特�
 
 ### 通用按钮（`assets/resource/pipeline/Common/Button/`）
 
-| 节点名 | 适用场景 |
-|---|---|
-| `WhiteConfirmButtonType1` | 白色底 + 圆环图标确认 |
-| `WhiteConfirmButtonType2` | 白色底 + 对号图标确认 |
-| `YellowConfirmButtonType1` | 黄色底 + 圆环图标确认 |
-| `YellowConfirmButtonType2` | 黄色底 + 对号图标确认 |
-| `CancelButton` | 白色底 + X 图标取消 |
-| `CloseButtonType1` | 右上角 X 关界面（不兼容 ESC 菜单） |
-| `CloseButtonType2` | 右上角 X 关界面（兼容 ESC 菜单） |
-| `TeleportButton` | 右下角传送按钮（固定 ROI） |
+| 节点名                     | 适用场景                           |
+| -------------------------- | ---------------------------------- |
+| `WhiteConfirmButtonType1`  | 白色底 + 圆环图标确认              |
+| `WhiteConfirmButtonType2`  | 白色底 + 对号图标确认              |
+| `YellowConfirmButtonType1` | 黄色底 + 圆环图标确认              |
+| `YellowConfirmButtonType2` | 黄色底 + 对号图标确认              |
+| `CancelButton`             | 白色底 + X 图标取消                |
+| `CloseButtonType1`         | 右上角 X 关界面（不兼容 ESC 菜单） |
+| `CloseButtonType2`         | 右上角 X 关界面（兼容 ESC 菜单）   |
+| `TeleportButton`           | 右下角传送按钮（固定 ROI）         |
 
 ### SceneManager（万能跳转）
 
@@ -203,24 +203,24 @@ agent/go-service/**                # 复杂逻辑（复杂识别、计算、特�
 
 常用接口：
 
-| 接口名 | 说明 |
-|---|---|
-| `SceneAnyEnterWorld` | 从任意界面进入大世界 |
-| `SceneDialogConfirm` / `SceneDialogCancel` | 点击对话框确认/取消 |
-| `SceneWaitLoadingExit` | 等待加载消失 |
-| `SceneEnterMenuRegionalDevelopment` | 进入地区建设菜单 |
+| 接口名                                     | 说明                 |
+| ------------------------------------------ | -------------------- |
+| `SceneAnyEnterWorld`                       | 从任意界面进入大世界 |
+| `SceneDialogConfirm` / `SceneDialogCancel` | 点击对话框确认/取消  |
+| `SceneWaitLoadingExit`                     | 等待加载消失         |
+| `SceneEnterMenuRegionalDevelopment`        | 进入地区建设菜单     |
 
 ### Custom Action/Recognition 速查
 
-| 场景 | 用什么 |
-|---|---|
-| 按顺序跑一组子任务 | `SubTask` |
-| 清零某节点命中计数 | `ClearHitCount` |
-| 强制让 Action 失败 | `FalseAction` |
-| 主动停止当前任务 | `PostStop` |
-| 运行时改节点参数 | `PipelineOverride` |
+| 场景                | 用什么                  |
+| ------------------- | ----------------------- |
+| 按顺序跑一组子任务  | `SubTask`               |
+| 清零某节点命中计数  | `ClearHitCount`         |
+| 强制让 Action 失败  | `FalseAction`           |
+| 主动停止当前任务    | `PostStop`              |
+| 运行时改节点参数    | `PipelineOverride`      |
 | 计算 OCR 数值表达式 | `ExpressionRecognition` |
-| Alt + 点击 | `AutoAltClickAction` |
+| Alt + 点击          | `AutoAltClickAction`    |
 
 ---
 
@@ -229,9 +229,9 @@ agent/go-service/**                # 复杂逻辑（复杂识别、计算、特�
 - 只用于 Pipeline 难以实现的复杂图像算法或特殊交互逻辑
 - 整体流程仍由 Pipeline 串联，禁止在 Go 中编写大量流程代码
 - 新增 Custom 组件需要：
-  1. 在对应子包 `register.go` 注册
-  2. 在 `agent/go-service/register.go` 的 `registerAll()` 中接入
-  3. 重新执行 `python tools/build_and_install.py`
+    1. 在对应子包 `register.go` 注册
+    2. 在 `agent/go-service/register.go` 的 `registerAll()` 中接入
+    3. 重新执行 `python tools/build_and_install.py`
 
 ---
 
@@ -246,7 +246,10 @@ agent/go-service/**                # 复杂逻辑（复杂识别、计算、特�
     "custom_action": "MapTrackerGoal",
     "custom_action_param": {
         "map_name": "map02_lv005",
-        "target": [670.0, 350.8],
+        "target": [
+            670.0,
+            350.8
+        ],
         "zipline_policy": "Lazy"
     }
 }
@@ -254,12 +257,12 @@ agent/go-service/**                # 复杂逻辑（复杂识别、计算、特�
 
 **`zipline_policy` 四档**：
 
-| 策略 | 起用滑索距离 | 官方描述 |
-|---|---|---|
-| `Never` | 永不 | 始终不使用滑索（`MapTrackerGoal` 默认） |
-| `Lazy` | >180m | 仅在极端情况（当前 `departure.go` 写死值） |
-| `Active` | >45m | 像人类玩家一样主动使用 |
-| `Aggressive` | >15m | 非常积极，一般不推荐 |
+| 策略         | 起用滑索距离 | 官方描述                                   |
+| ------------ | ------------ | ------------------------------------------ |
+| `Never`      | 永不         | 始终不使用滑索（`MapTrackerGoal` 默认）    |
+| `Lazy`       | >180m        | 仅在极端情况（当前 `departure.go` 写死值） |
+| `Active`     | >45m         | 像人类玩家一样主动使用                     |
+| `Aggressive` | >15m         | 非常积极，一般不推荐                       |
 
 ### MapTrackerAssertLocation
 
@@ -270,7 +273,12 @@ agent/go-service/**                # 复杂逻辑（复杂识别、计算、特�
     "recognition": "Custom",
     "custom_recognition": "MapTrackerAssertLocation",
     "custom_recognition_param": {
-        "expected": [{ "map_name": "map02_lv002", "target": [670, 350, 20, 20] }]
+        "expected": [{"map_name": "map02_lv002", "target": [
+                    670,
+                    350,
+                    20,
+                    20
+                ]}]
     },
     "action": "DoNothing"
 }
@@ -279,6 +287,7 @@ agent/go-service/**                # 复杂逻辑（复杂识别、计算、特�
 ### 工具：`tools/map_tracker/map_tracker_editor.py`
 
 录路径、框 AssertLocation 区域。运行：
+
 ```bash
 python tools/map_tracker/map_tracker_editor.py
 ```
@@ -292,8 +301,12 @@ python tools/map_tracker/map_tracker_editor.py
 常用 path 节点动作：`RUN` / `SPRINT` / `JUMP` / `INTERACT` / `PORTAL` / `TRANSFER` / `COLLECT` / `DIG` / `HEADING`
 
 `NAVMESH` 语义寻路节点（只需填目标坐标，运行时自动 A\* 规划）：
+
 ```json
-{ "action": "NAVMESH", "target": [720, 630] }
+{"action": "NAVMESH", "target": [
+        720,
+        630
+    ]}
 ```
 
 ---
@@ -357,14 +370,14 @@ python tools/build_and_install.py
     "configs": {
         "name": "(Win32-官服)SeizeDeliveryJobs",
         "resource": ["官服"],
-        "controller": ["Win32"]
+        "controller": ["Win32"],
     },
     "cases": [
         {
             "image": "武陵_抢委托_地图弹窗.png",
-            "hits": ["InDestinationMap"]
-        }
-    ]
+            "hits": ["InDestinationMap"],
+        },
+    ],
 }
 ```
 
@@ -375,12 +388,12 @@ python tools/build_and_install.py
 
 ## 15. 调试工具速查
 
-| 工具 | 用途 | 启动方式 |
-|---|---|---|
+| 工具                 | 用途                                    | 启动方式                                      |
+| -------------------- | --------------------------------------- | --------------------------------------------- |
 | Maa Pipeline Support | VS Code 插件，截图/ROI/取色/Launch 调试 | VS Code 安装插件后在 Pipeline 节点上点 Launch |
-| MaaDebugger | 独立调试器，连接游戏窗口实时截图取坐标 | `python -m MaaDebugger` |
-| MaaPipelineEditor | 可视化构建 Pipeline | https://mpe.codax.site |
-| MaaLogAnalyzer | 可视化分析日志 | 见项目 GitHub |
+| MaaDebugger          | 独立调试器，连接游戏窗口实时截图取坐标  | `python -m MaaDebugger`                       |
+| MaaPipelineEditor    | 可视化构建 Pipeline                     | https://mpe.codax.site                        |
+| MaaLogAnalyzer       | 可视化分析日志                          | 见项目 GitHub                                 |
 
 **MaaDebugger 连接步骤**：WIN32 标签页填窗口名 `Endfield` → SCAN → CONNECT → 填 Resource Directory → LOAD → 点图取坐标（终端打印 `on_click_image: x, y`，即 1280×720 游戏坐标，零换算）
 
@@ -417,11 +430,11 @@ python tools/build_and_install.py
 
 1. 把今天的进度、已确认的决策、下一步，更新到第 18 节「当前进度存档」。
 2. 提交改动并推送到 `myfork`（博士的个人 fork）：
-   ```bash
-   git add <具体文件>
-   git commit -m "docs/feat/fix: ..."   # 按 Conventional Commits
-   git push myfork feature/zipline-fast
-   ```
+    ```bash
+    git add <具体文件>
+    git commit -m "docs/feat/fix: ..."   # 按 Conventional Commits
+    git push myfork feature/zipline-fast
+    ```
 3. 告知博士已推送，路上注意安全。
 
 > 注：commit 信息须如实反映改动；推送目标仅限博士本人的 fork（`myfork`），不涉及官方仓库。若某次 commit/push 被安全机制拦截，照常请博士手动确认即可。
@@ -437,11 +450,20 @@ python tools/build_and_install.py
 
 > ⚠️ **接力操作说明**：新会话开始后，Claude 先把本节内容完整发出来让博士确认，确认无误后删除本节，再继续讨论/开发。
 
-### 18.1 状态：取货段 Pipeline 骨架已写好，博士已实机录了一遍坐标，待下次回来提供参数填入
+### 18.1 状态：取货段已实机测试，流程已走到「上①号滑索成功」，卡在②号滑索 target 坐标填错，待博士回来重录目的地滑索坐标
 
 完整实施计划见 `.claude/plans/zipline-fast-plan.md`（已通过博士审批）。
 
-**接力提醒**：博士已用 `map_tracker_editor.py` 录了一遍取货坐标，下次回来会把录好的 Point List 参数贴出来，Claude 直接填入下方 3 个节点的占位 `0.0` 处即可。
+**当前急需（接力第一步）**：博士回来重录**②号滑索（目的地/落点滑索架）的地图坐标**，贴 `③=[x,y]`，Claude 替换进 `SeizeDeliveryJobsWulingCityZipline` 的 `target` 即可。
+
+**本次测试结论（2026-06-29）**：
+- 取货坐标已填入并测过，传送+「先确保回大世界」前置都正常，**成功上①号起点滑索**。
+- 失败点：`SeizeDeliveryJobsWulingCityZipline` 的 `target` 填成了 `[673.2, 731.9]`，距当前位置仅 **1.14m** —— 这其实是**起点滑索架自己**，不是目的地滑索架。
+- `MapTrackerZipline` 的 `target` 语义（zipline.go:27）= **你要滑过去落地的那个目的地滑索架坐标**。算法靠「当前→target」算方向。距离太近→方向算不出→视角狂转约 180°→`Zipline fast travel did not start`（画面相似度 0.9998 没动）→失败。
+- 正确值应靠近落点 ④ `[684.4, 785.5]` 一带（Y≈785、X≈684），需博士重录。
+
+**独立测试任务（本次新建，调试用）**：`SeizeDeliveryJobsTestPickup`，入口 `SeizeDeliveryJobsTestPickupEntry`，跳过抢单，直接「确保回大世界→传送武陵城→滑索路线→接货→早停」。文件：`assets/tasks/SeizeDeliveryJobsTestPickup.json` + `interface.json` include（已同步 install）+ 5 语言 locale。
+
 - 取货只有 **1 段滑索**（已确认）。
 - 工具启动坑：脚本需要 `opencv-python`（`pip install opencv-python`），`maafw` 已装；或用 `uv run` 自动装依赖。必须在项目根目录运行。
 
@@ -461,14 +483,12 @@ python tools/build_and_install.py
 
 ### 18.4 实施顺序（每步可独立测试）
 
-1. ✅ **取货 Pipeline 骨架**（已完成）：`SeizeDeliveryJobsPost.json` 的 `SeizeDeliveryJobsWalkToDepotNodeWulingCity` 已由 `MapTrackerGoal` 改为 `SubTask` 滑索序列，新增 3 个子节点：
-   - `SeizeDeliveryJobsWulingCityWalkToZipline`（步行到起点滑索）
-   - `SeizeDeliveryJobsWulingCityZipline`（滑行到②号滑索）
-   - `SeizeDeliveryJobsWulingCityWalkFromZipline`（步行到取货点 [674.9,789.2]）
-   - 上/下索复用 `MapTrackerOpenWorld_GetOnZipline`/`GetOffZipline`。
-   - **坐标全是 0.0 占位，标了 TODO，等博士实机录入后才能测试**。
-   - `pnpm check` 已通过。
-2. **（下一步）录取货坐标**：博士用 `map_tracker_editor.py` 录 3 个坐标点位填入 → 重启测试。
+1. ✅ **取货 Pipeline 骨架 + 坐标**（已完成并测试）：`SeizeDeliveryJobsPost.json` 的 `SeizeDeliveryJobsWalkToDepotNodeWulingCity` 已由 `MapTrackerGoal` 改为 `SubTask` 滑索序列，3 个子节点坐标已填：
+    - `SeizeDeliveryJobsWulingCityWalkToZipline`（步行到起点滑索，path 3 点，已填 ✅）
+    - `SeizeDeliveryJobsWulingCityZipline`（滑行到目的地滑索，target ⚠️ **填错待重录**）
+    - `SeizeDeliveryJobsWulingCityWalkFromZipline`（步行到取货点，path 6 点，末点 [674.9,789.2]，已填 ✅）
+    - 上/下索复用 `MapTrackerOpenWorld_GetOnZipline`/`GetOffZipline`。
+2. ⏳ **（接力第一步）重录②号滑索 target**：录目的地滑索架坐标，替换 `SeizeDeliveryJobsWulingCityZipline.target` → 用独立测试任务重测 → 取货段收尾。
 3. **送货 Go 骨架**：改 `departure.go`（加坐标表占位、`nearestEndpoint`、`runDeliverRoute`、缓存加 Endpoint、`Run()` 第5步换函数）+ 新建 `SeizeDeliveryJobsDeliverRoutes.json`（4 个 `SubTask` 入口）→ 编译。
 4. **录送货坐标**：博士实机录 4 条路线 + 4 终点世界坐标 → 填入 → 重新编译。
 5. **联调**：4 终点逐一验证。
@@ -476,6 +496,7 @@ python tools/build_and_install.py
 ### 18.5 待博士实机录入的坐标
 
 用 `python tools/map_tracker/map_tracker_editor.py`（地图 map02_lv002）：
+
 - **取货（当前急需）**：① 传送落点坐标 ② 起点滑索架前坐标（这两点填 `WulingCityWalkToZipline` 的 path）③ ②号滑索架坐标（填 `WulingCityZipline` 的 target）④ ②号滑索落点坐标（填 `WulingCityWalkFromZipline` 的 path 起点；终点 [674.9,789.2] 已写好）。
 - 送货：起点滑索步行（共用）/ 4 终点各自滑索 target 序列 / 4 终点下索→NPC 步行 / 4 个送货点世界坐标。
 

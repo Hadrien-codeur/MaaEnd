@@ -479,6 +479,8 @@
     "task.AndroidOpenGame.description": "Android에서 게임을 실행합니다. 먼저 에뮬레이터를 수동으로 실행해 주세요.",
     "task.SeizeDeliveryJobs.label": "🏍️의뢰 수락 및 배달",
     "task.SeizeDeliveryJobs.description": "무릉성 창고 노드의 배달 의뢰를 자동으로 수락합니다",
+    "task.SeizeDeliveryJobsTestPickup.label": "🧪수령 경로 테스트(무릉성)",
+    "task.SeizeDeliveryJobsTestPickup.description": "디버그용: 수주를 건너뛰고 무릉성으로 바로 전송해 짚라인 경로로 수령 지점까지 이동합니다",
     "task.SeizeDeliveryJobsCommissionSource.label": "의뢰 수령 지점",
     "task.SeizeDeliveryJobsCommissionSource.cases.WulingCity.label": "무릉성",
     "task.SeizeDeliveryJobsCommissionSource.cases.TestArea.label": "실험 구역",
