@@ -1,0 +1,17 @@
+{
+    "task": [
+        {
+            "name": "SeizeDeliveryJobsTestDeliverObservatory",
+            "description": "$task.SeizeDeliveryJobsTestDeliverObservatory.description",
+            "label": "$task.SeizeDeliveryJobsTestDeliverObservatory.label",
+            "entry": "SeizeDeliveryJobsTestDeliverObservatoryEntry",
+            "controller": [
+                "Win32-Front",
+                "Wlroots"
+            ],
+            "group": [
+                "regional_development"
+            ]
+        }
+    ]
+}

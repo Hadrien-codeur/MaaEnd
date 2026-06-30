@@ -481,6 +481,8 @@
     "task.SeizeDeliveryJobs.description": "武陵城倉庫ノードの配送依頼を自動で受注します",
     "task.SeizeDeliveryJobsTestPickup.label": "🧪集荷ルートテスト(武陵城)",
     "task.SeizeDeliveryJobsTestPickup.description": "デバッグ用：受注をスキップし、武陵城へ直接転送してジップラインルートで集荷地点まで移動します",
+    "task.SeizeDeliveryJobsTestDeliverObservatory.label": "🧪配送ルートテスト·観測所(武陵城)",
+    "task.SeizeDeliveryJobsTestDeliverObservatory.description": "デバッグ用：武陵城へ転送→ジップラインで観測所まで配送ルートを実行し、完了後に停止してルートを確認。取得/提出は行わない",
     "task.SeizeDeliveryJobsCommissionSource.label": "依頼荷受場所",
     "task.SeizeDeliveryJobsCommissionSource.cases.WulingCity.label": "武陵城",
     "task.SeizeDeliveryJobsCommissionSource.cases.TestArea.label": "実験区域",

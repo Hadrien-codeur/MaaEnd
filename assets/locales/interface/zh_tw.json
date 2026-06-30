@@ -485,6 +485,8 @@
     "task.SeizeDeliveryJobs.description": "自動搶武陵城倉儲節點送貨委託",
     "task.SeizeDeliveryJobsTestPickup.label": "🧪取貨段測試(武陵城)",
     "task.SeizeDeliveryJobsTestPickup.description": "除錯用：跳過搶單，直接傳送武陵城走滑索路線到取貨點接貨",
+    "task.SeizeDeliveryJobsTestDeliverObservatory.label": "🧪送貨路線測試·觀測站(武陵城)",
+    "task.SeizeDeliveryJobsTestDeliverObservatory.description": "調試用：傳送武陵城→走滑索送貨路線到觀測站，跑完即停核對路線，不做取貨/提交",
     "task.SeizeDeliveryJobsCommissionSource.label": "委託接收點",
     "task.SeizeDeliveryJobsCommissionSource.cases.WulingCity.label": "武陵城",
     "task.SeizeDeliveryJobsCommissionSource.cases.TestArea.label": "實驗園區",

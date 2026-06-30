@@ -679,6 +679,8 @@
     "task.SeizeDeliveryJobs.description": "Automatically snatch delivery commissions at Wuling City depot nodes",
     "task.SeizeDeliveryJobsTestPickup.label": "🧪Pickup Route Test (Wuling City)",
     "task.SeizeDeliveryJobsTestPickup.description": "Debug only: skip snatching, teleport directly to Wuling City and run the zipline route to the pickup point",
+    "task.SeizeDeliveryJobsTestDeliverObservatory.label": "🧪Test Deliver Route · Observatory (Wuling City)",
+    "task.SeizeDeliveryJobsTestDeliverObservatory.description": "Debug: teleport to Wuling City, run the zipline delivery route to the Observatory, then stop to verify the route; no fetch/submit",
     "task.SeizeDeliveryJobsCommissionSource.label": "Commission Destination",
     "task.SeizeDeliveryJobsCommissionSource.cases.WulingCity.label": "Wuling City",
     "task.SeizeDeliveryJobsCommissionSource.cases.TestArea.label": "Test Area",

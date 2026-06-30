@@ -1,0 +1,256 @@
+{
+    // ===== 送货路线独立测试入口（仅调试用，默认关闭，由 SeizeDeliveryJobsTestDeliverObservatory 任务开启） =====
+    // 流程：确保回大世界 → 传送武陵城 → 跑取货路线定位到取货点（真实送货起点）→ 跑 Observatory 送货路线 → 停。
+    // 全程不做取货/提交识别，仅供博士核对路线与人物落点。
+    "SeizeDeliveryJobsTestDeliverObservatoryEntry": {
+        "desc": "送货路线测试入口-观测站（仅调试用）",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverObservatoryTeleport"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线测试开始（观测站）**"
+        }
+    },
+    "SeizeDeliveryJobsTestDeliverObservatoryTeleport": {
+        "desc": "送货测试-传送到武陵城仓储节点锚点",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SceneEnterWorldWulingWulingCity5"
+            ]
+        },
+        "post_delay": 0,
+        "timeout": 10000,
+        "next": [
+            "SeizeDeliveryJobsTestDeliverObservatoryRun"
+        ]
+    },
+    "SeizeDeliveryJobsTestDeliverObservatoryRun": {
+        "desc": "送货测试-先跑取货路线到取货点，再跑观测站送货路线（跑完即停）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsWulingCityWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsWulingCityZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsWulingCityWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteObservatory"
+            ]
+        },
+        "post_delay": 0,
+        "next": [
+            // 跑完即停，供博士核对路线与落点
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线跑完（观测站），请核对人物落点**"
+        }
+    },
+
+    // ===== 武陵城 4 条预录滑索送货路线 =====
+    // 每条 = 步行到起点滑索 → 上索 → 滑行(可多段) → 下索 → 步行到送货 NPC。
+    // 由 Go (SeizeDeliveryJobsDepartureAction.runDeliverRoute) 按终点名调用：节点名 = SeizeDeliveryJobsDeliverRoute<Endpoint>。
+    // 终点名与 SeizeDeliveryJobsEndpointFilter.json 一致：Owl / MaterialResearchInstitute / Observatory / TechProductionOffice。
+    // 下索后不交货，交货由 Go runSubmitEntry（SeizeDeliveryJobsSubmitEntry）负责。
+    // TODO(博士): 所有 path / target 坐标为占位空值，待实机用 map_tracker_editor.py 录入（map02_lv002）后替换。
+
+    // ---------- 起点滑索步行（4 条路线共用，待录） ----------
+    "SeizeDeliveryJobsDeliverWalkToZipline": {
+        "desc": "送货-步行到起点滑索架前（4 条路线共用）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerMove",
+        "custom_action_param": {
+            "map_name": "map02_lv002",
+            "path": [
+                // TODO(博士): 待录入起点滑索步行路径
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-步行到起点滑索"
+        }
+    },
+
+    // ========== 终点 1：Owl（猫头鹰，右下） ==========
+    "SeizeDeliveryJobsDeliverRouteOwl": {
+        "desc": "送货路线-猫头鹰（右下）：步行→上索→滑行→下索→步行到 NPC",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsDeliverWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteOwlZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteOwlWalkToNpc"
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-前往猫头鹰"
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteOwlZipline": {
+        "desc": "送货-猫头鹰 滑行到目的地滑索架",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {
+            "map_name": "map02_lv002",
+            "target": [
+                // TODO(博士): 待录入猫头鹰滑索 target
+            ]
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteOwlWalkToNpc": {
+        "desc": "送货-猫头鹰 下索后步行到送货 NPC",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerMove",
+        "custom_action_param": {
+            "map_name": "map02_lv002",
+            "path": [
+                // TODO(博士): 待录入猫头鹰下索→NPC 步行路径
+            ]
+        }
+    },
+
+    // ========== 终点 2：MaterialResearchInstitute（材料研究所，左下） ==========
+    "SeizeDeliveryJobsDeliverRouteMaterialResearchInstitute": {
+        "desc": "送货路线-材料研究所（左下）：步行→上索→滑行→下索→步行到 NPC",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsDeliverWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteMaterialResearchInstituteZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteMaterialResearchInstituteWalkToNpc"
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-前往材料研究所"
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteMaterialResearchInstituteZipline": {
+        "desc": "送货-材料研究所 滑行到目的地滑索架",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {
+            "map_name": "map02_lv002",
+            "target": [
+                // TODO(博士): 待录入材料研究所滑索 target
+            ]
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteMaterialResearchInstituteWalkToNpc": {
+        "desc": "送货-材料研究所 下索后步行到送货 NPC",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerMove",
+        "custom_action_param": {
+            "map_name": "map02_lv002",
+            "path": [
+                // TODO(博士): 待录入材料研究所下索→NPC 步行路径
+            ]
+        }
+    },
+
+    // ========== 终点 3：Observatory（观测站，右上） ==========
+    "SeizeDeliveryJobsDeliverRouteObservatory": {
+        "desc": "送货路线-观测站（右上）：步行→上索→滑行→下索→步行到 NPC",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsDeliverWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteObservatoryZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteObservatoryWalkToNpc"
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-前往观测站"
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteObservatoryZipline": {
+        "desc": "送货-观测站 滑行到目的地滑索架",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {
+            "map_name": "map02_lv002",
+            "target": [
+                // TODO(博士): 待录入观测站滑索 target
+            ]
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteObservatoryWalkToNpc": {
+        "desc": "送货-观测站 下索后步行到送货 NPC",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerMove",
+        "custom_action_param": {
+            "map_name": "map02_lv002",
+            "path": [
+                // TODO(博士): 待录入观测站下索→NPC 步行路径
+            ]
+        }
+    },
+
+    // ========== 终点 4：TechProductionOffice（技术生产办公室，左上） ==========
+    "SeizeDeliveryJobsDeliverRouteTechProductionOffice": {
+        "desc": "送货路线-技术生产办公室（左上）：步行→上索→滑行→下索→步行到 NPC",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsDeliverWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteTechProductionOfficeZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteTechProductionOfficeWalkToNpc"
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-前往技术生产办公室"
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteTechProductionOfficeZipline": {
+        "desc": "送货-技术生产办公室 滑行到目的地滑索架",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {
+            "map_name": "map02_lv002",
+            "target": [
+                // TODO(博士): 待录入技术生产办公室滑索 target
+            ]
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteTechProductionOfficeWalkToNpc": {
+        "desc": "送货-技术生产办公室 下索后步行到送货 NPC",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerMove",
+        "custom_action_param": {
+            "map_name": "map02_lv002",
+            "path": [
+                // TODO(博士): 待录入技术生产办公室下索→NPC 步行路径
+            ]
+        }
+    }
+}

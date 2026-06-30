@@ -17,7 +17,31 @@ const (
 	seizeDeliveryJobsDepartureComponent          = "SeizeDeliveryJobsDepartureAction"
 	seizeDeliveryJobsBlueTaskLocationTemplate    = "image/SeizeDeliveryJobs/BlueTaskLocation.png"
 	seizeDeliveryJobsBlueTaskLocationTemplateAlt = "image/SeizeDeliveryJobs/BlueTaskLocation2.png"
+
+	// seizeDeliveryJobsWulingCityMap is the map where the pre-recorded zipline delivery routes apply.
+	seizeDeliveryJobsWulingCityMap = "map02_lv002"
+	// seizeDeliveryJobsDeliverRoutePrefix is the pipeline node prefix for the pre-recorded delivery routes.
+	seizeDeliveryJobsDeliverRoutePrefix = "SeizeDeliveryJobsDeliverRoute"
+	// seizeDeliveryJobsEndpointMatchRadius is the max distance (in map units) within which a blue marker
+	// is considered to match a known delivery endpoint. Beyond this we fall back to NavMesh (runGoal).
+	seizeDeliveryJobsEndpointMatchRadius = 30.0
 )
+
+// seizeDeliveryJobsWulingEndpoint names a fixed delivery endpoint in Wuling City. The names match the
+// endpoint nodes in SeizeDeliveryJobsEndpointFilter.json and the route nodes in SeizeDeliveryJobsDeliverRoutes.json.
+type seizeDeliveryJobsWulingEndpoint struct {
+	Name   string
+	Target [2]float64
+}
+
+// seizeDeliveryJobsWulingEndpoints holds the four Wuling City delivery points and their world coordinates.
+// TODO(博士): 坐标为占位值，待实机用 map_tracker_editor.py 录入后替换（map02_lv002）。
+var seizeDeliveryJobsWulingEndpoints = []seizeDeliveryJobsWulingEndpoint{
+	{Name: "Owl", Target: [2]float64{0, 0}},                       // 猫头鹰（右下）
+	{Name: "MaterialResearchInstitute", Target: [2]float64{0, 0}}, // 材料研究所（左下）
+	{Name: "Observatory", Target: [2]float64{0, 0}},               // 观测站（右上）
+	{Name: "TechProductionOffice", Target: [2]float64{0, 0}},      // 技术生产办公室（左上）
+}
 
 // SeizeDeliveryJobsDepartureAction navigates from the tracked task marker back in the open world.
 type SeizeDeliveryJobsDepartureAction struct{}
@@ -29,6 +53,8 @@ type seizeDeliveryJobsDepartureParam struct {
 type seizeDeliveryJobsCachedDestination struct {
 	MapName string
 	Target  [2]float64
+	// Endpoint is the matched fixed delivery endpoint name (empty if none / fall back to NavMesh).
+	Endpoint string
 }
 
 var seizeDeliveryJobsDestinationCache = struct {
@@ -61,6 +87,7 @@ func (a *SeizeDeliveryJobsDepartureAction) Run(ctx *maa.Context, arg *maa.Custom
 	// 2. Find the destination on the big-map, or use a cached one if currently retrying
 	var mapName string
 	var target [2]float64
+	var endpoint string
 	if param.IsRetry {
 		// Current call is a retry, then use cached destination
 		cached, ok := a.loadCachedDestination()
@@ -72,15 +99,17 @@ func (a *SeizeDeliveryJobsDepartureAction) Run(ctx *maa.Context, arg *maa.Custom
 		}
 		mapName = cached.MapName
 		target = cached.Target
+		endpoint = cached.Endpoint
 		log.Info().
 			Str("component", seizeDeliveryJobsDepartureComponent).
 			Str("map", mapName).
 			Float64("targetX", target[0]).
 			Float64("targetY", target[1]).
+			Str("endpoint", endpoint).
 			Msg("using cached delivery job destination")
 	} else {
-		// Current call is the first attempt, find the destination and cache it
-		screenTarget, ok := a.findAndCacheTarget(ctx, arg, &mapName, &target)
+		// Current call is the first attempt, find the destination, resolve the endpoint, and cache both
+		screenTarget, ok := a.findAndCacheTarget(ctx, arg, &mapName, &target, &endpoint)
 		if !ok {
 			return false
 		}
@@ -102,9 +131,16 @@ func (a *SeizeDeliveryJobsDepartureAction) Run(ctx *maa.Context, arg *maa.Custom
 		return false
 	}
 
-	// 4. Run the goal to navigate to the destination
-	if !a.runGoal(ctx, arg, mapName, target) {
-		return false
+	// 4. Navigate to the destination: prefer the pre-recorded zipline route if the endpoint is known,
+	//    otherwise fall back to NavMesh (runGoal).
+	if endpoint != "" {
+		if !a.runDeliverRoute(ctx, endpoint) {
+			return false
+		}
+	} else {
+		if !a.runGoal(ctx, arg, mapName, target) {
+			return false
+		}
 	}
 
 	// 5. After reaching the destination, submit the delivery job
@@ -123,15 +159,18 @@ func (a *SeizeDeliveryJobsDepartureAction) parseParam(paramStr string) (*seizeDe
 	return &param, nil
 }
 
-func (a *SeizeDeliveryJobsDepartureAction) findAndCacheTarget(ctx *maa.Context, arg *maa.CustomActionArg, mapName *string, target *[2]float64) ([2]int, bool) {
+func (a *SeizeDeliveryJobsDepartureAction) findAndCacheTarget(ctx *maa.Context, arg *maa.CustomActionArg, mapName *string, target *[2]float64, endpoint *string) ([2]int, bool) {
 	foundMapName, foundTarget, screenTarget, ok := a.findTarget(ctx, arg)
 	if !ok {
 		return [2]int{}, false
 	}
 
+	foundEndpoint := a.nearestEndpoint(foundMapName, foundTarget)
+
 	*mapName = foundMapName
 	*target = foundTarget
-	a.saveCachedDestination(foundMapName, foundTarget)
+	*endpoint = foundEndpoint
+	a.saveCachedDestination(foundMapName, foundTarget, foundEndpoint)
 
 	log.Info().
 		Str("component", seizeDeliveryJobsDepartureComponent).
@@ -140,17 +179,53 @@ func (a *SeizeDeliveryJobsDepartureAction) findAndCacheTarget(ctx *maa.Context, 
 		Float64("targetY", foundTarget[1]).
 		Int("screenTargetX", screenTarget[0]).
 		Int("screenTargetY", screenTarget[1]).
+		Str("endpoint", foundEndpoint).
 		Msg("recorded delivery job destination")
 
 	return screenTarget, true
 }
 
-func (a *SeizeDeliveryJobsDepartureAction) saveCachedDestination(mapName string, target [2]float64) {
+// nearestEndpoint returns the name of the fixed Wuling City delivery endpoint closest to the given
+// world target, provided it lies within seizeDeliveryJobsEndpointMatchRadius. It returns an empty
+// string for non-Wuling maps or when no endpoint is close enough (caller falls back to NavMesh).
+func (a *SeizeDeliveryJobsDepartureAction) nearestEndpoint(mapName string, target [2]float64) string {
+	if mapName != seizeDeliveryJobsWulingCityMap {
+		return ""
+	}
+
+	bestName := ""
+	bestDist := math.MaxFloat64
+	for _, ep := range seizeDeliveryJobsWulingEndpoints {
+		dx := ep.Target[0] - target[0]
+		dy := ep.Target[1] - target[1]
+		dist := math.Hypot(dx, dy)
+		if dist < bestDist {
+			bestDist = dist
+			bestName = ep.Name
+		}
+	}
+
+	if bestName == "" || bestDist > seizeDeliveryJobsEndpointMatchRadius {
+		log.Warn().
+			Str("component", seizeDeliveryJobsDepartureComponent).
+			Float64("targetX", target[0]).
+			Float64("targetY", target[1]).
+			Float64("nearestDist", bestDist).
+			Str("nearest", bestName).
+			Msg("no delivery endpoint within match radius, falling back to NavMesh")
+		return ""
+	}
+
+	return bestName
+}
+
+func (a *SeizeDeliveryJobsDepartureAction) saveCachedDestination(mapName string, target [2]float64, endpoint string) {
 	seizeDeliveryJobsDestinationCache.Lock()
 	defer seizeDeliveryJobsDestinationCache.Unlock()
 	seizeDeliveryJobsDestinationCache.value = seizeDeliveryJobsCachedDestination{
-		MapName: mapName,
-		Target:  target,
+		MapName:  mapName,
+		Target:   target,
+		Endpoint: endpoint,
 	}
 	seizeDeliveryJobsDestinationCache.hasValue = true
 }
@@ -337,6 +412,25 @@ func (a *SeizeDeliveryJobsDepartureAction) runGoal(ctx *maa.Context, arg *maa.Cu
 			Msg("MapTrackerGoal failed")
 	}
 	return ok
+}
+
+// runDeliverRoute runs the pre-recorded zipline delivery route for the given endpoint name by invoking
+// the matching pipeline node SeizeDeliveryJobsDeliverRoute<Endpoint>.
+func (a *SeizeDeliveryJobsDepartureAction) runDeliverRoute(ctx *maa.Context, endpoint string) bool {
+	node := seizeDeliveryJobsDeliverRoutePrefix + endpoint
+	if detail, err := ctx.RunTask(node); err != nil || detail == nil || !detail.Status.Success() {
+		event := log.Error().
+			Err(err).
+			Str("component", seizeDeliveryJobsDepartureComponent).
+			Str("endpoint", endpoint).
+			Str("node", node)
+		if detail != nil {
+			event = event.Int64("subtaskID", detail.ID).Str("subtaskStatus", detail.Status.String())
+		}
+		event.Msg("failed to run pre-recorded delivery route")
+		return false
+	}
+	return true
 }
 
 func (a *SeizeDeliveryJobsDepartureAction) runSubmitEntry(ctx *maa.Context) bool {

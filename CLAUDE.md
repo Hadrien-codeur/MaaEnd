@@ -448,60 +448,47 @@ python tools/build_and_install.py
 
 ## 18. 当前进度存档（接力时先读此节，确认后删除）
 
-> ⚠️ **接力操作说明**：新会话开始后，Claude 先把本节内容完整发出来让博士确认，确认无误后删除本节，再继续讨论/开发。
+### 18.1 状态：取货段已走通 ✅；送货 Go 骨架 + 4 条路线骨架已写好并编译 ✅；正在录 Observatory 路线坐标
 
-### 18.1 状态：取货段已实机测试，流程已走到「上①号滑索成功」，卡在②号滑索 target 坐标填错，待博士回来重录目的地滑索坐标
+**取货段结论（2026-06-30 测试）**：滑索取货路线本身**已成功**。
 
-完整实施计划见 `.claude/plans/zipline-fast-plan.md`（已通过博士审批）。
+- 新坐标全部验证有效：①→②步行 `[664.5,734.2]→[665.7,733.1]→[673.2,732.9]`、③号滑索 target `[684.4,785.5]`、④→取货点步行 `[683.3,785.5]→[683.3,786.8]→[684.4,787.9]→[675.8,788.1]→[674.9,789.2]`。
+- 实测下索后步行最终停在 `[674.9,788.7]`，距目标 `[674.9,789.2]` 仅 0.5m，精准到位。
+- 测试时出现的「来回走 + 最终 Fatal」是**假失败**：因为测试身上没有真实委托货物，仓储节点前不弹「接取货物」按钮 → `SeizeDeliveryJobsFetchGoods` 模板匹配失败（0.38 < 0.7）→ 触发 `...Backward` 校正节点跑满 max_hit=5 → `FatalCannotFetchGoods`。与路线无关。
+- 完整带货闭环验证**暂缓**，博士选择直接进入送货段开发。
 
-**当前急需（接力第一步）**：博士回来重录**②号滑索（目的地/落点滑索架）的地图坐标**，贴 `③=[x,y]`，Claude 替换进 `SeizeDeliveryJobsWulingCityZipline` 的 `target` 即可。
+### 18.2 第 3 步已完成：送货 Go 骨架 + 4 条路线骨架（已编译安装）
 
-**本次测试结论（2026-06-29）**：
-- 取货坐标已填入并测过，传送+「先确保回大世界」前置都正常，**成功上①号起点滑索**。
-- 失败点：`SeizeDeliveryJobsWulingCityZipline` 的 `target` 填成了 `[673.2, 731.9]`，距当前位置仅 **1.14m** —— 这其实是**起点滑索架自己**，不是目的地滑索架。
-- `MapTrackerZipline` 的 `target` 语义（zipline.go:27）= **你要滑过去落地的那个目的地滑索架坐标**。算法靠「当前→target」算方向。距离太近→方向算不出→视角狂转约 180°→`Zipline fast travel did not start`（画面相似度 0.9998 没动）→失败。
-- 正确值应靠近落点 ④ `[684.4, 785.5]` 一带（Y≈785、X≈684），需博士重录。
+**已改 `agent/go-service/seizedeliveryjobs/departure.go`**（编译/vet/build_and_install 均通过）：
 
-**独立测试任务（本次新建，调试用）**：`SeizeDeliveryJobsTestPickup`，入口 `SeizeDeliveryJobsTestPickupEntry`，跳过抢单，直接「确保回大世界→传送武陵城→滑索路线→接货→早停」。文件：`assets/tasks/SeizeDeliveryJobsTestPickup.json` + `interface.json` include（已同步 install）+ 5 语言 locale。
+1. 加武陵城 4 送货点世界坐标表 `seizeDeliveryJobsWulingEndpoints`（占位 `[0,0]`，待录）。
+2. 加 `nearestEndpoint(mapName, target)`：蓝标世界坐标比最近送货点，半径 30m 内返回终点名，否则空 → fallback 回 `runGoal`（NavMesh）；非武陵城也 fallback。
+3. 加 `runDeliverRoute(ctx, endpoint)`：调 `SeizeDeliveryJobsDeliverRoute<终点名>`。
+4. 缓存结构加 `Endpoint` 字段，retry 复用。
+5. `Run()` 第 4 步：终点已知走滑索路线，否则走 NavMesh。
 
-- 取货只有 **1 段滑索**（已确认）。
-- 工具启动坑：脚本需要 `opencv-python`（`pip install opencv-python`），`maafw` 已装；或用 `uv run` 自动装依赖。必须在项目根目录运行。
+**已建 `assets/resource/pipeline/SeizeDeliveryJobs/SeizeDeliveryJobsDeliverRoutes.json`**：4 入口 `SubTask`（Owl/MaterialResearchInstitute/Observatory/TechProductionOffice），每条 = `DeliverWalkToZipline`(4条共用) → GetOnZipline → `<终点>Zipline` → GetOffZipline → `<终点>WalkToNpc`。坐标全占位 TODO。
+> ⚠️ 占位 `[0,0]` 安全：真实蓝标不会落在 [0,0] 30m 内，误跑会自动 fallback NavMesh，不会乱滑。
 
-### 18.2 方案总览（方案 B：预录固定滑索路线）
+**已建 Observatory 路线测试任务**：`SeizeDeliveryJobsTestDeliverObservatory`（入口 `SeizeDeliveryJobsTestDeliverObservatoryEntry`，节点在 DeliverRoutes.json）。流程：确保回大世界 → 传送武陵城 → 跑取货路线到取货点（真实送货起点）→ 跑 Observatory 送货路线 → 停。**不做取货/提交识别**，仅核对路线+落点。已 include 进 interface.json + 5 语言 locale。
 
-把武陵城「取货」「送货」两段地面自动寻路，替换为「步行→上滑索→滑行→下滑索→步行」预录路线，减少地面出怪/好友设施干扰。
+### 18.3 滑索技术调研结论（关键，已确认）
 
-- **取货**（纯 Pipeline，不改 Go）：固定 1 条路线，1 段滑索。
-- **送货**（改少量 Go + 新增 Pipeline）：4 个送货点，4 条路线，起点滑索相同、方向/段数不同。
+- **连滑多段无需特殊节点**：`MapTrackerZipline` 每段=推断位置→转向 target（偏差≤9°自动跳过转向）→点击发射→等静止判定。「连滑」段因下一架在当前方向上、偏差小会自动跳过转向；「转向」段偏差大会自动转。**N 段就串 N 个 `MapTrackerZipline` 节点，每段一个 target，用法完全一样。**
+- **好友滑索规避：目前仓库无现成流程**。`MapTrackerZipline` 纯坐标驱动，不扫图标/不看光环颜色（好友=蓝、自己=浅黄）。天然有一定规避力（瞄精确自己坐标）但不保证。**决定：先按纯坐标录 Observatory 实测，若不误锁就不做；真误锁再针对性加 Go 颜色规避**。见 [[issue-3857-zipline-recognition]]。
 
-### 18.3 关键技术决策（已确认）
+### 18.4 下一步（待博士实机操作）
 
-1. **好友滑索不影响**：`MapTrackerZipline` 坐标驱动，不扫图标。
-2. **送货终点判别**：用 `departure.go` 已识别的蓝标世界坐标，**比较最近的固定送货点**确定终点（不受地图缩放/屏幕范围影响，解决了左上技术生产办公室在屏幕外识别不到的担忧）。需改少量 Go。
-3. **终点判别放送货阶段**，不在抢单阶段（抢单不开指定送货点时没有识别终点的时机）。
-4. **重试兼容**：缓存结构加 `Endpoint` 字段，retry 复用缓存终点重跑路线。
+1. **重录起点滑索步行段**（博士说要重录）→ 填 `SeizeDeliveryJobsDeliverWalkToZipline.path`。
+2. **录 Observatory 路线**：滑索 target 序列（多段则把 `SeizeDeliveryJobsDeliverRouteObservatoryZipline` 扩成多个节点，每段一 target）+ 下索→NPC 步行路径（`...ObservatoryWalkToNpc.path`）+ 观测站送货点世界坐标（填 Go `seizeDeliveryJobsWulingEndpoints` 的 Observatory）。
+3. Claude 填入后重新 `build_and_install` + 重启 → 博士跑 `SeizeDeliveryJobsTestDeliverObservatory` 核对。
+4. Observatory 跑通后，再录其余 3 个终点。
 
-### 18.4 实施顺序（每步可独立测试）
+### 18.5 复用节点 & 文件速查
 
-1. ✅ **取货 Pipeline 骨架 + 坐标**（已完成并测试）：`SeizeDeliveryJobsPost.json` 的 `SeizeDeliveryJobsWalkToDepotNodeWulingCity` 已由 `MapTrackerGoal` 改为 `SubTask` 滑索序列，3 个子节点坐标已填：
-    - `SeizeDeliveryJobsWulingCityWalkToZipline`（步行到起点滑索，path 3 点，已填 ✅）
-    - `SeizeDeliveryJobsWulingCityZipline`（滑行到目的地滑索，target ⚠️ **填错待重录**）
-    - `SeizeDeliveryJobsWulingCityWalkFromZipline`（步行到取货点，path 6 点，末点 [674.9,789.2]，已填 ✅）
-    - 上/下索复用 `MapTrackerOpenWorld_GetOnZipline`/`GetOffZipline`。
-2. ⏳ **（接力第一步）重录②号滑索 target**：录目的地滑索架坐标，替换 `SeizeDeliveryJobsWulingCityZipline.target` → 用独立测试任务重测 → 取货段收尾。
-3. **送货 Go 骨架**：改 `departure.go`（加坐标表占位、`nearestEndpoint`、`runDeliverRoute`、缓存加 Endpoint、`Run()` 第5步换函数）+ 新建 `SeizeDeliveryJobsDeliverRoutes.json`（4 个 `SubTask` 入口）→ 编译。
-4. **录送货坐标**：博士实机录 4 条路线 + 4 终点世界坐标 → 填入 → 重新编译。
-5. **联调**：4 终点逐一验证。
-
-### 18.5 待博士实机录入的坐标
-
-用 `python tools/map_tracker/map_tracker_editor.py`（地图 map02_lv002）：
-
-- **取货（当前急需）**：① 传送落点坐标 ② 起点滑索架前坐标（这两点填 `WulingCityWalkToZipline` 的 path）③ ②号滑索架坐标（填 `WulingCityZipline` 的 target）④ ②号滑索落点坐标（填 `WulingCityWalkFromZipline` 的 path 起点；终点 [674.9,789.2] 已写好）。
-- 送货：起点滑索步行（共用）/ 4 终点各自滑索 target 序列 / 4 终点下索→NPC 步行 / 4 个送货点世界坐标。
-
-### 18.6 复用节点速查
-
-- 上/下索：`MapTrackerOpenWorld_GetOnZipline` / `GetOffZipline`（`MapTracker/OpenWorld.json`）
-- `MapTrackerZipline` / `MapTrackerMove`（custom_action）/ `SubTask`（顺序执行）
-- 送货交货仍由 Go `runSubmitEntry`（`SeizeDeliveryJobsSubmitEntry`）负责，下索后不需在 Pipeline 交货。
+- 取货路线：`SeizeDeliveryJobsPost.json` 的 `SeizeDeliveryJobsWalkToDepotNodeWulingCity`（SubTask 滑索序列，已走通）。
+- 送货路线：`SeizeDeliveryJobsDeliverRoutes.json`（4 入口 + 共用起点滑索步行 + Observatory 测试入口）。
+- 上/下索：`MapTrackerOpenWorld_GetOnZipline` / `GetOffZipline`。
+- 送货交货由 Go `runSubmitEntry`（`SeizeDeliveryJobsSubmitEntry`），下索后 Pipeline 不交货。
+- 测试任务：`SeizeDeliveryJobsTestPickup`（取货）/ `SeizeDeliveryJobsTestDeliverObservatory`（送货-观测站）。
+- 二进制 v2.15.0；改 Go 后必须 `python tools/build_and_install.py` + 完整重启 MaaEnd.exe。改 Pipeline JSON 也需重启。

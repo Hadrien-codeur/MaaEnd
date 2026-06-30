@@ -255,8 +255,8 @@
         "custom_action_param": {
             "map_name": "map02_lv002",
             "target": [
-                673.2,
-                731.9
+                684.4,
+                785.5
             ]
         },
         "focus": {
@@ -271,10 +271,6 @@
         "custom_action_param": {
             "map_name": "map02_lv002",
             "path": [
-                [
-                    684.4,
-                    785.5
-                ],
                 [
                     683.3,
                     785.5
