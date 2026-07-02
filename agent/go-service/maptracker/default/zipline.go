@@ -32,6 +32,10 @@ type MapTrackerZiplineParam struct {
 	Timeout int64 `json:"timeout,omitempty"`
 	// MapNameMatchRule has the same definition as [MapTrackerMoveParam.MapNameMatchRule].
 	MapNameMatchRule string `json:"map_name_match_rule,omitempty"`
+	// ChainMaxPress is the maximum number of times to press the "long zipline" relay key (E) while
+	// airborne to chain onto the next zipline without landing. Zero (default) disables chaining and
+	// keeps the classic land-and-relaunch behavior. When N>0, the player lands on the (N+1)-th zipline.
+	ChainMaxPress int `json:"chain_max_press,omitempty"`
 }
 
 var mapTrackerZiplineDefaultParam = MapTrackerZiplineParam{
@@ -49,6 +53,11 @@ const (
 	ZIPLINE_STILL_THRESHOLD_INIT    = 0.985
 	ZIPLINE_STILL_THRESHOLD_FINAL   = 0.875
 	ZIPLINE_STILL_THRESHOLD_SPEED   = 0.005 // reduced per second
+
+	// ZIPLINE_CHAIN_RELAY_NODE is the reusable pipeline node that detects the on-screen "long zipline"
+	// relay prompt and presses E to chain onto the next zipline while airborne. Reused here so the
+	// recognition ROI/threshold stay configurable in JSON (Pipeline owns flow, Go owns the hard part).
+	ZIPLINE_CHAIN_RELAY_NODE = "RealTimeAutoZipline"
 )
 
 var _ maa.CustomActionRunner = &MapTrackerZipline{}
@@ -125,11 +134,33 @@ func (a *MapTrackerZipline) Run(ctx *maa.Context, arg *maa.CustomActionArg) bool
 	deadline = time.Now().Add(time.Duration(param.Timeout) * time.Millisecond) // Refresh deadline
 	stillCheckInterval := time.Duration(ZIPLINE_STILL_CHECK_INTERVAL_MS) * time.Millisecond
 	stillStartTime := time.Now()
+	pressed := 0
 	for time.Now().Before(deadline) {
 		if ctx.GetTasker().Stopping() {
 			log.Warn().Msg("Task is stopping while waiting for zipline")
 			return false
 		}
+
+		// Chain relay: while still airborne and below the press budget, try to detect the on-screen
+		// "long zipline" prompt and press E to chain onto the next zipline without landing. Reusing the
+		// RealTimeAutoZipline node means success == "prompt seen and E pressed this round". Once the
+		// budget is spent we stop pressing, so the final zipline's prompt is intentionally ignored and
+		// the player lands there.
+		if pressed < param.ChainMaxPress {
+			detail, relayErr := ctx.RunTask(ZIPLINE_CHAIN_RELAY_NODE)
+			if relayErr == nil && detail != nil && detail.Status.Success() {
+				pressed++
+				log.Info().Int("pressed", pressed).Int("chainMaxPress", param.ChainMaxPress).Msg("Zipline chain relay key pressed")
+				maafocus.Print(ctx, fmt.Sprintf("连滑接力 %d/%d", pressed, param.ChainMaxPress))
+				// Reset the stillness baseline so the brief post-press similarity is not mistaken for landing.
+				if resetFrame, capErr := captureFullScreen(ctrl); capErr == nil {
+					prevFrame = resetFrame
+				}
+				stillStartTime = time.Now()
+				continue
+			}
+		}
+
 		time.Sleep(stillCheckInterval)
 		currFrame, err := captureFullScreen(ctrl)
 		if err != nil {
@@ -141,13 +172,13 @@ func (a *MapTrackerZipline) Run(ctx *maa.Context, arg *maa.CustomActionArg) bool
 		threshold := max(ZIPLINE_STILL_THRESHOLD_FINAL, ZIPLINE_STILL_THRESHOLD_INIT-elapsed*ZIPLINE_STILL_THRESHOLD_SPEED)
 		log.Debug().Float64("similarity", stillSimilarity).Float64("threshold", threshold).Msg("Zipline stillness check")
 		if stillSimilarity >= threshold {
-			log.Info().Float64("similarity", stillSimilarity).Msg("Zipline fast travel completed (screen still)")
+			log.Info().Float64("similarity", stillSimilarity).Int("pressed", pressed).Msg("Zipline fast travel completed (screen still)")
 			maafocus.Print(ctx, "滑索移动完毕")
 			return true
 		}
 		prevFrame = currFrame
 	}
-	log.Warn().Int64("timeout", param.Timeout).Msg("Zipline fast travel timed out")
+	log.Warn().Int64("timeout", param.Timeout).Int("pressed", pressed).Int("chainMaxPress", param.ChainMaxPress).Msg("Zipline fast travel timed out")
 	return false
 }
 
@@ -177,6 +208,9 @@ func (a *MapTrackerZipline) parseParam(paramStr string) (*MapTrackerZiplineParam
 	}
 	if param.MapNameMatchRule == "" {
 		param.MapNameMatchRule = mapTrackerMoveDefaultParam.MapNameMatchRule
+	}
+	if param.ChainMaxPress < 0 {
+		return nil, fmt.Errorf("chain_max_press must be non-negative, got %d", param.ChainMaxPress)
 	}
 	mapNameRegex := buildMapNameRegex(param.MapNameMatchRule, param.MapName)
 	if _, err := regexp.Compile(mapNameRegex); err != nil {

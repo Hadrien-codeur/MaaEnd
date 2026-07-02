@@ -39,7 +39,7 @@ type seizeDeliveryJobsWulingEndpoint struct {
 var seizeDeliveryJobsWulingEndpoints = []seizeDeliveryJobsWulingEndpoint{
 	{Name: "Owl", Target: [2]float64{0, 0}},                       // 猫头鹰（右下）
 	{Name: "MaterialResearchInstitute", Target: [2]float64{0, 0}}, // 材料研究所（左下）
-	{Name: "Observatory", Target: [2]float64{0, 0}},               // 观测站（右上）
+	{Name: "Observatory", Target: [2]float64{617.1, 358.0}},       // 观测站（右上）
 	{Name: "TechProductionOffice", Target: [2]float64{0, 0}},      // 技术生产办公室（左上）
 }
 

@@ -249,6 +249,13 @@
                     "type": "integer",
                     "exclusiveMinimum": 0,
                     "default": 15000
+                },
+                "chain_max_press": {
+                    "title": "Chain Max Press",
+                    "description": "Max times to press the relay key (E) while airborne to chain onto the next zipline without landing. 0 (default) disables chaining (classic land-and-relaunch). When N>0, the player lands on the (N+1)-th zipline.",
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0
                 }
             }
         },

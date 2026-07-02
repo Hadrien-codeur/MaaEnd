@@ -70,7 +70,26 @@
         "custom_action_param": {
             "map_name": "map02_lv002",
             "path": [
-                // TODO(博士): 待录入起点滑索步行路径
+                [
+                    675.7,
+                    788.1
+                ],
+                [
+                    683.3,
+                    787.9
+                ],
+                [
+                    683.3,
+                    786.7
+                ],
+                [
+                    684.5,
+                    786.7
+                ],
+                [
+                    684.5,
+                    785.5
+                ]
             ]
         },
         "focus": {
@@ -168,7 +187,7 @@
 
     // ========== 终点 3：Observatory（观测站，右上） ==========
     "SeizeDeliveryJobsDeliverRouteObservatory": {
-        "desc": "送货路线-观测站（右上）：步行→上索→滑行→下索→步行到 NPC",
+        "desc": "送货路线-观测站（右上）：步行→上索→连滑段A→连滑段B→下索→步行到 NPC",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "SubTask",
@@ -176,7 +195,8 @@
             "sub": [
                 "SeizeDeliveryJobsDeliverWalkToZipline",
                 "MapTrackerOpenWorld_GetOnZipline",
-                "SeizeDeliveryJobsDeliverRouteObservatoryZipline",
+                "SeizeDeliveryJobsDeliverRouteObservatoryZiplineChainA",
+                "SeizeDeliveryJobsDeliverRouteObservatoryZiplineChainB",
                 "MapTrackerOpenWorld_GetOffZipline",
                 "SeizeDeliveryJobsDeliverRouteObservatoryWalkToNpc"
             ]
@@ -185,16 +205,36 @@
             "Node.Recognition.Succeeded": "送货-前往观测站"
         }
     },
-    "SeizeDeliveryJobsDeliverRouteObservatoryZipline": {
-        "desc": "送货-观测站 滑行到目的地滑索架",
+    // 连滑段A：朝首架 [673.3,731.9] 发射，途中按 4 次 E 接力经过 651.8/589.2/536.8，落在 [577.0,480.6]。
+    "SeizeDeliveryJobsDeliverRouteObservatoryZiplineChainA": {
+        "desc": "送货-观测站 连滑段A（发射朝 [673.3,731.9]，按4次E接力，落 [577.0,480.6]）",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "target": [
-                // TODO(博士): 待录入观测站滑索 target
-            ]
+                673.3,
+                731.9
+            ],
+            "chain_max_press": 4,
+            "timeout": 25000
+        }
+    },
+    // 连滑段B：落地后不重新上索，朝 [586.9,420.4] 发射，途中按 2 次 E 接力经过 385.5，落在 [619.5,358.1]。
+    "SeizeDeliveryJobsDeliverRouteObservatoryZiplineChainB": {
+        "desc": "送货-观测站 连滑段B（发射朝 [586.9,420.4]，按2次E接力，落 [619.5,358.1] 终点架）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {
+            "map_name": "map02_lv002",
+            "target": [
+                586.9,
+                420.4
+            ],
+            "chain_max_press": 2,
+            "timeout": 25000
         }
     },
     "SeizeDeliveryJobsDeliverRouteObservatoryWalkToNpc": {
@@ -205,7 +245,14 @@
         "custom_action_param": {
             "map_name": "map02_lv002",
             "path": [
-                // TODO(博士): 待录入观测站下索→NPC 步行路径
+                [
+                    619.5,
+                    358.0
+                ],
+                [
+                    617.1,
+                    358.0
+                ]
             ]
         }
     },
