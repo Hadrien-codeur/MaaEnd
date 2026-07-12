@@ -218,7 +218,7 @@
                 731.9
             ],
             "chain_max_press": 4,
-            "timeout": 25000
+            "timeout": 40000
         }
     },
     // 连滑段B：落地后不重新上索，朝 [586.9,420.4] 发射，途中按 2 次 E 接力经过 385.5，落在 [619.5,358.1]。
@@ -234,7 +234,7 @@
                 420.4
             ],
             "chain_max_press": 2,
-            "timeout": 25000
+            "timeout": 30000
         }
     },
     "SeizeDeliveryJobsDeliverRouteObservatoryWalkToNpc": {

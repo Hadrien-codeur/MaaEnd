@@ -14,15 +14,17 @@
     "SeizeDeliveryJobsGuard": {
         "desc": "自动送委托的风险知悉拦截节点（此节点在 tasks 中跟随全自动送货选项默认开启）",
         "enabled": false,
+        "recognition": "DirectHit",
         "pre_delay": 0,
-        "action": "StopTask",
+        "action": "Custom",
+        "custom_action": "FalseAction",
         "post_delay": 0,
         "focus": {
-            "Node.Action.Starting": "您需要同意知悉可能的后果才能使用自动走路送货功能"
+            "Node.Recognition.Succeeded": "您需要同意知悉可能的后果才能使用自动走路送货功能"
         }
     },
     "SeizeDeliveryJobsReadyToSeize": {
-        "desc": "在运送委托列表，准备开始抢单",
+        "desc": "在运送委托列表，先检查不能抢单的几种情况，随后准备抢单",
         "pre_delay": 0,
         "post_delay": 0,
         "next": [
@@ -150,7 +152,11 @@
     },
     "SeizeDeliveryJobsLoop": {
         "desc": "等待委托列表静止，随后开始抢单",
-        "pre_wait_freezes": 1000, // 等待列表加载动画结束
+        "recognition": "And",
+        "all_of": [
+            "__SeizeDeliveryJobsRecoJobListLoaded"
+        ],
+        "pre_wait_freezes": 250,
         "pre_delay": 0,
         "post_delay": 0,
         "next": [
@@ -269,7 +275,8 @@
                 "expected": [
                     "16.3"
                 ],
-                "only_rec": true
+                "only_rec": true,
+                "order_by": "Vertical"
             },
             {
                 "sub_name": "OriginOcr",
@@ -285,7 +292,8 @@
                     "武陵城",
                     "Wuling City",
                     "무릉성"
-                ]
+                ],
+                "order_by": "Vertical"
             },
             {
                 "sub_name": "AcceptOcr",
@@ -304,7 +312,8 @@
                     "配達依頼を受ける",
                     "輸送依頼を受注",
                     "輸送依頼を受ける"
-                ]
+                ],
+                "order_by": "Vertical"
             },
             {
                 "sub_name": "ViewLocationOcr",
@@ -322,7 +331,8 @@
                     "(?i)View\\s*Location",
                     "位置を確認",
                     "위치 확인"
-                ]
+                ],
+                "order_by": "Vertical"
             }
         ],
         "box_index": 3
@@ -358,7 +368,8 @@
                 "expected": [
                     "11.9"
                 ],
-                "only_rec": true
+                "only_rec": true,
+                "order_by": "Vertical"
             },
             {
                 "sub_name": "OriginOcr",
@@ -374,7 +385,8 @@
                     "武陵城",
                     "Wuling City",
                     "무릉성"
-                ]
+                ],
+                "order_by": "Vertical"
             },
             {
                 "sub_name": "AcceptOcr",
@@ -393,7 +405,8 @@
                     "配達依頼を受ける",
                     "輸送依頼を受注",
                     "輸送依頼を受ける"
-                ]
+                ],
+                "order_by": "Vertical"
             },
             {
                 "sub_name": "ViewLocationOcr",
@@ -411,7 +424,8 @@
                     "(?i)View\\s*Location",
                     "位置を確認",
                     "위치 확인"
-                ]
+                ],
+                "order_by": "Vertical"
             }
         ],
         "box_index": 3
@@ -447,7 +461,8 @@
                 "expected": [
                     "10.6"
                 ],
-                "only_rec": true
+                "only_rec": true,
+                "order_by": "Vertical"
             },
             {
                 "sub_name": "OriginOcr",
@@ -465,7 +480,8 @@
                     "(?i)Test\\s*Area",
                     "実験区域",
                     "실험 구역"
-                ]
+                ],
+                "order_by": "Vertical"
             },
             {
                 "sub_name": "AcceptOcr",
@@ -484,7 +500,8 @@
                     "配達依頼を受ける",
                     "輸送依頼を受注",
                     "輸送依頼を受ける"
-                ]
+                ],
+                "order_by": "Vertical"
             },
             {
                 "sub_name": "ViewLocationOcr",
@@ -502,9 +519,19 @@
                     "(?i)View\\s*Location",
                     "位置を確認",
                     "위치 확인"
-                ]
+                ],
+                "order_by": "Vertical"
             }
         ],
         "box_index": 3
+    },
+    "SeizeDeliveryJobsTaskEnd": {
+        "desc": "任务结束节点：当重复次数用完时结束任务",
+        "enabled": true,
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Starting": "$task.SeizeDeliveryJobs.focus.taskEnd"
+        }
     }
 }

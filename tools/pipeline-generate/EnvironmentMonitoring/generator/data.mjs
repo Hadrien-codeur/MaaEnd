@@ -54,6 +54,13 @@ function buildExpectedFromLocaleMap(localeMap) {
     }).filter(Boolean);
 }
 
+function rawJson(value) {
+    return {
+        value,
+        raw: JSON.stringify(value, null, 4),
+    };
+}
+
 const routeResolver = createRouteResolver(ROUTE_CONFIG);
 
 function buildStationName(terminalId) {
@@ -89,40 +96,12 @@ function buildRow(mission, usedIds) {
     ];
     const AfterTrackedNext = route.isAdapted ? [`GoTo${Id}`] : [`${Id}NotAdapted`];
 
-    // 朝向节点：MapTarget 的 Heading 已合并到同一个 MapNavigateAction path；
-    // MapPath / MapGoal 仍需在移动后单独调用 HEADING，未配置 Heading 时退化为透传节点。
-    const AdjustHeadingNodeBody =
-        route.HasHeading && !route.HasNavigationHeading
-            ? {
-                  desc: `${sanitizeDisplayName(missionName)}任务中调整角色朝向`,
-                  pre_delay: 0,
-                  action: "Custom",
-                  custom_action: "MapNavigateAction",
-                  custom_action_param: {
-                      path: [
-                          {
-                              action: "HEADING",
-                              angle: route.Heading,
-                          },
-                      ],
-                  },
-                  post_delay: 0,
-                  rate_limit: 0,
-                  next: ["EnvironmentMonitoringTakePhoto"],
-              }
-            : {
-                  desc: `${sanitizeDisplayName(missionName)}任务无需调整角色朝向`,
-                  pre_delay: 0,
-                  post_delay: 0,
-                  rate_limit: 0,
-                  next: ["EnvironmentMonitoringTakePhoto"],
-              };
-
     return {
         Station,
         Id,
         MissionId: mission?.missionId,
         Name: sanitizeDisplayName(missionName),
+		NameKey: `task.EnvironmentMonitoring.route.${Id}.label`,
         GoToMonitoringTerminal,
         EnterMap: route.EnterMap,
         MapName: route.MapName,
@@ -132,16 +111,16 @@ function buildRow(mission, usedIds) {
         MapTargetTier: route.MapTargetTier,
         MapGoal: route.MapGoal,
         MapAssertRecognition: route.MapAssertRecognition,
-        MapAssertParam: route.MapAssertParam,
+        MapAssertParam: rawJson(route.MapAssertParam),
         CameraSwipeDirection: route.CameraSwipeDirection,
         CameraMaxHit: route.CameraMaxHit,
         ExpectedText: buildExpectedFromLocaleMap(mission.name),
         InExpectedText: buildExpectedFromLocaleMap(mission.shotTargetName),
-        TrackOrGoToNext,
-        AfterTrackedNext,
-        AdjustHeadingNodeBody,
+        OcrReplace: rawJson(route.Replace),
+        TrackOrGoToNext: rawJson(TrackOrGoToNext),
+        AfterTrackedNext: rawJson(AfterTrackedNext),
         MapNavigationAction: route.MapNavigationAction,
-        MapNavigationParam: route.MapNavigationParam,
+        MapNavigationParam: rawJson(route.MapNavigationParam),
     };
 }
 

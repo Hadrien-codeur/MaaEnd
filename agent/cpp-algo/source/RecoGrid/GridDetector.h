@@ -21,6 +21,9 @@ struct GridDetectOptions
     double colThresholdRatio = 0.40;
     int minRawSegmentLength = 10;
     double minKeptSegmentRatio = 0.70;
+    int lockedRowHeight = 0;
+    int lockedColWidth = 0;
+    double lockedSegmentTolerance = 0.35;
 };
 
 struct GridResult
@@ -37,6 +40,7 @@ struct GridResult
 };
 
 int SegmentLength(const Segment& segment);
+int ModalSegmentLength(const std::vector<Segment>& segments);
 cv::Mat NormalizeInputSize(const cv::Mat& src, cv::Size normalizedSize);
 cv::Mat CropRoi(const cv::Mat& src, cv::Rect roi);
 GridResult DetectGrid(const cv::Mat& image, const GridDetectOptions& options = {});

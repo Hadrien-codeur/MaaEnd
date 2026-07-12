@@ -129,32 +129,33 @@
         },
         "next": [
             //每一个节点命中后,将GiftOperatorName覆盖为对应干员名字
-            "GiftOperatorSelect_Perlica",
-            "GiftOperatorSelect_Yvonne",
-            "GiftOperatorSelect_Ardelia",
-            "GiftOperatorSelect_Gilberta",
-            "GiftOperatorSelect_ChenQianyu",
-            "GiftOperatorSelect_Wulfgard",
-            "GiftOperatorSelect_Antal",
-            "GiftOperatorSelect_Xaihi",
-            "GiftOperatorSelect_Lifeng",
-            "GiftOperatorSelect_Catcher",
-            "GiftOperatorSelect_Arclight",
-            "GiftOperatorSelect_Avywenna",
-            "GiftOperatorSelect_Laevatain",
-            "GiftOperatorSelect_Alesh",
-            "GiftOperatorSelect_Pogranichnik",
-            "GiftOperatorSelect_LastRite",
-            "GiftOperatorSelect_Ember",
-            "GiftOperatorSelect_Snowshine",
-            "GiftOperatorSelect_DaPan",
-            "GiftOperatorSelect_Fluorite",
             "GiftOperatorSelect_Akekuri",
+            "GiftOperatorSelect_Alesh",
+            "GiftOperatorSelect_Antal",
+            "GiftOperatorSelect_Arclight",
+            "GiftOperatorSelect_Ardelia",
+            "GiftOperatorSelect_Avywenna",
+            "GiftOperatorSelect_Camille",
+            "GiftOperatorSelect_Catcher",
+            "GiftOperatorSelect_ChenQianyu",
+            "GiftOperatorSelect_DaPan",
+            "GiftOperatorSelect_Ember",
             "GiftOperatorSelect_Estella",
+            "GiftOperatorSelect_Fluorite",
+            "GiftOperatorSelect_Gilberta",
+            "GiftOperatorSelect_Laevatain",
+            "GiftOperatorSelect_LastRite",
+            "GiftOperatorSelect_Lifeng",
+            "GiftOperatorSelect_MiFu",
+            "GiftOperatorSelect_Perlica",
+            "GiftOperatorSelect_Pogranichnik",
             "GiftOperatorSelect_Rossi",
+            "GiftOperatorSelect_Snowshine",
             "GiftOperatorSelect_Tangtang",
-            "GiftOperatorSelect_ZhuangFangyi",
-            "GiftOperatorSelect_MiFu"
+            "GiftOperatorSelect_Wulfgard",
+            "GiftOperatorSelect_Xaihi",
+            "GiftOperatorSelect_Yvonne",
+            "GiftOperatorSelect_ZhuangFangyi"
         ]
     },
     "GiftOperatorSelectSpecifiedOp": {
@@ -288,8 +289,8 @@
                 "method": 40,
                 "lower": [
                     27,
-                    255,
-                    255
+                    240,
+                    240
                 ],
                 "upper": [
                     30,
@@ -297,7 +298,8 @@
                     255
                 ],
                 "connected": true,
-                "count": 10
+                "count": 10,
+                "order_by": "Area"
             }
         }
     },
@@ -308,16 +310,16 @@
             "param": {
                 "roi": "GiftOperatorCheckSelectedLabelColor",
                 "lower": [
-                    40,
-                    40,
+                    0,
+                    0,
                     45
                 ],
                 "upper": [
                     80,
                     78,
-                    53
+                    55
                 ],
-                "count": 10
+                "count": 15
             }
         }
     },
@@ -391,8 +393,8 @@
             }
         },
         "next": [
-            "GiftOperatorSelectOp2"
-            //"GiftOperatorTrustFull"
+            "GiftOperatorSelectOp2",
+            "GiftOperatorSelectTrustFull"
         ]
     },
     "GiftOperatorCheckSelected2": {
@@ -408,8 +410,8 @@
             }
         },
         "next": [
-            "GiftOperatorSelectOp3"
-            //"GiftOperatorTrustFull"
+            "GiftOperatorSelectOp3",
+            "GiftOperatorSelectTrustFull"
         ]
     },
     "GiftOperatorCheckSelected3": {
@@ -486,6 +488,15 @@
             "[JumpBack]GiftOperatorMoveAhead"
         ]
     },
+    "GiftOperatorSelectTrustFull": {
+        "desc": "选择干员阶段信赖已满",
+        "next": [
+            "GiftOperatorConfirmSelect"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.GiftOperator.focus.select_trust_full"
+        }
+    },
     "GiftOperatorTrustIcon": {
         "desc": "干员信赖度图标",
         "recognition": {
@@ -504,26 +515,6 @@
             }
         }
     },
-    "GiftOperatorTrustValue": {
-        "desc": "干员信赖度数值",
-        "recognition": {
-            "type": "OCR",
-            "param": {
-                "roi": "GiftOperatorTrustIcon",
-                "roi_offset": [
-                    14,
-                    1,
-                    19,
-                    -2
-                ],
-                "expected": [
-                    "^((?!200).)*$"
-                ],
-                "only_rec": true,
-                "order_by": "Vertical"
-            }
-        }
-    },
     "GiftOperatorNotSelect": {
         "desc": "干员未被选择",
         "recognition": {
@@ -531,7 +522,7 @@
             "param": {
                 "roi": "GiftOperatorTrustIcon",
                 "roi_offset": [
-                    42,
+                    40,
                     -85,
                     5,
                     5
@@ -562,7 +553,27 @@
                     ]
                 ],
                 "connected": true,
-                "count": 100,
+                "count": 150,
+                "order_by": "Vertical"
+            }
+        }
+    },
+    "GiftOperatorTrustValue": {
+        "desc": "干员信赖度数值",
+        "recognition": {
+            "type": "OCR",
+            "param": {
+                "roi": "GiftOperatorNotSelect",
+                "roi_offset": [
+                    -25,
+                    87,
+                    7,
+                    -8
+                ],
+                "expected": [
+                    "^((?!200).)*$"
+                ],
+                "only_rec": true,
                 "order_by": "Vertical"
             }
         }
@@ -608,26 +619,22 @@
             "param": {
                 "all_of": [
                     "GiftOperatorTrustIcon",
-                    "GiftOperatorTrustValue",
-                    "GiftOperatorNotSelect"
+                    "GiftOperatorNotSelect",
+                    "GiftOperatorTrustValue"
                 ],
                 "box_index": 2
             }
         },
         "action": {
-            "type": "Click",
-            "param": {
-                "target_offset": [
-                    -30,
-                    50,
-                    0,
-                    0
-                ]
-            }
+            "type": "Click"
         },
+        "timeout": 7000,
         "next": [
             "GiftOperatorCheckSelected1"
-        ]
+        ],
+        "focus": {
+            "Tasker.Task.Failed": "$task.GiftOperator.focus.select_op1"
+        }
     },
     "GiftOperatorSelectOp2": {
         "desc": "选择第二个干员",
@@ -636,22 +643,14 @@
             "param": {
                 "all_of": [
                     "GiftOperatorTrustIcon",
-                    "GiftOperatorTrustValue",
-                    "GiftOperatorNotSelect"
+                    "GiftOperatorNotSelect",
+                    "GiftOperatorTrustValue"
                 ],
                 "box_index": 2
             }
         },
         "action": {
-            "type": "Click",
-            "param": {
-                "target_offset": [
-                    -30,
-                    50,
-                    0,
-                    0
-                ]
-            }
+            "type": "Click"
         },
         "next": [
             "GiftOperatorCheckSelected2"
@@ -664,22 +663,14 @@
             "param": {
                 "all_of": [
                     "GiftOperatorTrustIcon",
-                    "GiftOperatorTrustValue",
-                    "GiftOperatorNotSelect"
+                    "GiftOperatorNotSelect",
+                    "GiftOperatorTrustValue"
                 ],
                 "box_index": 2
             }
         },
         "action": {
-            "type": "Click",
-            "param": {
-                "target_offset": [
-                    -30,
-                    50,
-                    0,
-                    0
-                ]
-            }
+            "type": "Click"
         },
         "next": [
             "GiftOperatorCheckSelected3"

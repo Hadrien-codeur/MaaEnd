@@ -9,7 +9,24 @@
             "CheckWitheredBranchesReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "WitheredBranchesExecute",
+            "recovery_task": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
+            "failure_task": "WitheredBranchesFailed"
+        },
+        "post_delay": 0
+    },
+    "WitheredBranchesFailed": {
+        "desc": "枯枝任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.WitheredBranches.failed"
+        }
+    },
+    "WitheredBranchesExecute": {
+        "desc": "执行枯枝任务路线",
         "next": [
             "AcceptWitheredBranches",
             "GoToWitheredBranchesMission"
@@ -31,6 +48,7 @@
             "枯れ枝",
             "마른 가지"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckWitheredBranchesIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Withered\\s*Branches",
             "祖泉周辺の枯れ枝の写真を撮る",
             "선조의 샘 주변의 마른 가지를 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptWitheredBranches": {
         "desc": "接取枯枝委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToWitheredBranchesMapTrackerMove"
+            "GoToWitheredBranchesMove"
         ]
     },
     "GoToWitheredBranchesNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToWitheredBranchesStartPos"
         ]
     },
-    "GoToWitheredBranchesMapTrackerMove": {
-        "desc": "前往枯枝",
+    "GoToWitheredBranchesMove": {
+        "desc": "自动寻路前往枯枝",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -253,21 +272,19 @@
                     507.5,
                     379.2
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 135
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "WitheredBranchesAdjustCamera"
         },
-        "next": [
-            "WitheredBranchesAdjustHeading"
-        ]
-    },
-    "WitheredBranchesAdjustHeading": {
-        "desc": "枯枝任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

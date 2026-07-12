@@ -9,7 +9,24 @@
             "CheckBeaconDamagedInTheBlightTideReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "BeaconDamagedInTheBlightTideExecute",
+            "recovery_task": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
+            "failure_task": "BeaconDamagedInTheBlightTideFailed"
+        },
+        "post_delay": 0
+    },
+    "BeaconDamagedInTheBlightTideFailed": {
+        "desc": "侵蚀潮中损坏的信标任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.BeaconDamagedInTheBlightTide.failed"
+        }
+    },
+    "BeaconDamagedInTheBlightTideExecute": {
+        "desc": "执行侵蚀潮中损坏的信标任务路线",
         "next": [
             "AcceptBeaconDamagedInTheBlightTide",
             "GoToBeaconDamagedInTheBlightTideMission"
@@ -31,6 +48,7 @@
             "侵蝕潮で壊れたビーコン",
             "침식 조류로 인해 훼손된 신호기"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckBeaconDamagedInTheBlightTideIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Damaged\\s*Beacon",
             "侵蝕潮で破損したビーコンの写真を撮る",
             "침식 조류로 인해 훼손된 신호기를 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptBeaconDamagedInTheBlightTide": {
         "desc": "接取侵蚀潮中损坏的信标委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToBeaconDamagedInTheBlightTideMapTrackerMove"
+            "GoToBeaconDamagedInTheBlightTideMove"
         ]
     },
     "GoToBeaconDamagedInTheBlightTideNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToBeaconDamagedInTheBlightTideStartPos"
         ]
     },
-    "GoToBeaconDamagedInTheBlightTideMapTrackerMove": {
-        "desc": "前往侵蚀潮中损坏的信标",
+    "GoToBeaconDamagedInTheBlightTideMove": {
+        "desc": "自动寻路前往侵蚀潮中损坏的信标",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -289,21 +308,19 @@
                     702,
                     345
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 90
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "BeaconDamagedInTheBlightTideAdjustCamera"
         },
-        "next": [
-            "BeaconDamagedInTheBlightTideAdjustHeading"
-        ]
-    },
-    "BeaconDamagedInTheBlightTideAdjustHeading": {
-        "desc": "侵蚀潮中损坏的信标任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

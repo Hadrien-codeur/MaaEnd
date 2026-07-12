@@ -9,7 +9,24 @@
             "CheckBambooWaterChimesReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "BambooWaterChimesExecute",
+            "recovery_task": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
+            "failure_task": "BambooWaterChimesFailed"
+        },
+        "post_delay": 0
+    },
+    "BambooWaterChimesFailed": {
+        "desc": "水竹铃任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.BambooWaterChimes.failed"
+        }
+    },
+    "BambooWaterChimesExecute": {
+        "desc": "执行水竹铃任务路线",
         "next": [
             "AcceptBambooWaterChimes",
             "GoToBambooWaterChimesMission"
@@ -31,6 +48,7 @@
             "水竹鈴",
             "수죽령"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckBambooWaterChimesIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Bamboo\\s*Water\\s*Chimes",
             "水竹鈴の写真を撮る",
             "수죽령을 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptBambooWaterChimes": {
         "desc": "接取水竹铃委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToBambooWaterChimesMapTrackerMove"
+            "GoToBambooWaterChimesMove"
         ]
     },
     "GoToBambooWaterChimesNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToBambooWaterChimesStartPos"
         ]
     },
-    "GoToBambooWaterChimesMapTrackerMove": {
-        "desc": "前往水竹铃",
+    "GoToBambooWaterChimesMove": {
+        "desc": "自动寻路前往水竹铃",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -261,21 +280,19 @@
                     268.8,
                     458.1
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 345
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "BambooWaterChimesAdjustCamera"
         },
-        "next": [
-            "BambooWaterChimesAdjustHeading"
-        ]
-    },
-    "BambooWaterChimesAdjustHeading": {
-        "desc": "水竹铃任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

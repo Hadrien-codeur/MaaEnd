@@ -9,7 +9,24 @@
             "CheckTreeOfTheOldCourtyardReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "TreeOfTheOldCourtyardExecute",
+            "recovery_task": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
+            "failure_task": "TreeOfTheOldCourtyardFailed"
+        },
+        "post_delay": 0
+    },
+    "TreeOfTheOldCourtyardFailed": {
+        "desc": "旧庭树任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.TreeOfTheOldCourtyard.failed"
+        }
+    },
+    "TreeOfTheOldCourtyardExecute": {
+        "desc": "执行旧庭树任务路线",
         "next": [
             "AcceptTreeOfTheOldCourtyard",
             "GoToTreeOfTheOldCourtyardMission"
@@ -31,6 +48,7 @@
             "「旧庭の木」",
             "옛 정원의 나무"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckTreeOfTheOldCourtyardIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*\"Tree\\s*of\\s*the\\s*Old\\s*Courtyard\"",
             "「旧庭の木」の写真を撮る",
             "'옛 정원의 나무'를 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptTreeOfTheOldCourtyard": {
         "desc": "接取旧庭树委托",
@@ -218,7 +237,7 @@
             ]
         },
         "next": [
-            "GoToTreeOfTheOldCourtyardMapTrackerMove"
+            "GoToTreeOfTheOldCourtyardMove"
         ]
     },
     "GoToTreeOfTheOldCourtyardNotAtStartPos": {
@@ -234,8 +253,8 @@
             "GoToTreeOfTheOldCourtyardStartPos"
         ]
     },
-    "GoToTreeOfTheOldCourtyardMapTrackerMove": {
-        "desc": "前往旧庭树",
+    "GoToTreeOfTheOldCourtyardMove": {
+        "desc": "自动寻路前往旧庭树",
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
@@ -258,15 +277,6 @@
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "TreeOfTheOldCourtyardAdjustCamera"
         },
-        "next": [
-            "TreeOfTheOldCourtyardAdjustHeading"
-        ]
-    },
-    "TreeOfTheOldCourtyardAdjustHeading": {
-        "desc": "旧庭树任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

@@ -52,7 +52,8 @@ GridHashSnapshot ToHashSnapshot(const GridRecognitionResult& result)
     return MakeGridHashSnapshot(
         static_cast<int>(result.grid.rows.size()),
         static_cast<int>(result.grid.cols.size()),
-        result.cellHashes);
+        result.cellHashes,
+        result.cellFeatures);
 }
 
 GridScanResult MakeFailure(std::string message)
@@ -60,6 +61,17 @@ GridScanResult MakeFailure(std::string message)
     GridScanResult result;
     result.message = std::move(message);
     return result;
+}
+
+void UsePreviousSession(GridScanResult& result, const SessionState& session)
+{
+    result.incrementalUsed = true;
+    result.sessionCols = session.cols;
+    result.cells = ToSortedCells(session.cells);
+    FinalizeCounts(result);
+    result.rows = result.sessionRows;
+    result.cols = result.sessionCols;
+    result.totalCells = result.sessionTotalCells;
 }
 
 } // namespace
@@ -160,23 +172,41 @@ GridScanResult RecoGridEngine::Scan(const std::string& sessionId, const cv::Mat&
 
     try {
         GridScanResult result;
-        GridRecognitionResult recognition = RecognizeGrid(image, options.recognition);
+        GridScanOptions effectiveOptions = options;
+        auto sessionIt = sessions_.find(sessionId);
+        const bool hasSession = sessionIt != sessions_.end();
+        if (options.incremental && hasSession) {
+            effectiveOptions.recognition.detect.lockedRowHeight = sessionIt->second.lockedRowHeight;
+            effectiveOptions.recognition.detect.lockedColWidth = sessionIt->second.lockedColWidth;
+        }
+
+        GridRecognitionResult recognition = RecognizeGrid(image, effectiveOptions.recognition);
         result.rows = static_cast<int>(recognition.grid.rows.size());
         result.cols = static_cast<int>(recognition.grid.cols.size());
         result.totalCells = result.rows * result.cols;
+        result.detectedRows = result.rows;
+        result.detectedCols = result.cols;
+        result.detectedTotalCells = result.totalCells;
         if (result.totalCells <= 0) {
             result.message = recognition.message.empty() ? "Grid detected no cells" : recognition.message;
+            if (options.incremental && hasSession) {
+                result.success = true;
+                UsePreviousSession(result, sessionIt->second);
+                return result;
+            }
             sessions_.erase(sessionId);
+            return result;
+        }
+        if (options.incremental && hasSession && sessionIt->second.cols > 0 && result.cols != sessionIt->second.cols) {
+            result.success = true;
+            result.message = "Grid shape rejected; kept previous scan session";
+            UsePreviousSession(result, sessionIt->second);
             return result;
         }
 
         const GridHashSnapshot currentSnapshot = ToHashSnapshot(recognition);
         const cv::Size imageSize = image.size();
-        const GridClassifyOptions classifyOptions = ToClassifyOptions(options.recognition);
-        constexpr int kPlacementBeamWidth = 3;
-        auto sessionIt = sessions_.find(sessionId);
-        const bool hasSession = sessionIt != sessions_.end();
-
+        const GridClassifyOptions classifyOptions = ToClassifyOptions(effectiveOptions.recognition);
         GridDeltaResult delta;
         if (options.incremental && hasSession && sessionIt->second.cols == result.cols) {
             delta = ComputeGridDelta(
@@ -186,7 +216,7 @@ GridScanResult RecoGridEngine::Scan(const std::string& sessionId, const cv::Mat&
             AdjustLeadingPartialRowsForDelta(
                 delta,
                 recognition,
-                options,
+                effectiveOptions,
                 imageSize,
                 sessionIt->second.viewportStartRow,
                 &sessionIt->second.cells);
@@ -209,12 +239,11 @@ GridScanResult RecoGridEngine::Scan(const std::string& sessionId, const cv::Mat&
                 result,
                 recognition,
                 templates_,
-                options,
+                effectiveOptions,
                 classifyOptions,
                 currentSnapshot,
                 delta,
-                imageSize,
-                kPlacementBeamWidth);
+                imageSize);
             return result;
         }
 
@@ -222,30 +251,33 @@ GridScanResult RecoGridEngine::Scan(const std::string& sessionId, const cv::Mat&
         session.snapshot = currentSnapshot;
         session.viewportStartRow = 0;
         session.cols = result.cols;
-        session.pending.clear();
+        session.lockedRowHeight = ModalSegmentLength(recognition.grid.rows);
+        session.lockedColWidth = ModalSegmentLength(recognition.grid.cols);
+        session.pending.reset();
         std::vector<GridScanCell> currentCells = MakeUnknownCells(
             0,
             result.rows,
             result.cols,
             recognition.grid.roi,
             recognition.grid.cells,
-            options,
-            options.recognition,
+            effectiveOptions,
+            effectiveOptions.recognition,
             imageSize,
-            options.unknownTemplateId);
+            effectiveOptions.unknownTemplateId);
         result.totalCells = static_cast<int>(currentCells.size());
 
         const std::vector<std::size_t> occupiedIndices = CellIndices(currentCells);
         GridClassificationResult classification = ClassifyGridCells(
             recognition,
             templates_,
-            options.recognition,
+            effectiveOptions.recognition,
             classifyOptions,
             imageSize,
             occupiedIndices);
 
-        ApplyClassifications(currentCells, classification, result.cols, 0, options.unknownTemplateId);
+        ApplyClassifications(currentCells, classification, result.cols, 0, effectiveOptions.unknownTemplateId);
         result.newCellIndices = occupiedIndices;
+        result.dispatchableCells = currentCells;
         UpsertSessionCells(session.cells, currentCells);
         result.success = true;
         result.message = recognition.message.empty() ? "Grid scanned" : recognition.message;

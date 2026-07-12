@@ -9,7 +9,24 @@
             "CheckFloraObservationPointReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "FloraObservationPointExecute",
+            "recovery_task": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
+            "failure_task": "FloraObservationPointFailed"
+        },
+        "post_delay": 0
+    },
+    "FloraObservationPointFailed": {
+        "desc": "植物观察点任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.FloraObservationPoint.failed"
+        }
+    },
+    "FloraObservationPointExecute": {
+        "desc": "执行植物观察点任务路线",
         "next": [
             "AcceptFloraObservationPoint",
             "GoToFloraObservationPointMission"
@@ -31,6 +48,7 @@
             "植物観察スポット",
             "식물 관찰 지점"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckFloraObservationPointIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Flora\\s*Observation\\s*Point",
             "植物観察スポットの写真を撮る",
             "식물 관찰 지점을 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptFloraObservationPoint": {
         "desc": "接取植物观察点委托",
@@ -218,7 +237,7 @@
             ]
         },
         "next": [
-            "GoToFloraObservationPointMapTrackerMove"
+            "GoToFloraObservationPointMove"
         ]
     },
     "GoToFloraObservationPointNotAtStartPos": {
@@ -234,8 +253,8 @@
             "GoToFloraObservationPointStartPos"
         ]
     },
-    "GoToFloraObservationPointMapTrackerMove": {
-        "desc": "前往植物观察点",
+    "GoToFloraObservationPointMove": {
+        "desc": "自动寻路前往植物观察点",
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
@@ -258,15 +277,6 @@
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "FloraObservationPointAdjustCamera"
         },
-        "next": [
-            "FloraObservationPointAdjustHeading"
-        ]
-    },
-    "FloraObservationPointAdjustHeading": {
-        "desc": "植物观察点任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

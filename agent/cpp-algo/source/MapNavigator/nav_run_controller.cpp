@@ -240,6 +240,32 @@ int64_t ElapsedMs(std::chrono::steady_clock::time_point from, std::chrono::stead
     return std::chrono::duration_cast<std::chrono::milliseconds>(to - from).count();
 }
 
+// The authored line from the current waypoint up to and including the anchor. Returns empty unless the
+// anchor is actually reached (a control node or path end first truncates the span), so the caller falls
+// back to the navmesh corridor instead of trusting a line that stops short of the anchor.
+std::vector<navmesh::WorldPoint> BuildAuthoredSpanPolyline(const NavigationSession& session, size_t anchor_index)
+{
+    const std::vector<Waypoint>& waypoints = session.current_path();
+    std::vector<navmesh::WorldPoint> poly;
+    bool reached_anchor = false;
+    for (size_t index = session.current_node_idx(); index < waypoints.size(); ++index) {
+        const Waypoint& waypoint = waypoints[index];
+        if (!waypoint.HasPosition()) {
+            break;
+        }
+        poly.push_back({ .x = waypoint.x, .y = waypoint.y });
+        const std::optional<size_t> canonical = session.CanonicalIndexAtCurrentPath(index);
+        if (canonical && *canonical == anchor_index) {
+            reached_anchor = true;
+            break;
+        }
+    }
+    if (!reached_anchor) {
+        return {};
+    }
+    return poly;
+}
+
 } // namespace
 
 void NavRunController::invalidate()
@@ -251,12 +277,33 @@ void NavRunController::invalidate()
 
 bool NavRunController::buildPlan(
     const NaviParam& param,
+    const NavigationSession& session,
     const NaviPosition& position,
     size_t anchor_index,
     const Waypoint& anchor,
     NavRunReplanReason reason,
     std::chrono::steady_clock::time_point now)
 {
+    const auto commit = [&](navmesh::WorldPath path, bool literal) {
+        plan_.valid = true;
+        plan_.zone_id = position.zone_id;
+        plan_.anchor_index = anchor_index;
+        plan_.anchor_pos = { .x = anchor.x, .y = anchor.y };
+        plan_.literal = literal;
+        plan_.path = std::move(path);
+        plan_.corridor_arc_prefix = BuildCorridorArcPrefix(plan_.path);
+        plan_.cursor = 0;
+        plan_.planned_at = now;
+    };
+
+    std::vector<navmesh::WorldPoint> authored = BuildAuthoredSpanPolyline(session, anchor_index);
+    if (authored.size() >= 2) {
+        navmesh::WorldPath literal_path;
+        literal_path.points = std::move(authored);
+        commit(std::move(literal_path), true);
+        return true;
+    }
+
     const navmesh::WorldPoint start { .x = position.x, .y = position.y };
     const navmesh::WorldPoint goal { .x = anchor.x, .y = anchor.y };
     auto route = PlanNavmeshRoute(param, position.zone_id, start, goal);
@@ -265,15 +312,7 @@ bool NavRunController::buildPlan(
                  << VAR(position.zone_id);
         return false;
     }
-
-    plan_.valid = true;
-    plan_.zone_id = position.zone_id;
-    plan_.anchor_index = anchor_index;
-    plan_.anchor_pos = { .x = anchor.x, .y = anchor.y };
-    plan_.path = std::move(route->path);
-    plan_.corridor_arc_prefix = BuildCorridorArcPrefix(plan_.path);
-    plan_.cursor = 0;
-    plan_.planned_at = now;
+    commit(std::move(route->path), false);
     return true;
 }
 
@@ -336,7 +375,7 @@ NavRunTickResult NavRunController::tick(
     }
 
     if (!plan_.valid) {
-        if (!buildPlan(param, position, anchor_index, anchor, NavRunReplanReason::AnchorChanged, now)) {
+        if (!buildPlan(param, *session, position, anchor_index, anchor, NavRunReplanReason::AnchorChanged, now)) {
             return result;
         }
         last_progress_seen_ = now;
@@ -371,7 +410,7 @@ NavRunTickResult NavRunController::tick(
         if (budget_left && (hard_off || cooldown_ready)) {
             plan_.last_soft_replan_at = now;
             plan_.soft_replan_attempts += 1;
-            if (buildPlan(param, position, anchor_index, anchor, reason, now)) {
+            if (buildPlan(param, *session, position, anchor_index, anchor, reason, now)) {
                 auto reprojected = ProjectOntoCorridor(plan_.path, plan_.cursor, position);
                 if (!reprojected) {
                     invalidate();

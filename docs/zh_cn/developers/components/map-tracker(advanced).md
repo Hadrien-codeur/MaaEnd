@@ -39,6 +39,8 @@
 
 - `threshold`: 介于 $(0, 1]$ 的实数，默认 `0.4`。控制匹配的置信度阈值。低于此值的匹配结果将不命中识别。
 
+- `allowed_modes`: 整数，默认 `3`。高级参数，控制允许使用的定位推断模式，取值为 `INFER_MODE_FULL_SEARCH = 1` 与 `INFER_MODE_FAST_SEARCH = 2` 的按位或结果。该参数必须包含 `INFER_MODE_FULL_SEARCH`。
+
 ### Recognition: MapTrackerBigMapInfer
 
 🗺️ 在大地图界面中推断当前视野区域在地图中的坐标与地图缩放。
@@ -49,7 +51,7 @@
 
 #### 节点参数
 
-请参见具体代码中 `MapTrackerBigMapInferParam` 的类型定义。
+请参见具体代码中 `MapTrackerBigMapInferParam` 的类型定义，参数包括 `map_name_regex` 和 `threshold`。这些参数也被内嵌到 `MapTrackerBigMapFindImage` 节点的 `MapTrackerBigMapFindImageParam` 中，以控制其内部的大地图推断行为。
 
 ## 算法解释
 
@@ -83,6 +85,36 @@
 | `Active`     | 是       |        `8` |        `4` |      `0.5` |
 | `Aggressive` | 是       |        `1` |        `1` |     `0.25` |
 
+## 测试办法
+
+### 单元测试
+
+MapTracker 的部分组件，以及 MapTracker 所依赖的核心库 [minicv](/agent/go-service/pkg/minicv/) 具有单元测试，您可以通过 Go 的测试命令执行它们。
+
+### 集成测试
+
+集成测试主要是通过创建一个离线 MaaFW 控制器，并向其中输入固定的图片文件，来验证 MapTracker 的识别结果是否符合预期。
+
+您可以运行下面的脚本来完成批量测试：
+
+```bash
+python tools/map_tracker/map_tracker_tester.py batch_test -i tests/MaaEndTestset/Win32/Official_CN/map_tracker
+```
+
+> [!NOTE]
+>
+> 运行这个测试脚本前，您需要安装 Python 及 `opencv-python`、`maafw` 库，并事先配置好本项目的开发环境。
+
+> [!TIP]
+>
+> 如你所见，测试集位于 Git Submodule `tests/MaaEndTestset` 的 `Win32/Official_CN/map_tracker` 目录。您需要确保该 Submodule 已经被正确拉取到本地。
+
+如果需要采集新的测试样本图，您可以运行下面的脚本来从游戏中实时录制：
+
+```bash
+python tools/map_tracker/map_tracker_tester.py collect_data -o your_output_dir
+```
+
 ## 维护办法
 
 MapTracker 的日常维护主要涉及的是**地图图片的更新**。当游戏开放了新版本时，需要将最新的地图同步到 MapTracker 的地图图片库中。
@@ -91,13 +123,9 @@ MapTracker 的日常维护主要涉及的是**地图图片的更新**。当游�
 
 ### 操作步骤
 
-> [!TIP]
+> [!NOTE]
 >
-> 运行脚本要求安装 Python 及 `opencv-python`、`PyMaxflow` 依赖库。
->
-> ```bash
-> pip install opencv-python PyMaxflow
-> ```
+> 运行下面的脚本前，您需要安装 Python 及 `opencv-python`、`PyMaxflow` 依赖库。
 
 该工具脚本的完整操作步骤如下：
 

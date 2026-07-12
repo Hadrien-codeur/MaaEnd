@@ -9,7 +9,24 @@
             "CheckObservantSableChestedFowlbeastReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "ObservantSableChestedFowlbeastExecute",
+            "recovery_task": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
+            "failure_task": "ObservantSableChestedFowlbeastFailed"
+        },
+        "post_delay": 0
+    },
+    "ObservantSableChestedFowlbeastFailed": {
+        "desc": "东张西望的黑腹雉羽兽任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.ObservantSableChestedFowlbeast.failed"
+        }
+    },
+    "ObservantSableChestedFowlbeastExecute": {
+        "desc": "执行东张西望的黑腹雉羽兽任务路线",
         "next": [
             "AcceptObservantSableChestedFowlbeast",
             "GoToObservantSableChestedFowlbeastMission"
@@ -31,6 +48,7 @@
             "キョロキョロする黒腹羽獣",
             "두리번거리는 세이블체스티드 파울비스트"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckObservantSableChestedFowlbeastIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Sable\\s*-\\s*chested\\s*Fowlbeast",
             "農地でキョロキョロする黒腹羽獣の写真を撮る",
             "논밭에서 두리번거리는 세이블체스티드 파울비스트를 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptObservantSableChestedFowlbeast": {
         "desc": "接取东张西望的黑腹雉羽兽委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToObservantSableChestedFowlbeastMapTrackerMove"
+            "GoToObservantSableChestedFowlbeastMove"
         ]
     },
     "GoToObservantSableChestedFowlbeastNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToObservantSableChestedFowlbeastStartPos"
         ]
     },
-    "GoToObservantSableChestedFowlbeastMapTrackerMove": {
-        "desc": "前往东张西望的黑腹雉羽兽",
+    "GoToObservantSableChestedFowlbeastMove": {
+        "desc": "自动寻路前往东张西望的黑腹雉羽兽",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -253,21 +272,19 @@
                     373.3,
                     135.6
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 105
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "ObservantSableChestedFowlbeastAdjustCamera"
         },
-        "next": [
-            "ObservantSableChestedFowlbeastAdjustHeading"
-        ]
-    },
-    "ObservantSableChestedFowlbeastAdjustHeading": {
-        "desc": "东张西望的黑腹雉羽兽任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

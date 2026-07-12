@@ -9,7 +9,24 @@
             "CheckXiraniteNexusReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "XiraniteNexusExecute",
+            "recovery_task": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
+            "failure_task": "XiraniteNexusFailed"
+        },
+        "post_delay": 0
+    },
+    "XiraniteNexusFailed": {
+        "desc": "枢壤仪任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.XiraniteNexus.failed"
+        }
+    },
+    "XiraniteNexusExecute": {
+        "desc": "执行枢壤仪任务路线",
         "next": [
             "AcceptXiraniteNexus",
             "GoToXiraniteNexusMission"
@@ -31,6 +48,7 @@
             "枢壌儀",
             "중추 식양 장치"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckXiraniteNexusIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Xiranite\\s*Nexus",
             "枢壌儀の写真を撮る",
             "중추 식양 장치를 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptXiraniteNexus": {
         "desc": "接取枢壤仪委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToXiraniteNexusMapTrackerMove"
+            "GoToXiraniteNexusMove"
         ]
     },
     "GoToXiraniteNexusNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToXiraniteNexusStartPos"
         ]
     },
-    "GoToXiraniteNexusMapTrackerMove": {
-        "desc": "前往枢壤仪",
+    "GoToXiraniteNexusMove": {
+        "desc": "自动寻路前往枢壤仪",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -273,21 +292,19 @@
                     171.8,
                     674.6
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 270
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "XiraniteNexusAdjustCamera"
         },
-        "next": [
-            "XiraniteNexusAdjustHeading"
-        ]
-    },
-    "XiraniteNexusAdjustHeading": {
-        "desc": "枢壤仪任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

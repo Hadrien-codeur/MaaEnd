@@ -9,7 +9,24 @@
             "CheckEternalSunsetReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "EternalSunsetExecute",
+            "recovery_task": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
+            "failure_task": "EternalSunsetFailed"
+        },
+        "post_delay": 0
+    },
+    "EternalSunsetFailed": {
+        "desc": "栖霞驻影任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.EternalSunset.failed"
+        }
+    },
+    "EternalSunsetExecute": {
+        "desc": "执行栖霞驻影任务路线",
         "next": [
             "AcceptEternalSunset",
             "GoToEternalSunsetMission"
@@ -31,6 +48,7 @@
             "「棲霞留影」",
             "'노을의 그림자'"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckEternalSunsetIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*\"Eternal\\s*Sunset\"",
             "東屋中央の「棲霞留影」の写真を撮る",
             "정자 한가운데에 자라는 '노을의 그림자'를 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptEternalSunset": {
         "desc": "接取栖霞驻影委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToEternalSunsetMapTrackerMove"
+            "GoToEternalSunsetMove"
         ]
     },
     "GoToEternalSunsetNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToEternalSunsetStartPos"
         ]
     },
-    "GoToEternalSunsetMapTrackerMove": {
-        "desc": "前往栖霞驻影",
+    "GoToEternalSunsetMove": {
+        "desc": "自动寻路前往栖霞驻影",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -253,21 +272,19 @@
                     346,
                     296
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 60
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "EternalSunsetAdjustCamera"
         },
-        "next": [
-            "EternalSunsetAdjustHeading"
-        ]
-    },
-    "EternalSunsetAdjustHeading": {
-        "desc": "栖霞驻影任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

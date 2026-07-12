@@ -9,7 +9,24 @@
             "CheckCloudrestEcoSiteReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "CloudrestEcoSiteExecute",
+            "recovery_task": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
+            "failure_task": "CloudrestEcoSiteFailed"
+        },
+        "post_delay": 0
+    },
+    "CloudrestEcoSiteFailed": {
+        "desc": "栖云生态点任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.CloudrestEcoSite.failed"
+        }
+    },
+    "CloudrestEcoSiteExecute": {
+        "desc": "执行栖云生态点任务路线",
         "next": [
             "AcceptCloudrestEcoSite",
             "GoToCloudrestEcoSiteMission"
@@ -31,6 +48,7 @@
             "栖雲生態スポット",
             "서운 생태 지점"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckCloudrestEcoSiteIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Cloudrest\\s*Eco\\s*-\\s*Site",
             "栖雲生態スポットの写真を撮る",
             "서운 생태 지점을 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptCloudrestEcoSite": {
         "desc": "接取栖云生态点委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToCloudrestEcoSiteMapTrackerMove"
+            "GoToCloudrestEcoSiteMove"
         ]
     },
     "GoToCloudrestEcoSiteNotAtStartPos": {
@@ -238,140 +257,28 @@
             "GoToCloudrestEcoSiteStartPos"
         ]
     },
-    "GoToCloudrestEcoSiteMapTrackerMove": {
-        "desc": "前往栖云生态点",
+    "GoToCloudrestEcoSiteMove": {
+        "desc": "自动寻路前往栖云生态点",
         "action": "Custom",
-        "custom_action": "MapTrackerMove",
+        "custom_action": "MapTrackerGoal",
         "custom_action_param": {
             "map_name": "map02_lv004",
-            "path": [
-                [
-                    617.3,
-                    325.5
-                ],
-                [
-                    633.8,
-                    324.5
-                ],
-                [
-                    637.5,
-                    328.2
-                ],
-                [
-                    641.4,
-                    341.8
-                ],
-                [
-                    646.2,
-                    364.5
-                ],
-                [
-                    647.5,
-                    418.3
-                ],
-                [
-                    602.5,
-                    419.5
-                ],
-                [
-                    602.3,
-                    432.7
-                ],
-                [
-                    590,
-                    433.3
-                ],
-                [
-                    565,
-                    433.8
-                ],
-                [
-                    522.5,
-                    451.4
-                ],
-                [
-                    525.2,
-                    459.1
-                ],
-                [
-                    514.2,
-                    465.8
-                ],
-                [
-                    517.5,
-                    472.6
-                ],
-                [
-                    512,
-                    475.9
-                ],
-                [
-                    511.2,
-                    480.8
-                ],
-                [
-                    502.2,
-                    485.9
-                ],
-                [
-                    485,
-                    481.3
-                ],
-                [
-                    477.3,
-                    474.7
-                ],
-                [
-                    453.8,
-                    472.6
-                ],
-                [
-                    447.5,
-                    472.6
-                ],
-                [
-                    443.2,
-                    475.7
-                ],
-                [
-                    440.7,
-                    481.2
-                ],
-                [
-                    438.4,
-                    486.7
-                ],
-                [
-                    438,
-                    492.1
-                ],
-                [
-                    437.9,
-                    498.4
-                ],
-                [
-                    438.1,
-                    503.4
-                ],
-                [
-                    438.1,
-                    509.2
-                ]
-            ]
+            "target": [
+                438.1,
+                509.2
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 180
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "CloudrestEcoSiteAdjustCamera"
         },
-        "next": [
-            "CloudrestEcoSiteAdjustHeading"
-        ]
-    },
-    "CloudrestEcoSiteAdjustHeading": {
-        "desc": "栖云生态点任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

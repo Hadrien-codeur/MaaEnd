@@ -1,44 +1,17 @@
 {
-    "WLSwordVaultDaleMoveToTriggerPointAuto": {
+    "GotoTriggerPointSetAnchor_WLSwordVaultDale": {
+        "enabled": false,
+        "pre_delay": 0,
         "anchor": {
-            "AutoEssenceMoveToTriggerPoint": "WLSwordVaultDaleMoveToTriggerPoint",
-            "AutoEssenceWalkAround": "WLSwordVaultDaleWalkAround1"
+            "AutoEssenceMoveToTriggerPoint": "GotoTriggerPointMove_WLSwordVaultDale",
+            "AutoEssenceMoveToTriggerPointMaybeTeleport": "GotoTriggerPointMaybeTeleport_WLSwordVaultDale"
         },
-        "next": [
-            "[JumpBack]WLSwordVaultDaleMaybeTeleport",
-            "WLSwordVaultDaleMoveToTriggerPoint"
-        ]
-    },
-    "WLSwordVaultDaleLocationAssertion": {
-        "recognition": {
-            "type": "Custom",
-            "param": {
-                "custom_recognition": "MapTrackerAssertLocation",
-                "custom_recognition_param": {
-                    "expected": [
-                        {
-                            // 淤积点附近
-                            "map_name": "map02_lv006",
-                            "target": [
-                                386.7,
-                                294.8,
-                                21.4,
-                                20.7
-                            ]
-                        }
-                    ]
-                }
-            }
-        },
-        "anchor": {
-            "AutoEssenceMoveToTriggerPoint": "WLSwordVaultDaleMoveToTriggerPoint",
-            "AutoEssenceWalkAround": "WLSwordVaultDaleWalkAround1"
-        },
+        "post_delay": 0,
         "focus": {
-            "Node.Action.Starting": "📍附近的能量淤积点：\n<p style=\"text-align: center\"><strong>藏剑谷</strong></p>"
+            "Node.Action.Starting": "📌目标地点：藏剑谷"
         }
     },
-    "WLSwordVaultDaleMaybeTeleport": {
+    "GotoTriggerPointMaybeTeleport_WLSwordVaultDale": {
         "recognition": {
             "type": "Custom",
             "param": {
@@ -71,13 +44,22 @@
         },
         "inverse": true,
         "next": [
-            "SceneEnterWorldWulingSwordVaultDale3"
+            "[JumpBack]__GotoTriggerPointTeleportOnce_WLSwordVaultDale",
+            "GotoTriggerPointMove_WLSwordVaultDale"
         ],
         "focus": {
             "Node.Action.Starting": "✈️准备传送到最近锚点"
         }
     },
-    "WLSwordVaultDaleMoveToTriggerPoint": {
+    "__GotoTriggerPointTeleportOnce_WLSwordVaultDale": {
+        "max_hit": 1,
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "SceneEnterWorldWulingSwordVaultDale3"
+        ]
+    },
+    "GotoTriggerPointMove_WLSwordVaultDale": {
         "action": {
             "type": "Custom",
             "param": {
@@ -86,16 +68,12 @@
                     "map_name": "map02_lv006",
                     "path": [
                         [
-                            357.4,
-                            291.4
+                            365.6,
+                            298.1
                         ],
                         [
-                            366.3,
-                            297.7
-                        ],
-                        [
-                            398.7,
-                            306.5
+                            394.9,
+                            305.1
                         ]
                     ],
                     "path_trim": true
@@ -103,13 +81,13 @@
             }
         },
         "next": [
-            "WLSwordVaultDaleMoveToTriggerPointExact"
+            "GotoTriggerPointMoveExact_WLSwordVaultDale"
         ],
         "focus": {
             "Node.Action.Starting": "🚶正在前往激发点附近"
         }
     },
-    "WLSwordVaultDaleMoveToTriggerPointExact": {
+    "GotoTriggerPointMoveExact_WLSwordVaultDale": {
         "action": {
             "type": "Custom",
             "param": {
@@ -118,72 +96,20 @@
                     "map_name": "map02_lv006",
                     "path": [
                         [
-                            398.7,
-                            306.5
+                            399.5,
+                            306.8
                         ]
-                    ]
+                    ],
+                    "no_ensure_initial_movement_state": true
                 }
             }
         },
+        "post_delay": 1500, // 确保彻底停下，规避移动惯性
         "next": [
-            "AutoEssenceAtTriggerState"
+            "AutoEssenceDispatcher"
         ],
         "focus": {
             "Node.Action.Starting": "🚶正在前往激发点"
-        }
-    },
-    "WLSwordVaultDaleWalkAround1": {
-        "action": {
-            "type": "Custom",
-            "param": {
-                "custom_action": "MapTrackerMove",
-                "custom_action_param": {
-                    "map_name": "map02_lv006",
-                    "path": [
-                        [
-                            400.7,
-                            304.5
-                        ]
-                    ],
-                    "rotation_lower_threshold": 12.0,
-                    "rotation_upper_threshold": 120.0,
-                    "sprint_threshold": 6.0
-                }
-            }
-        },
-        "next": [
-            "AutoEssenceCheckOngoing",
-            "WLSwordVaultDaleWalkAround2"
-        ],
-        "focus": {
-            "Node.Action.Starting": "🚶正在散步中"
-        }
-    },
-    "WLSwordVaultDaleWalkAround2": {
-        "action": {
-            "type": "Custom",
-            "param": {
-                "custom_action": "MapTrackerMove",
-                "custom_action_param": {
-                    "map_name": "map02_lv006",
-                    "path": [
-                        [
-                            399.2,
-                            307.8
-                        ]
-                    ],
-                    "rotation_lower_threshold": 12.0,
-                    "rotation_upper_threshold": 120.0,
-                    "sprint_threshold": 6.0
-                }
-            }
-        },
-        "next": [
-            "AutoEssenceCheckOngoing",
-            "WLSwordVaultDaleWalkAround1"
-        ],
-        "focus": {
-            "Node.Action.Starting": "🚶正在散步中"
         }
     }
 }

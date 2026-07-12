@@ -9,7 +9,24 @@
             "CheckRainbowFinReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "RainbowFinExecute",
+            "recovery_task": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
+            "failure_task": "RainbowFinFailed"
+        },
+        "post_delay": 0
+    },
+    "RainbowFinFailed": {
+        "desc": "七彩鳞任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.RainbowFin.failed"
+        }
+    },
+    "RainbowFinExecute": {
+        "desc": "执行七彩鳞任务路线",
         "next": [
             "AcceptRainbowFin",
             "GoToRainbowFinMission"
@@ -31,6 +48,7 @@
             "七色鱗獣",
             "무지개 린수"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckRainbowFinIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Rainbow\\s*Fin\\s*in\\s*Water",
             "水中の七色鱗獣の写真を撮る",
             "물속의 무지개 린수를 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptRainbowFin": {
         "desc": "接取七彩鳞委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToRainbowFinMapTrackerMove"
+            "GoToRainbowFinMove"
         ]
     },
     "GoToRainbowFinNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToRainbowFinStartPos"
         ]
     },
-    "GoToRainbowFinMapTrackerMove": {
-        "desc": "前往七彩鳞",
+    "GoToRainbowFinMove": {
+        "desc": "自动寻路前往七彩鳞",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -277,21 +296,19 @@
                     205,
                     755
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 45
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "RainbowFinAdjustCamera"
         },
-        "next": [
-            "RainbowFinAdjustHeading"
-        ]
-    },
-    "RainbowFinAdjustHeading": {
-        "desc": "七彩鳞任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

@@ -9,7 +9,24 @@
             "CheckCleansingJadeReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "CleansingJadeExecute",
+            "recovery_task": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
+            "failure_task": "CleansingJadeFailed"
+        },
+        "post_delay": 0
+    },
+    "CleansingJadeFailed": {
+        "desc": "漱玉任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.CleansingJade.failed"
+        }
+    },
+    "CleansingJadeExecute": {
+        "desc": "执行漱玉任务路线",
         "next": [
             "AcceptCleansingJade",
             "GoToCleansingJadeMission"
@@ -31,6 +48,7 @@
             "「漱玉」",
             "'수옥'"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckCleansingJadeIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*\"Cleansing\\s*Jade\"",
             "石柱の横にある「漱玉」の写真を撮る",
             "돌기둥 옆에서 자라는 '수옥'을 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptCleansingJade": {
         "desc": "接取漱玉委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToCleansingJadeMapTrackerMove"
+            "GoToCleansingJadeMove"
         ]
     },
     "GoToCleansingJadeNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToCleansingJadeStartPos"
         ]
     },
-    "GoToCleansingJadeMapTrackerMove": {
-        "desc": "前往漱玉",
+    "GoToCleansingJadeMove": {
+        "desc": "自动寻路前往漱玉",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -249,21 +268,19 @@
                     246,
                     394
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 300
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "CleansingJadeAdjustCamera"
         },
-        "next": [
-            "CleansingJadeAdjustHeading"
-        ]
-    },
-    "CleansingJadeAdjustHeading": {
-        "desc": "漱玉任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

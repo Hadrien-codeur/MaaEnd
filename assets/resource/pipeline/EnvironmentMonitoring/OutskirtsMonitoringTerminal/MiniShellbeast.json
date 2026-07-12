@@ -9,7 +9,24 @@
             "CheckMiniShellbeastReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "MiniShellbeastExecute",
+            "recovery_task": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
+            "failure_task": "MiniShellbeastFailed"
+        },
+        "post_delay": 0
+    },
+    "MiniShellbeastFailed": {
+        "desc": "小壳兽任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.MiniShellbeast.failed"
+        }
+    },
+    "MiniShellbeastExecute": {
+        "desc": "执行小壳兽任务路线",
         "next": [
             "AcceptMiniShellbeast",
             "GoToMiniShellbeastMission"
@@ -30,6 +47,12 @@
             "(?i)Mini\\s*Shellbeast",
             "小さな甲獣",
             "작은 셸비스트"
+        ],
+        "replace": [
+            [
+                "売",
+                "壳"
+            ]
         ],
         "order_by": "Vertical"
     },
@@ -120,6 +143,12 @@
             "(?i)Photo:\\s*Mini\\s*Shellbeast\\s*in\\s*Defense",
             "殻にこもる小さな甲獣の写真を撮る",
             "껍질 속으로 숨은 작은 셸비스트를 촬영하기"
+        ],
+        "replace": [
+            [
+                "売",
+                "壳"
+            ]
         ]
     },
     "AcceptMiniShellbeast": {
@@ -222,7 +251,7 @@
             ]
         },
         "next": [
-            "GoToMiniShellbeastMapTrackerMove"
+            "GoToMiniShellbeastMove"
         ]
     },
     "GoToMiniShellbeastNotAtStartPos": {
@@ -238,8 +267,8 @@
             "GoToMiniShellbeastStartPos"
         ]
     },
-    "GoToMiniShellbeastMapTrackerMove": {
-        "desc": "前往小壳兽",
+    "GoToMiniShellbeastMove": {
+        "desc": "自动寻路前往小壳兽",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -257,21 +286,19 @@
                     217.1,
                     702.7
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 15
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "MiniShellbeastAdjustCamera"
         },
-        "next": [
-            "MiniShellbeastAdjustHeading"
-        ]
-    },
-    "MiniShellbeastAdjustHeading": {
-        "desc": "小壳兽任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

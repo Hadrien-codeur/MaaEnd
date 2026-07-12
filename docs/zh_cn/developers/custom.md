@@ -42,6 +42,29 @@ Action 节点用于执行自定义动作。常见写法如下：
 
 示例文件：[`SubTask.json`](../../../assets/resource/pipeline/Interface/Example/SubTask.json)
 
+### FailureCollector
+
+`FailureCollector` 实现位于 `agent/go-service/common/failurecollector`，用于在多个子任务中收集失败项，全部执行完毕后统一汇报失败。单个子任务失败不会中断后续子任务的执行。
+
+提供三个 Custom Action，通过相同的 `key` 关联同一次收集：
+
+- `FailureCollectorReset`：重置指定 `key` 的收集状态，必须在所有 RunTask 之前调用。
+- `FailureCollectorRunTask`：执行 `task` 子任务。成功则继续；失败时按发生顺序记录 `failure_task` 并可选执行 `recovery_task`，Action 本身始终返回成功以保证 Pipeline 继续执行后续节点。
+- `FailureCollectorFinish`：按失败发生顺序依次执行本轮记录的全部 `failure_task` 节点，随后清空状态。存在失败记录时返回失败，否则返回成功。
+
+- 参数：
+    - `FailureCollectorReset`：
+        - `key: string`：收集标识，必填。同一流程中须保持一致且全局唯一。
+    - `FailureCollectorRunTask`：
+        - `key: string`：收集标识，必填。
+        - `task: string`：要执行的子任务 Pipeline 节点名，必填。该节点被禁用（`Enabled = false`）时直接跳过，不视为失败。
+        - `failure_task: string`：子任务失败时记录的 Pipeline 节点名，必填。该节点通常通过 `focus` 向 Agent 输出用户提示信息。
+        - `recovery_task?: string`：子任务失败后执行的恢复任务节点名，可选。
+    - `FailureCollectorFinish`：
+        - `key: string`：收集标识，必填。
+
+示例文件：[`AutoCollect.json`](../../../assets/resource/pipeline/AutoCollect.json)
+
 ### ClearHitCount
 
 `ClearHitCount` 实现位于 `agent/go-service/clearhitcount`，用于清除指定节点的命中计数。
@@ -130,6 +153,19 @@ Action 节点用于执行自定义动作。常见写法如下：
 - 参数：
     - `duration: int`：长按持续时间（毫秒），必填。
 
+### AutoAltSwipeAction
+
+`AutoAltSwipeAction` 实现位于 `agent/go-service/common/autoalt`，用于执行 Alt + 滑动操作。先按下 Alt 键，再执行滑动，最后松开 Alt 键。
+
+- 参数（均可选，透传给子节点 `__AutoAltSwipeMouseSwipeAction` 的 Swipe 动作）：
+    - `begin?: [int, int] | [int, int, int, int]`：滑动起点；省略时默认 `arg.Box`。
+    - `end?: [int, int] | [int, int, int, int]`：滑动终点；省略时默认 `arg.Box`。
+    - `begin_offset?: [int, int, int, int]`：在默认起点（`arg.Box`）上叠加 `[dx, dy, dw, dh]`。
+    - `end_offset?: [int, int, int, int]`：在默认终点（`arg.Box`）上叠加 `[dx, dy, dw, dh]`。
+    - `duration?: int`：滑动持续时间（毫秒）。
+    - `end_hold?: int`：滑动结束后按住时长（毫秒）。
+    - `only_hover?: bool`：是否仅悬停滑动。
+
 ---
 
 ## Custom Recognition
@@ -205,6 +241,7 @@ Recognition 节点用于执行自定义识别。常见写法如下：
 - 表达式结果必须是布尔值，否则识别失败。
 - 被引用节点当前应能返回可解析的 OCR 数值结果，否则表达式求值失败。
 - 对 `And` 节点，`box_index` 指向的本次子识别结果当前需要直接包含可解析的 OCR 数值结果。
+- 表达式中的整数字面量，以及 OCR 换算后的数值，若超出当前平台 `int` 可表示范围，会自动钳制到 `int` 最大值或最小值（正溢出取最大值，负溢出取最小值），并输出警告日志；表达式会继续求值，而不是直接失败。
 - 该识别器只负责表达式求值，不负责业务语义本身，业务侧应在 Pipeline 中自行组织节点与阈值。
 
 ### ScheduleRecognition
@@ -239,5 +276,6 @@ Recognition 节点用于执行自定义识别。常见写法如下：
 | 按星期几门控后续节点          | `ScheduleRecognition`         |
 | 在指定位置 Alt + 点击         | `AutoAltClickAction`          |
 | 在指定位置 Alt + 长按         | `AutoAltLongPressAction`      |
+| Alt + 滑动                    | `AutoAltSwipeAction`          |
 
 所有 Custom 的 Go 代码实现在 `agent/go-service/` 下，Pipeline 作者不需要关心，照文档参数写 JSON 就行。

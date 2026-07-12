@@ -18,9 +18,13 @@
         "desc": "在目的地地图界面，调用 custom 进行自动送货流程",
         "action": "Custom",
         "custom_action": "SeizeDeliveryJobsDepartureAction",
-        "post_delay": 750, // 等待提交货物按钮弹出
+        "custom_action_param": {
+            "map_name_regex": "map02_lv002|map02_lv005", // 所有可用的送货地图名称（后续增加新地区需要更新此值）
+            "zipline_policy": "Lazy", // 默认不优先使用滑索（可以覆写为 "Active"）
+            "is_retry": false
+        },
         "next": [
-            // 结束
+            // 此 CustomAction 内部会自行规划后续节点，故无需在此处指定 next
         ]
     },
     // ===== 分割线：下面的节点由 Go 调用 =====
@@ -51,7 +55,7 @@
         "action": "Click",
         "post_delay": 0,
         "next": [
-            // 完成
+            // 后续由 Go 内部逻辑来进行后续流程控制
         ],
         "focus": {
             "Node.Action.Starting": "成功识别目的地位置"
@@ -61,7 +65,7 @@
         "desc": "自动送委托的提交入口点（此节点由 Go 调用）",
         "enabled": true,
         "pre_delay": 0,
-        "post_delay": 0,
+        "post_delay": 2000, // 等待玩家止步
         "next": [
             "SeizeDeliveryJobsSubmit",
             "SeizeDeliveryJobsSubmitFallback"
@@ -92,12 +96,17 @@
         }
     },
     "SeizeDeliveryJobsCloseRewardDialog": {
-        "desc": "在提交货物后，关闭奖励对话框（随后任务结束）",
+        "desc": "在提交货物后，关闭奖励对话框；随后按剩余循环次数决定回到抢单入口或结束任务",
         "recognition": "And",
         "all_of": [
             "CloseRewardsButton"
         ],
+        "pre_wait_freezes": 500, // 等待奖励动画播放完毕
         "action": "Click",
+        "next": [
+            "SeizeDeliveryJobsMain", // 有剩余次数时继续循环
+            "SeizeDeliveryJobsTaskEnd" // 次数用尽时结束任务
+        ],
         "focus": {
             "Node.Action.Starting": "**成功提交货物**"
         }
@@ -105,15 +114,15 @@
     "SeizeDeliveryJobsSubmitFallback": {
         "desc": "未能找到提交货物按钮时触发，使用缓存坐标重新返回大世界并送货（有最大尝试次数限制）",
         "max_hit": 5,
-        "pre_delay": 0,
         "action": "Custom",
         "custom_action": "SeizeDeliveryJobsDepartureAction",
         "custom_action_param": {
+            "map_name_regex": "", // 重试使用的是缓存数据，此处不填即可
+            "zipline_policy": "Never", // 重试时玩家离终点很近，不要使用滑索
             "is_retry": true
         },
-        "post_delay": 0,
         "next": [
-            // 完成，后续由 Go 内部逻辑来重新调用提交货物分支
+            // 后续由 Go 内部逻辑来重新调用提交货物分支
         ],
         "focus": {
             "Node.Action.Starting": "准备重新前往终点"

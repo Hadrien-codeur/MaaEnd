@@ -9,7 +9,24 @@
             "CheckPierWaterwheelReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "PierWaterwheelExecute",
+            "recovery_task": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
+            "failure_task": "PierWaterwheelFailed"
+        },
+        "post_delay": 0
+    },
+    "PierWaterwheelFailed": {
+        "desc": "码头水车任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.PierWaterwheel.failed"
+        }
+    },
+    "PierWaterwheelExecute": {
+        "desc": "执行码头水车任务路线",
         "next": [
             "AcceptPierWaterwheel",
             "GoToPierWaterwheelMission"
@@ -31,6 +48,7 @@
             "渡し場の水車",
             "부두 물레방아"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckPierWaterwheelIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Pier\\s*Waterwheel",
             "渡し場の水車の写真を撮る",
             "부두 물레방아를 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptPierWaterwheel": {
         "desc": "接取码头水车委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToPierWaterwheelMapTrackerMove"
+            "GoToPierWaterwheelMove"
         ]
     },
     "GoToPierWaterwheelNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToPierWaterwheelStartPos"
         ]
     },
-    "GoToPierWaterwheelMapTrackerMove": {
-        "desc": "前往码头水车",
+    "GoToPierWaterwheelMove": {
+        "desc": "自动寻路前往码头水车",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -253,21 +272,19 @@
                     512,
                     192
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 105
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "PierWaterwheelAdjustCamera"
         },
-        "next": [
-            "PierWaterwheelAdjustHeading"
-        ]
-    },
-    "PierWaterwheelAdjustHeading": {
-        "desc": "码头水车任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

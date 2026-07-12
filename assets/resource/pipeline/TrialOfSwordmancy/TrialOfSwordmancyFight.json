@@ -9,8 +9,9 @@
             25
         ],
         "template": "TrialOfSwordmancy/TrialStart.png",
+        "pre_delay": 0,
         "action": "Click",
-        "post_wait_freezes": 100,
+        "post_delay": 0,
         "next": [
             "TrialOfSwordmancyPrepareTeam"
         ]
@@ -35,6 +36,8 @@
                 200
             ]
         },
+        "pre_delay": 0,
+        "post_delay": 0,
         "next": [
             "TrialOfSwordmancyConfirmTeam"
         ]
@@ -46,22 +49,27 @@
             "YellowConfirmButtonType2"
         ],
         "pre_wait_freezes": 400,
+        "pre_delay": 0,
         "action": "Click",
+        "post_delay": 0,
         "next": [
             "[JumpBack]SceneWaitLoadingExit",
-            "TrialOfSwordmancyEnterTrial"
+            "TrialOfSwordmancyEnterTrialTarget"
         ]
     },
-    "TrialOfSwordmancyEnterTrial": {
-        "desc": "进入演算场景",
+    "TrialOfSwordmancyEnterTrialTarget": {
+        "desc": "进入挑战目标界面",
         "recognition": "And",
         "all_of": [
             "TrialOfSwordmancyChallengeBackground"
         ],
+        "pre_delay": 0,
+        "post_delay": 0,
         "next": [
             "TrialOfSwordmancyCloseTrialTarget"
         ]
     },
+    // 挑战目标界面无任何画面变化，用不了 post_wait_freezes
     "TrialOfSwordmancyCloseTrialTarget": {
         "desc": "关闭挑战目标界面",
         "recognition": "TemplateMatch",
@@ -72,11 +80,25 @@
             119
         ],
         "template": "Common/Button/CloseButtonType4.png",
+        "pre_delay": 500, // 防止点击失效
         "action": "Click",
-        "post_wait_freezes": 100,
+        "post_delay": 0,
         "next": [
-            "[JumpBack]AutoFight",
-            "TrialOfSwordmancyFightSuccess"
+            "TrialOfSwordmancyEnterTrialSuccess"
+        ]
+    },
+    "TrialOfSwordmancyEnterTrialSuccess": {
+        "desc": "成功关闭挑战目标界面，开始演算",
+        "recognition": "And",
+        "all_of": [
+            "TrialOfSwordmancyChallengeBackground"
+        ],
+        "inverse": true,
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "TrialOfSwordmancyFightSuccess",
+            "[JumpBack]AutoFight"
         ]
     },
     "TrialOfSwordmancyFightSuccess": {
@@ -85,11 +107,12 @@
         "all_of": [
             "WhiteConfirmButtonType1"
         ],
+        "pre_delay": 0,
         "action": "Click",
-        "post_wait_freezes": 100,
+        "post_delay": 0,
         "next": [
-            "TrialOfSwordmancyInTrialMenu",
-            "TrialOfSwordmancyRewardExhausted"
+            "TrialOfSwordmancyRewardExhausted",
+            "TrialOfSwordmancyReEnterTrialMenuSuccess"
         ]
     },
     "TrialOfSwordmancyRewardExhausted": {
@@ -98,10 +121,70 @@
         "all_of": [
             "YellowConfirmButtonType1"
         ],
+        "pre_delay": 0,
         "action": "Click",
-        "next": [], // 任务结束
-        "focus": {
-            "Node.Action.Succeeded": "今日奖励次数已用尽"
-        }
+        "post_delay": 0,
+        "next": [
+            "TrialOfSwordmancyDailyFinish"
+        ]
+    },
+    "TrialOfSwordmancyReEnterTrialMenuSuccess": {
+        "desc": "成功返回演算菜单",
+        "recognition": "And",
+        "all_of": [
+            "TrialOfSwordmancyDrawCard"
+        ],
+        "pre_wait_freezes": {
+            "time": 100,
+            "target": [
+                // 等待抽牌按钮的骰子转动完毕
+                1081,
+                510,
+                68,
+                60
+            ]
+        },
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "TrialOfSwordmancyDailyAutoFightRearmResetState",
+            "TrialOfSwordmancyMain"
+        ]
+    },
+    "TrialOfSwordmancyDailyAutoFightResetState": {
+        "desc": "自动作战模式下，一次性重置到选剑演武入口",
+        "enabled": false,
+        "max_hit": 1,
+        "recognition": "DirectHit",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "TrialOfSwordmancyGotoTrialArenaStart"
+            ]
+        },
+        "post_delay": 0,
+        "next": [
+            "TrialOfSwordmancyDailyMain"
+        ]
+    },
+    "TrialOfSwordmancyDailyAutoFightRearmResetState": {
+        "desc": "自动作战模式下，为下一轮重新启用入口重置",
+        "enabled": false,
+        "recognition": "DirectHit",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "ClearHitCount",
+        "custom_action_param": {
+            "nodes": [
+                "TrialOfSwordmancyDailyAutoFightResetState",
+                "TrialOfSwordmancyGotoTrialArenaCpp"
+            ]
+        },
+        "post_delay": 0,
+        "next": [
+            "TrialOfSwordmancyMain"
+        ]
     }
 }

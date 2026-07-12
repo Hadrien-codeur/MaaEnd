@@ -32,20 +32,21 @@
             },
             "permission_required": true
         },
-        {
-            "name": "Win32-Window-Background",
-            "label": "$controller.Win32-Window-Background.label",
-            "description": "$controller.Win32-Window-Background.description",
-            "type": "Win32",
-            "win32": {
-                "class_regex": "UnityWndClass",
-                "window_regex": "Endfield",
-                "screencap": "PrintWindow",
-                "mouse": "SendMessageWithWindowPos",
-                "keyboard": "PostMessage"
-            },
-            "permission_required": true
-        },
+        // Win32-Window-Background: 因游戏更新无法继续适配，已弃用
+        // {
+        //     "name": "Win32-Window-Background",
+        //     "label": "$controller.Win32-Window-Background.label",
+        //     "description": "$controller.Win32-Window-Background.description",
+        //     "type": "Win32",
+        //     "win32": {
+        //         "class_regex": "UnityWndClass",
+        //         "window_regex": "Endfield",
+        //         "screencap": "PrintWindow",
+        //         "mouse": "SendMessageWithWindowPos",
+        //         "keyboard": "PostMessage"
+        //     },
+        //     "permission_required": true
+        // },
         {
             "name": "ADB",
             "label": "$controller.ADB.label",
@@ -90,8 +91,7 @@
     ],
     "agent": [
         {
-            "child_exec": "agent/go-service",
-            "child_args": []
+            "child_exec": "agent/go-service"
         },
         {
             "child_exec": "agent/cpp-algo",
@@ -142,6 +142,8 @@
     ],
     "task": [],
     "import": [
+        // pretask
+        "tasks/pretasks/GameSetting.json",
         // group: regional_development
         "tasks/SellProduct.json",
         "tasks/SeizeDeliveryJobs.json",
@@ -156,15 +158,16 @@
         "tasks/GearAssembly.json",
         "tasks/Weapon.json",
         "tasks/BatchUseDetector.json",
-        "tasks/AutoUseSpMedication.json",
         "tasks/EssenceFilter.json",
         // group: open_world
         "tasks/ResourceRecycleStation.json",
         "tasks/AutoCollect.json",
         "tasks/AutoEcoFarm.json",
         "tasks/PuzzleSolver.json",
+        "tasks/SwitchTeam.json",
         "tasks/ImportBluePrints.json",
         // group: sanity_sink
+        "tasks/AutoUseSpMedication.json",
         "tasks/AutoEssence.json",
         "tasks/ProtocolSpace.json",
         // group: dijiang_ship
@@ -183,6 +186,7 @@
         "tasks/AccountSwitch.json",
         "tasks/WebEvent202605.json",
         "tasks/AndroidOpenGame.json",
+        "tasks/CloseGame.json",
         // group: realtime
         "tasks/RealTimeTask.json",
         // group: backpack
@@ -195,6 +199,7 @@
         "tasks/preset/DailyFull.json",
         "tasks/preset/QuickDaily.json",
         "tasks/preset/RealtimeAssist.json",
-        "tasks/preset/EssenceFarming.json"
+        // setting
+        "tasks/setting/Keymap.json"
     ]
 }

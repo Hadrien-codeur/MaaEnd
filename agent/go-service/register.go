@@ -16,6 +16,7 @@ import (
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/charactercontroller"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/clearhitcount"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/expressionrecognition"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/failurecollector"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/falseaction"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/pipelineoverride"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/poststop"
@@ -36,6 +37,7 @@ import (
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/taskersink/cursormove"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/taskersink/hdrcheck"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/taskersink/processcheck"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/trialofswordmancy"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/visitfriends"
 	webevent202605 "github.com/MaaXYZ/MaaEnd/agent/go-service/webevent/202605"
 	"github.com/rs/zerolog/log"
@@ -53,6 +55,7 @@ func registerAll() {
 
 	// General Custom
 	subtask.Register()
+	failurecollector.Register()
 	clearhitcount.Register()
 	pipelineoverride.Register()
 	expressionrecognition.Register()
@@ -86,6 +89,7 @@ func registerAll() {
 	creditshopping.Register()
 	webevent202605.Register()
 	pullcount.Register()
+	trialofswordmancy.Register()
 	log.Info().
 		Msg("All custom components and sinks registered successfully")
 }

@@ -13,7 +13,7 @@
                 "regional_development"
             ],
             "pipeline_override": {
-                "SeizeDeliveryJobsSuccessFetchGoods": {
+                "SeizeDeliveryJobsSuccessWalkDone": {
                     "enabled": true
                 }
             }

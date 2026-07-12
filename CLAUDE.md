@@ -448,50 +448,52 @@ python tools/build_and_install.py
 
 ## 18. 当前进度存档（接力时先读此节，确认后删除）
 
-### 18.1 状态：连滑（空中按 E 接力）能力已实现 + Observatory 路线已重构为 2 连滑段，已编译安装 ✅，待博士实机验证
+### 18.1 状态：上游已合并 ✅ + 连滑能力已实测通过 ✅ + 「自定义送货」开关已实现待实机闭环验证
 
-**本次会话完成（2026-07-02）**：把滑索从"逐架落地重跳"升级为真正的"空中按 E 连滑接力"，并把 Observatory 送货路线由 8 段落地重跳重构为 2 个连滑段。
+**本次会话完成（2026-07-12/13）**：
+1. 合并上游 `origin/v2`（201 提交）到 `feature/zipline-fast`，解决 `departure.go` / `map-tracker.md` 冲突。
+2. 修复合并引入的 retry bug（见 18.3）。
+3. Observatory 连滑实测通过（ChainA 超时→timeout 25000 上调到 40000，ChainB 30000）。
+4. 新增「自定义送货」开关（见 18.4），已编译安装 + check 通过，**待实机闭环验证**。
 
-### 18.2 关键根因发现（推翻了旧的第 18.3 假设）
+### 18.2 上游合并要点（官方已有滑索送货，本分支在其上优化）
 
-- 旧 `MapTrackerZipline`（`agent/go-service/maptracker/default/zipline.go`）实为**逐架落地重跳**：每段「转向→点屏幕中心发射→等落地静止」，**全程从不按 E**。所以此前"连滑"从未真正触发——不是坐标问题，是机制本身不按 E。
-- 游戏真正连滑（博士实机确认）：上索一次→朝首架发射→飞行途中屏幕**右侧**出现"长距滑索"图标→**按 E 跳到下一架继续飞、不落地**→反复接力；段末那架不按 E 自然落地。段间落地后**不需重新上索**，直接转向发射。
-- 现成可复用节点：`RealTimeAutoZipline`（`assets/resource/pipeline/RealTimeTask/AutoZipline.json`）——识别右侧 ROI `[1040,432,137,123]` 的 E 图标（模板 `RealTimeTask/Zipline.png`，阈值 0.8）→ `ClickKey(69)` 按 E。`RunTask` 返回成功=这轮识别到并按了 E。原先只挂在后台 `RealTimeTaskMain` 轮询，跑 SeizeDeliveryJobs 时不运行。
+- 官方 PR **#3730** 已实现「优先使用滑索送货」：`SeizeDeliveryJobsPostDeparturePreferZipline=Yes` → `MapTrackerGoal` 的 `zipline_policy=Active`，NavMesh 自动用滑索（非固定路线）。
+- 官方送货 `SeizeDeliveryJobsDepartureAction`（`departure.go`）参数：`map_name_regex`（找图）+ `zipline_policy`（NavMesh）。
+- **融合方案**：保留官方参数，同时保留本分支「命中已知终点→走固定滑索路线 `runDeliverRoute`，否则 fallback `runGoal`(NavMesh)」的分流。
+- **关键事实（本次追踪确认）**：官方「全自动送货」的**取货段 = 本分支录的滑索取货路线**（逐节点相同，取货按钮 `FetchGoods` 默认在）；**送货段在指定观测站时已自动调用** `SeizeDeliveryJobsDeliverRouteObservatory`（因 Observatory 坐标 `[617.1,358.0]` 已填），送货按钮 `SubmitEntry` 默认在。
 
-### 18.3 已实施的改动（编译/vet/format/check 全通过，已 build_and_install）
+### 18.3 已修复的 bug（合并引入）
 
-1. **`agent/go-service/maptracker/default/zipline.go`（核心）**：
-   - `MapTrackerZiplineParam` 加 `ChainMaxPress int json:"chain_max_press,omitempty"`；`parseParam` 加非负校验。
-   - 加常量 `ZIPLINE_CHAIN_RELAY_NODE = "RealTimeAutoZipline"`。
-   - Run 的落地静止循环改为「先试按 E 接力，再做静止检测」融合循环：未按满 `ChainMaxPress` 时每轮 `RunTask("RealTimeAutoZipline")`，成功则 `pressed++`、重置 `prevFrame`/`stillStartTime`、`continue`；按满后不再按 E，等自然落地静止返回。终点架 E 提示因达上限不会误按。
-   - `ChainMaxPress=0`（默认）= 完全保持原逐架落地行为，向后兼容取货段等所有现有单段调用。
-2. **`tools/schema/components/map_tracker.schema.json`**：`MapTrackerZiplineParam.properties` 加 `chain_max_press`（integer, minimum 0, default 0）。（该 schema `additionalProperties:false`，必须加。）
-3. **`assets/resource/pipeline/SeizeDeliveryJobs/SeizeDeliveryJobsDeliverRoutes.json`**：Observatory 的 8 个 `...Zipline1..8` 节点删除，改为 2 个连滑段：
-   - `...ObservatoryZiplineChainA`：target `[673.3,731.9]`，`chain_max_press:4`，`timeout:25000` → 落 `[577.0,480.6]`。
-   - `...ObservatoryZiplineChainB`：target `[586.9,420.4]`，`chain_max_press:2`，`timeout:25000` → 落 `[619.5,358.1]`（终点架）。
-   - SubTask 序列：`WalkToZipline → GetOnZipline → ChainA → ChainB → GetOffZipline → WalkToNpc`（段间无 GetOnZipline）。
-4. **`docs/zh_cn/developers/components/map-tracker.md`**：补 `chain_max_press` 参数说明。
-5. **未动** `SeizeDeliveryJobsPost.json`（取货段单段滑索，无该参数→默认 0→原行为保持）。Owl/材料研究所/技术生产办公室三条路线仍为占位待录，不受影响。
+- **retry 重跑固定路线 bug**：官方 retry（`SeizeDeliveryJobsSubmitFallback`，找不到提交按钮时）语义是「已在终点附近，用缓存坐标 + `zipline_policy=Never` 走小段 NavMesh 微调」。合并后 retry 会因缓存 `endpoint` 非空而重跑整条固定滑索路线（把玩家拽回起点重滑）。**已修**：`departure.go` retry 分支强制 `endpoint=""`，走 NavMesh。
 
-> 备注：先前博士指出并已删除的重复点 `[585.8,420.4]`（与 `[586.9,420.4]` 几乎重合、导致转向发疯）——重构为连滑段后该点自然不再作为独立 target，问题一并消除。
+### 18.4 本次新增：「自定义送货」开关（CustomDelivery）
 
-### 18.4 下一步（待博士实机验证）
+- **位置**：`全自动送货(TeleWalkFetchDeliver)` 下，与 `优先使用滑索送货`/`送货次数` 并列。默认关。
+- **语义**：关=官方行为（命中终点走固定路线，否则 NavMesh）；开=送货段**强制只走固定滑索路线**，未命中已知终点则**判失败不回退**（博士确认）。取货段本就是固定路线，不受开关影响。
+- **实现**：
+    1. `departure.go`：param 加 `CustomDelivery bool json:"custom_delivery,omitempty"`；Run 第4步 `endpoint==""` 且 `CustomDelivery` 时记 Error 返 false（不 fallback）。
+    2. `assets/tasks/SeizeDeliveryJobs.json`：`TeleWalkFetchDeliver.option` 加 `SeizeDeliveryJobsCustomDelivery`；新增该 switch 定义，Yes 时 override `SeizeDeliveryJobsRunDeparture.custom_action_param`（含 `custom_delivery:true`，写全字段因判定 override 为整块替换）。
+    3. 5 语言 locale 加 `task.SeizeDeliveryJobsCustomDelivery.label/description`。
+- **override 合并存疑点**：`PreferZipline=Yes` 与 `CustomDelivery=Yes` 都 override 同一节点 `custom_action_param`。判定为**整块替换**（依据：官方 PreferZipline override 写了全字段）。两开关同开时按 option 数组顺序，CustomDelivery 靠后→生效→走固定路线（自定义优先，可接受）。**实机时留意此点**。
 
-1. **完整重启 MaaEnd.exe**（改了 Go + Pipeline）。
-2. 跑 `SeizeDeliveryJobsTestDeliverObservatory`，核对：
-   - ChainA 是否按 4 次 E、落在 `[577,480.6]` 附近；
-   - ChainB 是否按 2 次 E、落在 `[619.5,358.1]` 终点架；
-   - 下索后步行到 NPC `[617.1,358.0]`。
-3. 看 `go-service.log` 里 `Zipline chain relay key pressed`（含 `pressed`/`chainMaxPress`）是否按预期次数触发。
-4. **调参方式**：按 E 次数不符 → 只改 JSON 的 `chain_max_press`（无需重编 Go）；飞行途中提前超时 → 上调该段 `timeout`。
-5. Observatory 连滑跑通后，再用同一套连滑写法录其余 3 个终点（Owl/MaterialResearchInstitute/TechProductionOffice）。
+### 18.5 下一步（待博士实机验证）
 
-### 18.5 复用节点 & 文件速查
+1. **完整重启 MaaEnd.exe**（改了 Go + Pipeline + locale）。
+2. **实机闭环**：跑 `抢委托送货-武陵城 / 16.3万 / 指定送货点=观测站 / 抢单结束后=全自动送货 / 自定义送货=开`。
+   观察：抢单 → 传送 → 滑索取货路线 → **取货按钮 FetchGoods** → 送货固定滑索路线(ChainA/ChainB) → **送货按钮 Submit** → 关奖励弹窗 → 结束。
+3. 关掉「自定义送货」再跑一次，确认退回官方行为（回归）。
+4. 有问题导出日志到 `install/debug_exports`，据 `go-service.log` 调参。
+5. Observatory 闭环通过后，录其余 3 终点（Owl/MaterialResearchInstitute/TechProductionOffice）——用同套连滑写法，且**改用「Go 让 deadline 随 chain_max_press 动态放大」**替代手调 timeout（博士要求）。连滑机制：两架最长 110m，连滑提示在距离 <50m 时出现（架间本身 <50m 则一发射就提示）。
 
-- 连滑核心：`MapTrackerZipline` + `chain_max_press` 参数（zipline.go），识别按 E 复用 `RealTimeAutoZipline`。
-- 送货路线：`SeizeDeliveryJobsDeliverRoutes.json`（Observatory 已连滑化；其余 3 终点占位待录）。
-- 取货路线（已走通，未改）：`SeizeDeliveryJobsPost.json` 的 `SeizeDeliveryJobsWulingCityZipline`。
-- 上/下索：`MapTrackerOpenWorld_GetOnZipline` / `GetOffZipline`（`MapTracker/OpenWorld.json`）。
-- 送货交货由 Go `runSubmitEntry`（`SeizeDeliveryJobsSubmitEntry`）。
-- 测试任务：`SeizeDeliveryJobsTestPickup`（取货）/ `SeizeDeliveryJobsTestDeliverObservatory`（送货-观测站）。
-- 二进制 v2.15.0；改 Go 后必须 `python tools/build_and_install.py` + 完整重启 MaaEnd.exe。改 Pipeline JSON 也需重启。
+### 18.6 复用节点 & 文件速查
+
+- 连滑核心：`MapTrackerZipline` + `chain_max_press`（`zipline.go`），识别按 E 复用 `RealTimeAutoZipline`。
+- 送货路线：`SeizeDeliveryJobsDeliverRoutes.json`（Observatory 已连滑化实测通过；其余 3 终点占位待录）。
+- 送货 Go 分流：`departure.go`（`nearestEndpoint`→`runDeliverRoute`/`runGoal`；`custom_delivery` 强制固定路线）。
+- 取货路线（官方=本分支）：`SeizeDeliveryJobsPost.json` 的 `SeizeDeliveryJobsWalkToDepotNodeWulingCity`（含取货按钮 `FetchGoods`）。
+- 上/下索：`MapTrackerOpenWorld_GetOnZipline` / `GetOffZipline`。
+- 送货交货：Go `runSubmitEntry`（`SeizeDeliveryJobsSubmitEntry` → `SeizeDeliveryJobsSubmit`）。
+- 测试任务：`SeizeDeliveryJobsTestPickup`（取货）/ `SeizeDeliveryJobsTestDeliverObservatory`（送货-观测站，仅核对路线不交货）。
+- 二进制 v2.15.0；改 Go 后必须 `python tools/build_and_install.py` + 完整重启 MaaEnd.exe。改 Pipeline JSON / locale 也需重启。
+- ⚠️ 合并未提交：本次改动尚在工作区，博士说「最后再提交」。

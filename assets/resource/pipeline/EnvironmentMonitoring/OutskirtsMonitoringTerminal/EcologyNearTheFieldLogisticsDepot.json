@@ -9,7 +9,24 @@
             "CheckEcologyNearTheFieldLogisticsDepotReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "EcologyNearTheFieldLogisticsDepotExecute",
+            "recovery_task": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
+            "failure_task": "EcologyNearTheFieldLogisticsDepotFailed"
+        },
+        "post_delay": 0
+    },
+    "EcologyNearTheFieldLogisticsDepotFailed": {
+        "desc": "储备站周围的生态环境任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.EcologyNearTheFieldLogisticsDepot.failed"
+        }
+    },
+    "EcologyNearTheFieldLogisticsDepotExecute": {
+        "desc": "执行储备站周围的生态环境任务路线",
         "next": [
             "AcceptEcologyNearTheFieldLogisticsDepot",
             "GoToEcologyNearTheFieldLogisticsDepotMission"
@@ -31,6 +48,7 @@
             "備蓄施設周辺の生態環境",
             "보급소 주변의 생태 환경"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckEcologyNearTheFieldLogisticsDepotIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Field\\s*Logistics\\s*Depot\\s*Ecology",
             "備蓄施設周辺の生態環境の写真を撮る",
             "보급소 주변의 생태 환경을 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptEcologyNearTheFieldLogisticsDepot": {
         "desc": "接取储备站周围的生态环境委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToEcologyNearTheFieldLogisticsDepotMapTrackerMove"
+            "GoToEcologyNearTheFieldLogisticsDepotMove"
         ]
     },
     "GoToEcologyNearTheFieldLogisticsDepotNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToEcologyNearTheFieldLogisticsDepotStartPos"
         ]
     },
-    "GoToEcologyNearTheFieldLogisticsDepotMapTrackerMove": {
-        "desc": "前往储备站周围的生态环境",
+    "GoToEcologyNearTheFieldLogisticsDepotMove": {
+        "desc": "自动寻路前往储备站周围的生态环境",
         "action": "Custom",
         "custom_action": "MapTrackerGoal",
         "custom_action_param": {
@@ -247,31 +266,19 @@
             "target": [
                 618.8,
                 901.6
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 270
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "EcologyNearTheFieldLogisticsDepotAdjustCamera"
         },
-        "next": [
-            "EcologyNearTheFieldLogisticsDepotAdjustHeading"
-        ]
-    },
-    "EcologyNearTheFieldLogisticsDepotAdjustHeading": {
-        "desc": "储备站周围的生态环境任务中调整角色朝向",
-        "pre_delay": 0,
-        "action": "Custom",
-        "custom_action": "MapNavigateAction",
-        "custom_action_param": {
-            "path": [
-                {
-                    "action": "HEADING",
-                    "angle": 270
-                }
-            ]
-        },
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

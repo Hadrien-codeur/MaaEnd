@@ -9,7 +9,24 @@
             "CheckRainbowReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "RainbowExecute",
+            "recovery_task": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
+            "failure_task": "RainbowFailed"
+        },
+        "post_delay": 0
+    },
+    "RainbowFailed": {
+        "desc": "彩虹任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.Rainbow.failed"
+        }
+    },
+    "RainbowExecute": {
+        "desc": "执行彩虹任务路线",
         "next": [
             "AcceptRainbow",
             "GoToRainbowMission"
@@ -31,6 +48,7 @@
             "虹",
             "무지개"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckRainbowIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Rainbow",
             "虹の写真を撮る",
             "무지개를 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptRainbow": {
         "desc": "接取彩虹委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToRainbowMapTrackerMove"
+            "GoToRainbowMove"
         ]
     },
     "GoToRainbowNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToRainbowStartPos"
         ]
     },
-    "GoToRainbowMapTrackerMove": {
-        "desc": "前往彩虹",
+    "GoToRainbowMove": {
+        "desc": "自动寻路前往彩虹",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -289,31 +308,19 @@
                     477.1,
                     603.3
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 260
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "RainbowAdjustCamera"
         },
-        "next": [
-            "RainbowAdjustHeading"
-        ]
-    },
-    "RainbowAdjustHeading": {
-        "desc": "彩虹任务中调整角色朝向",
-        "pre_delay": 0,
-        "action": "Custom",
-        "custom_action": "MapNavigateAction",
-        "custom_action_param": {
-            "path": [
-                {
-                    "action": "HEADING",
-                    "angle": 260
-                }
-            ]
-        },
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

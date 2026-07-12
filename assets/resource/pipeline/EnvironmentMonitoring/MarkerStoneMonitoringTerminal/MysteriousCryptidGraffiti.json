@@ -9,7 +9,24 @@
             "CheckMysteriousCryptidGraffitiReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "MysteriousCryptidGraffitiExecute",
+            "recovery_task": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
+            "failure_task": "MysteriousCryptidGraffitiFailed"
+        },
+        "post_delay": 0
+    },
+    "MysteriousCryptidGraffitiFailed": {
+        "desc": "谜之生物的涂鸦任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.MysteriousCryptidGraffiti.failed"
+        }
+    },
+    "MysteriousCryptidGraffitiExecute": {
+        "desc": "执行谜之生物的涂鸦任务路线",
         "next": [
             "AcceptMysteriousCryptidGraffiti",
             "GoToMysteriousCryptidGraffitiMission"
@@ -31,6 +48,7 @@
             "謎の生物に関する落書き",
             "미지의 생물이 남긴 낙서"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckMysteriousCryptidGraffitiIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Mysterious\\s*Cryptid\\s*Graffiti",
             "謎の生物に関する落書きの写真を撮る",
             "미지의 생물이 남긴 낙서를 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptMysteriousCryptidGraffiti": {
         "desc": "接取谜之生物的涂鸦委托",
@@ -222,7 +241,7 @@
             ]
         },
         "next": [
-            "GoToMysteriousCryptidGraffitiMapTrackerMove"
+            "GoToMysteriousCryptidGraffitiMove"
         ]
     },
     "GoToMysteriousCryptidGraffitiNotAtStartPos": {
@@ -238,8 +257,8 @@
             "GoToMysteriousCryptidGraffitiStartPos"
         ]
     },
-    "GoToMysteriousCryptidGraffitiMapTrackerMove": {
-        "desc": "前往谜之生物的涂鸦",
+    "GoToMysteriousCryptidGraffitiMove": {
+        "desc": "自动寻路前往谜之生物的涂鸦",
         "action": "Custom",
         "custom_action": "MapTrackerMove",
         "custom_action_param": {
@@ -309,21 +328,19 @@
                     442.5,
                     531.7
                 ]
-            ]
+            ],
+            "on_finish": {
+                "action": "Custom",
+                "custom_action": "MapTrackerToward",
+                "custom_action_param": {
+                    "angle": 165
+                }
+            }
         },
         "anchor": {
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToMarkerStoneMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "MysteriousCryptidGraffitiAdjustCamera"
         },
-        "next": [
-            "MysteriousCryptidGraffitiAdjustHeading"
-        ]
-    },
-    "MysteriousCryptidGraffitiAdjustHeading": {
-        "desc": "谜之生物的涂鸦任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

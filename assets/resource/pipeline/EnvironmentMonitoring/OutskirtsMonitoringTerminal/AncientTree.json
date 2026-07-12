@@ -9,7 +9,24 @@
             "CheckAncientTreeReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "AncientTreeExecute",
+            "recovery_task": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
+            "failure_task": "AncientTreeFailed"
+        },
+        "post_delay": 0
+    },
+    "AncientTreeFailed": {
+        "desc": "古树任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.EnvironmentMonitoring.route.AncientTree.failed"
+        }
+    },
+    "AncientTreeExecute": {
+        "desc": "执行古树任务路线",
         "next": [
             "AcceptAncientTree",
             "GoToAncientTreeMission"
@@ -31,6 +48,7 @@
             "古木",
             "고목"
         ],
+        "replace": [],
         "order_by": "Vertical"
     },
     "CheckAncientTreeIcon": {
@@ -120,7 +138,8 @@
             "(?i)Photo:\\s*Ancient\\s*Tree\\s*in\\s*Lake",
             "水中から生えた古木の写真を撮る",
             "작은 웅덩이에서 자라는 고목을 촬영하기"
-        ]
+        ],
+        "replace": []
     },
     "AcceptAncientTree": {
         "desc": "接取古树委托",
@@ -218,7 +237,7 @@
             ]
         },
         "next": [
-            "GoToAncientTreeMapTrackerMove"
+            "GoToAncientTreeMove"
         ]
     },
     "GoToAncientTreeNotAtStartPos": {
@@ -234,8 +253,8 @@
             "GoToAncientTreeStartPos"
         ]
     },
-    "GoToAncientTreeMapTrackerMove": {
-        "desc": "前往古树",
+    "GoToAncientTreeMove": {
+        "desc": "自动寻路前往古树",
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
@@ -257,15 +276,6 @@
             "EnvironmentMonitoringBackToTerminal": "EnvironmentMonitoringGoToOutskirtsMonitoringTerminal",
             "EnvironmentMonitoringAdjustCamera": "AncientTreeAdjustCamera"
         },
-        "next": [
-            "AncientTreeAdjustHeading"
-        ]
-    },
-    "AncientTreeAdjustHeading": {
-        "desc": "古树任务无需调整角色朝向",
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
         "next": [
             "EnvironmentMonitoringTakePhoto"
         ]

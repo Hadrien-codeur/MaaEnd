@@ -9,7 +9,24 @@
             "Check${Id}ReadyText"
         ],
         "pre_delay": 0,
-        "post_delay": 0,
+        "action": "Custom",
+        "custom_action": "FailureCollectorRunTask",
+        "custom_action_param": {
+            "key": "EnvironmentMonitoring",
+            "task": "${Id}Execute",
+            "recovery_task": "${GoToMonitoringTerminal}",
+            "failure_task": "${Id}Failed"
+        },
+        "post_delay": 0
+    },
+    "${Id}Failed": {
+        "desc": "${Name}任务执行失败提示",
+        "focus": {
+            "Node.Recognition.Succeeded": "$${NameKey}"
+        }
+    },
+    "${Id}Execute": {
+        "desc": "执行${Name}任务路线",
         "next": [
             "Accept${Id}",
             "GoTo${Id}Mission"
@@ -25,6 +42,7 @@
             71
         ],
         "expected": "${ExpectedText}",
+        "replace": "${OcrReplace}",
         "order_by": "Vertical"
     },
     "Check${Id}Icon": {
@@ -108,7 +126,8 @@
             855,
             241
         ],
-        "expected": "${InExpectedText}"
+        "expected": "${InExpectedText}",
+        "replace": "${OcrReplace}"
     },
     "Accept${Id}": {
         "desc": "接取${Name}委托",
@@ -191,7 +210,7 @@
         "custom_recognition": "${MapAssertRecognition}",
         "custom_recognition_param": "${MapAssertParam}",
         "next": [
-            "GoTo${Id}MapTrackerMove"
+            "GoTo${Id}Move"
         ]
     },
     "GoTo${Id}NotAtStartPos": {
@@ -207,8 +226,8 @@
             "GoTo${Id}StartPos"
         ]
     },
-    "GoTo${Id}MapTrackerMove": {
-        "desc": "前往${Name}",
+    "GoTo${Id}Move": {
+        "desc": "自动寻路前往${Name}",
         "action": "Custom",
         "custom_action": "${MapNavigationAction}",
         "custom_action_param": "${MapNavigationParam}",
@@ -217,10 +236,9 @@
             "EnvironmentMonitoringAdjustCamera": "${Id}AdjustCamera"
         },
         "next": [
-            "${Id}AdjustHeading"
+            "EnvironmentMonitoringTakePhoto"
         ]
     },
-    "${Id}AdjustHeading": "${AdjustHeadingNodeBody}",
     "${Id}AdjustCamera": {
         "desc": "${Name}任务中调整朝向",
         "max_hit": "${CameraMaxHit}",
