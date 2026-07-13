@@ -48,6 +48,9 @@ const (
 	ZIPLINE_ACTION_DURATION_MS        = 50
 	ZIPLINE_ACTION_POST_DELAY_MS      = 300
 	ZIPLINE_ROTATION_LOOP_INTERVAL_MS = 450
+	// ZIPLINE_PRE_LAUNCH_DELAY_MS is the wait between finishing the aim rotation and clicking to launch,
+	// giving the in-game "zipline locked-on" prompt time to appear so the launch click is accepted.
+	ZIPLINE_PRE_LAUNCH_DELAY_MS = 1000
 
 	ZIPLINE_STILL_CHECK_INTERVAL_MS = 300
 	ZIPLINE_STILL_THRESHOLD_INIT    = 0.985
@@ -99,6 +102,13 @@ func (a *MapTrackerZipline) Run(ctx *maa.Context, arg *maa.CustomActionArg) bool
 		log.Warn().Msg("Failed to rotate toward target zipline")
 		return false
 	}
+
+	// After the geometric aim is done, wait briefly so the in-game "zipline locked-on" prompt has time to
+	// appear before we click to launch. Aiming (angle within threshold) is not the same as the game being
+	// ready to fire: right after boarding, the landing/camera animation is still settling and the click
+	// would be swallowed. This delay only affects the initial launch of each zipline (ChainA/ChainB start);
+	// mid-chain relays press E inside the loop below and never reach here.
+	time.Sleep(time.Duration(ZIPLINE_PRE_LAUNCH_DELAY_MS) * time.Millisecond)
 
 	before, err := captureMiniMapImage(ctrl)
 	if err != nil {
