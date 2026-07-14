@@ -443,3 +443,48 @@ python tools/build_and_install.py
 
 1. Claude 先把第 18 节内容完整发出来给博士确认。
 2. 博士确认无误后，删除第 18 节，继续开发。
+
+---
+
+## 18. 当前进度存档（接力时先读此节，确认后删除）
+
+### 18.1 状态：已同步上游 + 确定改用 MapNavigator 录制送货步行段（待另一台电脑推进）
+
+**本次会话完成（2026-07-14，本机）**：
+
+1. **同步完成**：本机 `feature/zipline-fast` 已 fast-forward 到另一台电脑上传的 `154a8279`（含滑索发射时机 bug 修复 + Observatory 全链路实测通过）。
+2. **拉上游**：本地 `v2` 已更新到 `origin/v2`（`e279a802`，222 提交）；已 `git merge v2` 进开发分支（merge commit `438ca0e0`，无冲突）。子模块已同步（`model → 93b0d62` 新 NavMesh 数据包）。
+3. **清理**：丢弃了本机遗留的 13 个退化改动（docs 破坏 Alert 渲染 / skills 空行扰动 / tests 脏指针）；删除已确认的旧第 18 节存档并已提交（`638053d9`）。
+
+### 18.2 关键调查结论：「录制路径偏长」根因 + MapNavigator 迁移可行性
+
+**博士疑问**：路径录制工具录出的坐标应用后，实际游戏路径偏长，是否分辨率/工具地图缩放导致？
+
+**结论：不是缩放问题。** 录制端与运行端全程统一在 `0.1625` 地图像素坐标空间，编辑器显示 zoom（`core_utils.py:465` 抵消）和运行时 precision 缩放（`infer.go:418` 除回）都在数学上抵消。偏长真正来自 **MapTrackerMove 逐点直走的循迹行为**：
+- 蛇形走位（每轮只朝当前点转向，`move.go:365`）
+- 录制稀疏化割角（`map_tracker_editor.py:560` `_can_simplify(k=1.1)` 丢中间点）
+- 冲刺过冲（`sprint_threshold=10`，`move.go:80`）
+
+**MapNavigator 迁移评估（博士已决定采用 MapNavigator 录制）**：
+- MaaEnd 有两套独立导航系统：**MapTracker**（送货现用，小地图匹配 + 稀疏采集点 NavMesh）vs **MapNavigator/MapLocator**（`MapLocateRecognition` 定位 + **BaseNav 从游戏 GLB 生成的稠密可走三角面网格** + `NAVMESH` 语义寻路，只填终点自动 A\*）。
+- 上游最近优化几乎全在 MapNavigator：`#3995 自动绕障`、`#4055 防卡墙`、`#4164 走廊门控`、`#4169 折角修复`、`#4172 编辑器 tk→web 重构`（本次已随 merge 拉入，新 web 编辑器在 `tools/MapNavigator/web/`）。
+- **MapNavigator 无原生滑索能力**（动作集无 ZIPLINE，cpp-algo 搜 zipline 全空；连滑 `chain_max_press` 是 MapTracker 独有）。所以**不能整段迁移**。
+- **送货路线是固定三明治**：`步行(MapTrackerMove) → 上索 → 滑索/连滑(MapTrackerZipline) → 下索 → 步行(MapTrackerMove)`。
+- **最优方案 = 混用**：两个步行段（`SeizeDeliveryJobsDeliverWalkToZipline` / 各路线 `WalkToNpc` / 取货段 `WulingCityWalkToZipline`+`WalkFromZipline`）从手录折线的 `MapTrackerMove` 换成只填终点的 `NAVMESH`（MapNavigator）；滑索段原封不动保留 MapTracker。
+- ⚠️ **待实测风险**：两套坐标系不同（MapTracker 0.1625 空间 vs MapNavigator Base 空间，靠 `assets/resource/image/MapLocator/maptracker_coordinate_transforms.json` 转换，scale 0.92~1.0）。混用时「下索落点 → NAVMESH 起点定位」的交接需实测确认能否正确衔接。
+
+### 18.3 下一步（博士回另一台电脑推进，计划用 MapNavigator 录制）
+
+1. **先跑通新 web 编辑器**：`tools/MapNavigator/web/serve.py`（tk 版已被上游删除）。确认能连游戏、加载 BaseNav、A\* 模式点终点导出 `NAVMESH` 参数。
+2. **打样一条步行段**：挑最简单的（如取货段 `SeizeDeliveryJobsWulingCityWalkToZipline`），把 `MapTrackerMove` 改成 MapNavigator 的 `NAVMESH` 节点，实测：(a) NAVMESH 路径是否明显比原折线顺/短；(b) 坐标交接是否正确（尤其滑索前后）。
+3. 打样 OK 后，再推广到其余步行段 + 补录 Owl / MaterialResearchInstitute / TechProductionOffice 三终点（这 3 个终点坐标在 `departure.go:39-44` 仍是 `{0,0}` 占位符）。
+4. **二进制提醒**：本机若要跑，需 `python tools/build_and_install.py`（含 `zipline.go` 的 1s 发射延迟修复）；改 Go/Pipeline/locale 后完整重启 MaaEnd.exe。当前 CLAUDE.md 记录二进制仍 v2.15.0，实际官方已到 v2.19/v2.20，如需最新 Go 能力（MapNavigator web 后端等）可能要更新 `install/agent/` 三件套。
+
+### 18.4 复用节点 & 文件速查
+
+- **送货路线**：`assets/resource/pipeline/SeizeDeliveryJobs/SeizeDeliveryJobsDeliverRoutes.json`（Observatory 已实测；Owl/MaterialResearchInstitute/TechProductionOffice 待录）。
+- **取货路线**：`SeizeDeliveryJobsPost.json` 的 `SeizeDeliveryJobsWalkToDepotNodeWulingCity`（步行段坐标待优化）。
+- **送货 Go 分流**：`agent/go-service/seizedeliveryjobs/departure.go`（`nearestEndpoint` 匹配半径 30；4 终点里 3 个 `{0,0}` 占位）。
+- **MapTracker 移动**：`agent/go-service/maptracker/default/move.go`（逐点直走）；滑索 `zipline.go`（`chain_max_press` 连滑 + 1s 发射延迟）。
+- **MapNavigator 工具**：`tools/MapNavigator/`（web 编辑器在 `web/`，README 有 NAVMESH/A\*/坐标转换说明）；坐标转换表 `assets/resource/image/MapLocator/maptracker_coordinate_transforms.json`。
+- **MapNavigator 运行时**：`agent/cpp-algo/source/MapNavigator/` + `source/Navmesh/BaseNav*`（C++，`NAVMESH` 语义寻路）。
