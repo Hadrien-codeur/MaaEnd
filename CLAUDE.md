@@ -448,14 +448,20 @@ python tools/build_and_install.py
 
 ## 18. 当前进度存档（接力时先读此节，确认后删除）
 
-### 18.1 状态：取货段坐标已用 MapNavigator 校准（定稿）+ 送货 3 终点待录（Owl/材研所/技术办）
+### 18.1 状态：已同步 v2.20.0 + 本机二进制已更新 + 待「A 方案」复测 NAVMESH 步行段
 
-**本次会话完成（2026-07-15，本机）**：
+**本次会话完成（2026-07-21，本机 = 装 cmake 那台之外的另一台，二进制原本更旧）**：
 
-1. **同步 + 代理**：本机 `feature/zipline-fast` 已对齐另一台电脑 `3dd62b06`（含上游 v2 merge，无冲突；`model → 93b0d62`）。git 全局代理改为「仅 github.com 走 `127.0.0.1:7897`」，其余直连（原全局代理 Clash 没开时全挂的坑已缓解，但 github 仍需 Clash 开着）。
-2. **MapNavigator 工具跑通**：web 编辑器依赖已装（fastapi/uvicorn/numpy/pynput/pyperclip；`maafw` 未装但 A\* 离线模式不需要）。`python tools/MapNavigator/main.py` → `http://127.0.0.1:8770`，武陵 BaseNav（`base.nav.gz`）加载正常，A\* 与实时定位可用。
-3. **关键结论：NAVMESH 直接替换取货段不可行**。实测把取货 `WalkToZipline` 改成 `MapNavigateAction`（C++，`custom_action:"MapNavigateAction"`，非 Go 的 `MapTrackerMoveCompatible`——后者会丢弃 NAVMESH 点），NAVMESH 声称到达但停在**距滑索架约 2 单位**处（默认到达容差），导致 `GetOnZipline` 上索交互按钮识别失败（score 0.44~0.5）→ 任务失败。根因：取货段太短（1~2 米）且上索需精确贴位，NAVMESH 的 ~2 单位容差不够；叠加旧二进制（cpp-algo 6-30）MapNavigator 定位抖动（日志见朝向 68°↔-156° 反复跳、`glitch-suppressed`），缺上游 7 月的 `#4164/#4169` 修复。
-4. **最终采用方案：MapNavigator 只当"高精度取坐标器"，路线仍用 MapTracker 折线**。用 MapNavigator 标点拿 base px → 反向公式转回 MapTracker 坐标 → 微调原有 `MapTrackerMove`/`MapTrackerZipline` 的锚点。**取货段已按此校准并定稿**（见下）。NAVMESH 自动寻路方案**挂起**（等二进制更新 + 上游 MapNavigator 稳定后再评估）。
+1. **对齐另一台电脑**：`feature/zipline-fast` fast-forward 到 `d8886c7c`（取货段坐标已用 MapNavigator 校准定稿，见 18.3）。
+2. **同步上游到 v2.20.0**：本地 `v2` 更新到 `origin/v2`（`f60dcd52`，+114 提交）；merge 进开发分支（merge commit `29157402`）。
+    - 解决 2 处冲突：`zh_cn.json`（我们的测试任务文案 + 上游新增「接取价格」文案，两者都留）、`SeizeDeliveryJobsPost.json`（保留我们的取货段测试入口）。
+    - **修复合并引入的悬空引用**：上游 PR #4240（快捷选点传送重构）删掉了 `__SeizeDeliveryJobsEnsureInWorld` 定义，而我们两处仍引用它 → 已把该私有守卫节点补回 `SeizeDeliveryJobsPost.json`。`pnpm check` 4 控制器全绿。
+    - ⚠️ **上游 PR #4240 大改了送货主流程**（`SeizeDeliveryJobs.json` −308 行、新增 `find_target.go`，用自动传送点选择替代旧自定义点选）。我们的 `departure.go`/`SeizeDeliveryJobsDeliverRoutes.json` 核心逻辑未被波及（diff 为空），但**取货段与上游新流程的运行时衔接尚未实机复验**。
+3. **二进制混合更新（本机）**：旧的已备份到 `install/_backup_pre_v2.20_20260721`。
+    - `cpp-algo.exe`：**官方 v2.20.0 覆盖**（2.36MB→4.0MB，含 MapNavigator 修复 #3995 自动绕障 / #4055 防卡墙 / #4164 走廊门控 / #4169 折角）。我们没改 C++，安全。
+    - `maafw dll ×16`（`deps/bin/`）：**官方 v2.20.0 覆盖**。
+    - `go-service.exe`：**本机 go1.26.2 自编译**（`python tools/build_and_install.py`，默认只编 Go 跳过 cpp-algo）。因为它含我们分支独有的送货分流 + 滑索发射延迟修复，官方版没有。ABI 兼容已核实：`go.mod` binding `maa-framework-go/v4 v4.0.0-beta.18` 就是官方 v2.20.0 编译所用版本，同源。
+4. **导航工具体系调研**（三路并行，结论见 18.6）：确认「MapNavigator/MapLocator 定位更准、上游主推、但无滑索能力」；坐标与移动方式硬绑定，跨用有损（`MapTrackerMoveCompatible` 静默丢 NAVMESH 点）。
 
 ### 18.2 坐标转换（本次核心工具，务必记住）
 
@@ -475,7 +481,28 @@ MapNavigator 编辑器导出的是 **base px**（如 [942,722]）；MapTracker �
 - `SeizeDeliveryJobsWulingCityWalkFromZipline`：起点 (683.3,785.5)→**(682.25,786.75)**，终点 (674.9,789.2)→**(674.99,788.58)**
 - 方案文档：`docs/zh_cn/dev-notes/送货步行段迁移NAVMESH方案.md`（记录了 NAVMESH vs MapTracker、坐标转换、MapNavigateAction ≠ MapTrackerMoveCompatible 的坑）。
 
-### 18.4 下一步：录送货 3 终点（Owl / MaterialResearchInstitute / TechProductionOffice）
+### 18.4 下一步（博士回家后先做「A 方案」，再录 3 终点）
+
+#### 🅰️ A 方案：用新二进制复测「步行段改 NAVMESH」是否可行（回家后第一件事）
+
+**动机**：18.1 里 NAVMESH 直替取货段失败的两个根因之一是「旧 cpp-algo（6-30）MapNavigator 定位抖动，缺 #4164/#4169 修复」。本机 cpp-algo 已升到 v2.20.0（含这些修复），值得**重新打样一次**，看定位抖动是否消除、上索贴位容差是否够。
+
+**⚠️⚠️ 另一台电脑二进制备注（务必先确认）**：
+- 二进制 **不在 git 里**（`.gitignore`），推送到 myfork 的只有源码/pipeline/文档，**不含更新后的 exe/dll**。
+- 因此**另一台电脑（cmake 那台）拉取本次改动后，cpp-algo.exe 仍是它本地的旧版**，若不更新就复测 NAVMESH，结果不可信（会重现旧的定位抖动）。
+- **A 方案必须在「已更新 cpp-algo 到 v2.20.0」的机器上做**。本机（2026-07-21 这台）已更新完毕，直接可测。若换回 cmake 那台，需先：`--cpp-algo` 自编译，或按 18.5「二进制」流程用官方 v2.20.0 覆盖 cpp-algo + maafw dll，再 `python tools/build_and_install.py` 编 go-service。
+- 每台机器改完 Go/Pipeline/locale 后都要 **完整重启 MaaEnd.exe** 才生效。
+
+**A 方案打样步骤**（挑最短、最易翻车的取货段做 A/B 对照）：
+1. 备份现取货段（已定稿的 MapTracker 折线坐标在 18.3，git 里有，随时可回退）。
+2. 把取货 `SeizeDeliveryJobsWulingCityWalkToZipline` 从 `MapTrackerMove` 改成 `MapNavigateAction`（**C++ 真 A\***，`custom_action:"MapNavigateAction"`，**绝不要用 Go 的 `MapTrackerMoveCompatible`——它静默丢 NAVMESH 点**），path 用 `NAVMESH` 目标点（base px，用 MapNavigator web 工具 A\* 页取）。
+3. 定位断言若也换，配套用 `MapLocateAssertLocation`（C++，base px），不要混 `MapTrackerAssertLocation`。
+4. 跑 `SeizeDeliveryJobsTestPickup` 实测：
+    - ✅ 若 NAVMESH 能贴到滑索架、`GetOnZipline` 上索按钮识别成功（score 明显 >0.5）→ 说明新二进制解决了问题，可推广到送货步行段。
+    - ❌ 若仍停在距架 ~2 单位、上索失败 → 确认「取货段太短 + 贴位容差」是硬伤，NAVMESH 不适合极短贴位段；**回退到已定稿的 MapTracker 折线**，维持「MapNavigator 只当取坐标器」方案，直接进「录 3 终点」。
+5. 无论成败，把结论写回 18.1 / 18.6，并更新方案文档 `docs/zh_cn/dev-notes/送货步行段迁移NAVMESH方案.md`。
+
+#### 🅱️ A 方案定论后：录送货 3 终点（Owl / MaterialResearchInstitute / TechProductionOffice）
 
 - **样板 = Observatory 路线**（`SeizeDeliveryJobsDeliverRoutes.json`，已实测通过）。每条 = SubTask 串：`DeliverWalkToZipline(共用,已录) → GetOnZipline → <滑索段> → GetOffZipline → <WalkToNpc>`。
 - **已确认：3 条新路线共用起点滑索段 `SeizeDeliveryJobsDeliverWalkToZipline`**（都从同一起点滑索架出发，上索后滑向不同方向）。
@@ -493,4 +520,30 @@ MapNavigator 编辑器导出的是 **base px**（如 [942,722]）；MapTracker �
 - **送货 Go 分流**：`departure.go`（`nearestEndpoint`→`runDeliverRoute` RunTask 同名节点；改坐标只动 pipeline，Go 不用改）。
 - **滑索**：`zipline.go`（`chain_max_press` 连滑 + 1s 发射延迟）；`MapTrackerZipline` target=发射朝向的滑索架。
 - **MapNavigator 工具**：`python tools/MapNavigator/main.py` → 8770。A\* 页选 Wuling/map02base(zone 2) 点点取 base px。**两个"MapNavigate"别混**：`MapNavigateAction`=C++真A\*；`MapTrackerMoveCompatible`=Go垫片会丢NAVMESH。
-- **二进制**：cpp-algo.exe 仍 6-30（旧，缺 MapNavigator 修复）；go-service.exe 7-14 自编（含 zipline 修复，源码 `zipline.go:53`）。已备份 `install/_backup_pre_v2.19_20260715/`。最新 release v2.19.0。本机无 cmake/ninja（编不了 cpp-algo），有 go1.26.4（可编 go-service）。NAVMESH 方案若重启需先更新 cpp-algo。
+- **二进制（两台机器状态不同，务必区分）**：
+  - **本机（2026-07-21 这台，无 cmake）**：cpp-algo.exe = 官方 v2.20.0（含 MapNavigator 修复）；maafw dll ×16 = 官方 v2.20.0；go-service.exe = 本机 go1.26.2 自编译（含送货分流+滑索修复）。备份 `install/_backup_pre_v2.20_20260721/`。**A 方案可直接在此机测**。
+  - **另一台电脑（cmake 那台）**：二进制**不随 git 同步**，拉取后 cpp-algo.exe 仍是它本地旧版（6-30，缺 #4164/#4169）。**若在该机复测 A 方案，必须先把 cpp-algo 升到 v2.20.0**（自编译 `--cpp-algo`，或用官方包覆盖 cpp-algo.exe + `deps/bin/` maafw dll），否则重现定位抖动、结论不可信。
+  - 更新二进制通用流程：官方包只覆盖 `install/agent/cpp-algo.exe`+`WebView2Loader.dll` 和 `deps/bin/*.dll`（**不覆盖** resource/tasks/locales/data 软链接）；go-service 用 `python tools/build_and_install.py` 本机编（默认跳过 cpp-algo）。改完完整重启 MaaEnd.exe。
+
+### 18.6 导航工具体系调研结论（2026-07-21，供工具选型）
+
+**两套独立系统，坐标系不同，硬绑定各自运行时**：
+
+| | MapTracker（旧） | MapNavigator/MapLocator（新） |
+|---|---|---|
+| 录制工具 | `tools/map_tracker/map_tracker_editor.py`（OpenCV GUI） | `tools/MapNavigator/`（Web，`main.py`→:8770） |
+| 坐标系 | MapTracker 大地图 PNG 像素 | **base 像素**（MapLocator 全局底图） |
+| 定位 | `MapTrackerAssertLocation`（Go，模板匹配，有抖动） | `MapLocateAssertLocation`（C++，YOLO+ZNCC+运动预测，**更准**） |
+| 移动 | `MapTrackerMove` 折线 / `MapTrackerZipline` 滑索 / `MapTrackerGoal`(.mtnm Dijkstra) | `MapNavigateAction`（录制 path 或 `NAVMESH` A\*） |
+| 运行时 | Go | C++ cpp-algo |
+
+**关键事实**：
+1. **精度**：MapNavigator/MapLocator 定位更准（实测转回 MapTracker 仅差 0.6~3 单位）。→ 无论最终用哪套移动，**取坐标都优先用 MapNavigator web 工具**。
+2. **滑索是 MapTracker 独有**：MapNavigator 无 ZIPLINE 动作。→ 送货三明治的**滑索段只能留 MapTracker**，不能整段迁 MapNavigator。
+3. **坐标不能喂错运行时**：MapNavigator 录的含 NAVMESH 的 path 绝不能走 `MapTrackerMoveCompatible`（`move_compatible.go:236` 静默丢弃 NAVMESH 点，不报错）。
+4. **上游趋势**：近 4 个月 MapNavigator 72 提交 / MapTracker 63 提交，都活跃。MapNavigator 是寻路算法主战场（绕障/防卡墙/门控/折角，从 Beta 收敛到可靠）；MapTracker 偏玩法（滑索/传送/资源）。官方 skill 明确要求 **AutoCollect 新路线用 MapNavigateAction+MapLocateAssertLocation、禁用 MapTracker**；MapNavigator 指南默认「优先 NAVMESH」。两套是共享底座（#3359 已把 NavMesh 回接进 MapTracker），无淘汰风险。
+5. **现状**：SeizeDeliveryJobs（我们）= 纯 MapTracker；TrialOfSwordmancy/AutoSell = 纯 MapNavigator；AutoCollect 正从 MapTracker 向 MapNavigator 过渡。
+
+**对送货的选型定论**：
+- 滑索段：MapTracker（不变，唯一有滑索）。
+- 步行段：先做 A 方案复测 NAVMESH（新二进制下）；成则简化（只填终点+自动绕障），败则回退「MapNavigator 取坐标 + MapTracker 折线」的已定稿方案。
