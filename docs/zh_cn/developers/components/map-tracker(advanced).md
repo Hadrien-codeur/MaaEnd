@@ -30,8 +30,11 @@
 可选参数：
 
 - `map_name_regex`: 用于筛选地图名称的[正则表达式](https://regexr.com/)。仅匹配该正则表达式的地图会参与识别。例如：
-    - `^map\\d+_lv\\d+$`: 默认值。匹配所有常规地图。
-    - `^map\\d+_lv\\d+(_tier_\\d+)?$`: 匹配所有常规地图和分层地图（Tier）。
+    - `^[a-z]+\\d*_[a-z]+\\d+$`: 默认值。匹配所有常规地图，这包括：
+        - 大世界地图，例如 "map01_lv001"（四号谷地-枢纽区）；
+        - 建筑物地图，例如 "indie_dg007"（首墩内部）；
+        - 秘境地图，例如 "dung01_wrdg001"（蚀像寻遗第一赛季）。
+    - `^map\\d+_lv\\d+(_tier_\\d+)?$`: 匹配所有大世界地图和它们的分层地图（Tier）。
     - `^map01_lv001$`: 仅匹配 "map01_lv001"（四号谷地-枢纽区）。
     - `^map01_lv\\d+$`: 匹配 "map01"（四号谷地）的所有子区域。
 
@@ -129,37 +132,43 @@ MapTracker 的日常维护主要涉及的是**地图图片的更新**。当游�
 
 该工具脚本的完整操作步骤如下：
 
-1. 从 zmdmap 拉取最新的地图数据：
+1. 从 zmdmap 拉取最新的地图数据到生产数据目录：
 
     ```bash
-    python tools/map_tracker/map_fetcher.py json -o tools/map_tracker/data
+    python tools/map_tracker/map_fetcher.py json -o assets/data/ZmdMap
     ```
 
-2. 从 zmdmap 拉取最新的 Region 地图的原始图片（并将其切割为若干 Level 地图图片），同时拉取最新的 Tier 地图的原始图片：
+2. 从 zmdmap 拉取最新的 Region 地图的原始图片（并将其切割为若干 Level 地图图片），同时拉取最新的 Tier 地图的原始图片。原始图片不是运行时资源，暂存在 `.cache/map_tracker/images`：
 
     ```bash
-    python tools/map_tracker/map_fetcher.py image -i tools/map_tracker/data -o tools/map_tracker/images
+    python tools/map_tracker/map_fetcher.py image -i assets/data/ZmdMap -o .cache/map_tracker/images
     ```
 
 3. 对所有 Level 地图图片进行重叠区域再分配：
 
     ```bash
-    python tools/map_tracker/map_generator.py distinguish_levels -i tools/map_tracker/images -o tools/map_tracker/final --layout-dir tools/map_tracker/data
+    python tools/map_tracker/map_generator.py distinguish_levels -i .cache/map_tracker/images -o .cache/map_tracker/images_staged --data-dir assets/data/ZmdMap
     ```
 
-4. 对所有 Tier 地图图片进行画布扩展和背景叠加：
+4. 在所有非 Tier 地图图片上附加固定图标，并部署到生产目录：
 
     ```bash
-    python tools/map_tracker/map_generator.py tidy_tiers -i tools/map_tracker/images -o tools/map_tracker/final
+    python tools/map_tracker/map_generator.py attach_icons -i .cache/map_tracker/images_staged -o assets/resource/image/MapTracker/map/ --data-dir assets/data/ZmdMap
     ```
 
-5. 生成最终地图图片的 BBox 数据：
+5. 对所有 Tier 地图图片进行画布扩展和背景叠加，并部署到生产目录：
 
     ```bash
-    python tools/map_tracker/map_generator.py bbox -i tools/map_tracker/final -o tools/map_tracker/final
+    python tools/map_tracker/map_generator.py tidy_tiers -i .cache/map_tracker/images -o assets/resource/image/MapTracker/map/
     ```
 
-6. 得到的 `tools/map_tracker/final` 目录下的图片和 BBox 数据即为最新的地图图片库。
+6. 根据生产资源目录中的最终地图图片生成 BBox 数据：
+
+    ```bash
+    python tools/map_tracker/map_generator.py bbox -i assets/resource/image/MapTracker/map -o assets/data/MapTracker
+    ```
+
+MapTracker 使用的生产资源为 `assets/resource/image/MapTracker/map` 中的地图图片和 `assets/data/MapTracker/map_bbox_data.json`。`assets/data/ZmdMap` 保存地图生成工具使用的 zmdmap 数据；`.cache/map_tracker` 仅用于暂存下载和生成过程中的中间文件，不应作为生产资源提交。
 
 ### 名词解释
 
@@ -170,6 +179,8 @@ MapTracker 的日常维护主要涉及的是**地图图片的更新**。当游�
 - Tier 地图：指的是游戏中的分层地图；
 
 - 重叠区域再分配：为了保证同一地点不会在两个 Level 地图中同时出现，采用了一种基于最大流切割的算法，将多个 Level 的重叠区域划分到合适的 Level 中。
+
+- 图标附加：根据地图实体数据，在所有非 Tier 地图上叠加固定图标，用于增强地图特征。
 
 - 画布扩展：为了方便计算坐标，会把 Tier 地图的画布扩展到与对应 Level 地图相同的尺寸。
 

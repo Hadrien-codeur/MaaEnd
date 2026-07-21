@@ -7,15 +7,19 @@
 # ///
 
 # MapGenerator - Generate map assets from map_fetcher output.
-# Subcommands: distinguish_levels, tidy_tiers, bbox.
+# Subcommands: distinguish_levels, attach_icons, tidy_tiers, bbox.
 
 import os
 import re
 import json
 import numpy as np
 from collections import defaultdict
-from _internal.core_utils import _R, _G, _Y, _C, _0, Drawer, cv2
-from _internal.zmdmap_schemas import RegionLayoutTable, LevelLayoutMetaData
+from _internal.core_utils import _R, _G, _Y, _C, _0, Drawer, MapName, cv2
+from _internal.zmdmap_schemas import (
+    EntitiesTable,
+    LevelLayoutMetaData,
+    RegionLayoutTable,
+)
 
 SCALE_MAP_FACTOR = 0.1625
 """Scale factor to convert *unscaled coordinates* to *converted coordinates*."""
@@ -40,8 +44,6 @@ FEATHER_KSIZE = 17
 
 FEATHER_SIGMA = 4.0
 """Gaussian sigma for edge feathering (ownership + tier ring)."""
-
-_RE_LAYOUT_FILE = re.compile(r"^(\w+\d+)_layout\.json$")
 
 
 def _feather_mask(mask: np.ndarray, ksize: int, sigma: float) -> np.ndarray:
@@ -77,34 +79,13 @@ def ensure_output_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
 
 
-class DistinMapPage:
+class LevelMapDistinguisher:
     """Distinguishes level maps into separate maps using layout data for positioning."""
 
-    def __init__(
-        self, input_dir: str, output_dir: str, layout_dir: str, ui: bool = False
-    ):
+    def __init__(self, input_dir: str, output_dir: str, data_dir: str):
         self.input_dir = input_dir
         self.output_dir = output_dir
-        self.layout_dir = layout_dir
-        self.ui = ui
-        self.window_name = "MapTracker Level Distinguisher"
-        self.window_w, self.window_h = 1280, 720
-
-    def _load_layouts(self) -> dict[str, RegionLayoutTable]:
-        """Load all *_layout.json files from layout_dir."""
-        layouts: dict[str, RegionLayoutTable] = {}
-        for fname in os.listdir(self.layout_dir):
-            m = _RE_LAYOUT_FILE.match(fname)
-            if not m:
-                continue
-            region_name = m.group(1)
-            try:
-                layouts[region_name] = RegionLayoutTable.load(
-                    os.path.join(self.layout_dir, fname)
-                )
-            except Exception as e:
-                print(f"  {_Y}Warning: failed to load {fname}: {e}{_0}")
-        return layouts
+        self.data_dir = data_dir
 
     def _load_level_maps(self) -> dict[str, np.ndarray]:
         """Load level images (files containing '_lv') from input directory.
@@ -117,7 +98,7 @@ class DistinMapPage:
                 continue
             if fname.startswith("_"):
                 continue
-            if "_lv" not in fname:
+            if "lv" not in fname and "dg" not in fname:
                 continue
             name = fname[:-4]
             path = os.path.join(self.input_dir, fname)
@@ -143,29 +124,6 @@ class DistinMapPage:
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         return gray >= DISCARD_THRESHOLD
 
-    def _make_land_alpha(self, img: np.ndarray) -> np.ndarray:
-        """Return a copy of img with non-land pixels set to alpha=0.
-        Prevents black backgrounds from erasing other maps during compositing."""
-        out = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
-        out[~self._content_mask(img), 3] = 0
-        return out
-
-    def _composite_canvas(
-        self,
-        maps: dict[str, np.ndarray],
-        positions: dict[str, tuple],
-        canvas_h: int,
-        canvas_w: int,
-    ) -> np.ndarray:
-        """Composite all maps onto a blank RGBA canvas and return it."""
-        canvas = np.zeros((canvas_h, canvas_w, 4), dtype=np.uint8)
-        canvas[:, :, 3] = 255
-        drawer = Drawer(canvas)
-        for nm in sorted(positions, key=lambda n: positions[n]):
-            x, y = positions[nm]
-            drawer.paste(self._make_land_alpha(maps[nm]), (x, y), with_alpha=True)
-        return canvas
-
     def _distinguish_group(
         self,
         group_key: str,
@@ -187,15 +145,13 @@ class DistinMapPage:
         canvas_w = layout.canvas_width
         canvas_h = layout.canvas_height
 
-        print(f"  Compositing onto {canvas_w} x {canvas_h} canvas...")
+        print(f"  Canvas size: {canvas_w} x {canvas_h}")
         for nm in sorted(positions, key=lambda n: positions[n]):
             x, y = positions[nm]
             print(f"    {_C}{nm}{_0} -> ({x}, {y})")
 
         maps = self._remove_islands(maps)
-        canvas = self._composite_canvas(maps, positions, canvas_h, canvas_w)
-
-        self._auto_split(maps, positions, names_list, canvas)
+        self._split_overlaps(maps, positions, names_list, canvas_h, canvas_w)
 
     @staticmethod
     def _brightness_weight(gray: np.ndarray) -> np.ndarray:
@@ -326,27 +282,27 @@ class DistinMapPage:
         second_side[y1:y2, x1:x2] = comp & (segments == sv)
         return first_side, second_side
 
-    def _auto_split(
+    def _split_overlaps(
         self,
         maps: dict[str, np.ndarray],
         positions: dict[str, tuple[int, int]],
         names_list: list[str],
-        canvas: np.ndarray,
+        canvas_h: int,
+        canvas_w: int,
     ) -> None:
-        print(f"\n  {_G}Automatic split mode{_0}")
-        canvas_h, canvas_w = canvas.shape[:2]
+        print(f"\n  {_G}Splitting overlaps...{_0}")
         n_maps = len(names_list)
         land_masks: list[np.ndarray] = []
-        canvas_maps: list[np.ndarray] = []
+        aligned_maps: list[np.ndarray] = []
 
         for nm in names_list:
             img = maps[nm]
             px, py = positions[nm]
             h, w = img.shape[:2]
             ey, ex = min(py + h, canvas_h), min(px + w, canvas_w)
-            cimg = np.zeros((canvas_h, canvas_w, 3), dtype=np.uint8)
-            cimg[py:ey, px:ex] = img[: ey - py, : ex - px]
-            canvas_maps.append(cimg)
+            aligned_image = np.zeros((canvas_h, canvas_w, 3), dtype=np.uint8)
+            aligned_image[py:ey, px:ex] = img[: ey - py, : ex - px]
+            aligned_maps.append(aligned_image)
             mask = np.zeros((canvas_h, canvas_w), dtype=bool)
             mask[py:ey, px:ex] = self._content_mask(img)[: ey - py, : ex - px]
             land_masks.append(mask)
@@ -379,7 +335,6 @@ class DistinMapPage:
                 positions,
                 names_list,
                 [m.astype(np.uint8) for m in exclusive_masks],
-                canvas,
             )
             return
 
@@ -388,8 +343,8 @@ class DistinMapPage:
         c_sum = np.zeros((canvas_h, canvas_w), dtype=np.float32)
         c_cnt = np.zeros((canvas_h, canvas_w), dtype=np.uint8)
         yy, xx = np.indices((canvas_h, canvas_w), dtype=np.float32)
-        for nm, cimg, mask in zip(names_list, canvas_maps, land_masks):
-            gray = cv2.cvtColor(cimg, cv2.COLOR_RGB2GRAY)
+        for nm, aligned_image, mask in zip(names_list, aligned_maps, land_masks):
+            gray = cv2.cvtColor(aligned_image, cv2.COLOR_RGB2GRAY)
             combined_gray[mask] = np.maximum(combined_gray[mask], gray[mask])
             px, py = positions[nm]
             mh, mw = maps[nm].shape[:2]
@@ -446,8 +401,8 @@ class DistinMapPage:
         ownership_masks = self._enforce_seed_connectivity(
             owner, exclusive_masks, land_masks, names_list
         )
-        print(f"    {_G}Auto split complete.{_0}")
-        self._export_split_maps(maps, positions, names_list, ownership_masks, canvas)
+        print(f"    {_G}Overlap split complete.{_0}")
+        self._export_split_maps(maps, positions, names_list, ownership_masks)
 
     def _enforce_seed_connectivity(
         self,
@@ -546,10 +501,9 @@ class DistinMapPage:
         positions: dict[str, tuple[int, int]],
         names_list: list[str],
         ownership_masks: list[np.ndarray],
-        canvas: np.ndarray,
     ) -> None:
         """Export each map with feathered ownership edges."""
-        canvas_h, canvas_w = canvas.shape[:2]
+        canvas_h, canvas_w = ownership_masks[0].shape
         for i, nm in enumerate(names_list):
             mask = ownership_masks[i]
             ys, xs = np.nonzero(mask)
@@ -576,81 +530,24 @@ class DistinMapPage:
             )
 
         print(f"  {_G}Split maps saved to {self.output_dir}{_0}")
-        if not self.ui:
-            return
-
-        canvas_rgb = canvas[:, :, :3]
-        overview = (canvas_rgb.astype(np.float32) * 0.25).astype(np.uint8)
-        owner_all = np.full((canvas_h, canvas_w), -1, dtype=np.int16)
-        for i, mask in enumerate(ownership_masks):
-            owner_all[mask > 0] = i
-        hsv = np.zeros((len(names_list), 1, 3), dtype=np.uint8)
-        hsv[:, 0, 0] = np.linspace(
-            0, 180, len(names_list), endpoint=False, dtype=np.uint8
-        )
-        hsv[:, 0, 1], hsv[:, 0, 2] = 220, 255
-        colors = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)[:, 0, :]
-        box = np.ones((3, 3), dtype=np.uint8)
-        for i, mask in enumerate(ownership_masks):
-            owned = mask.astype(bool)
-            overview[owned] = (
-                canvas_rgb[owned].astype(np.float32) * 0.35
-                + colors[i].astype(np.float32) * 0.65
-            ).astype(np.uint8)
-        for i, nm in enumerate(names_list):
-            region = (owner_all == i).astype(np.uint8)
-            dilated = cv2.dilate(region, box, iterations=1)
-            overview[(dilated > 0) & (owner_all != i) & (owner_all >= 0)] = 255
-            ys, xs = np.nonzero(ownership_masks[i])
-            if len(ys):
-                cv2.putText(
-                    overview,
-                    nm,
-                    (int(xs.mean()), int(ys.mean())),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1.0,
-                    (255, 255, 255),
-                    1,
-                    cv2.LINE_AA,
-                )
-
-        ch_v, cw_v = overview.shape[:2]
-        s = min(self.window_w / cw_v, self.window_h / ch_v, 1.0)
-        disp = cv2.resize(
-            overview, (int(cw_v * s), int(ch_v * s)), interpolation=cv2.INTER_LINEAR
-        )
-        frame = np.zeros((self.window_h, self.window_w, 3), dtype=np.uint8)
-        ox = (self.window_w - disp.shape[1]) // 2
-        oy = (self.window_h - disp.shape[0]) // 2
-        frame[oy : oy + disp.shape[0], ox : ox + disp.shape[1]] = disp
-        for text, org, color in (
-            (f"Overview: {len(names_list)} level maps", (8, 18), (225, 225, 225)),
-            ("Press any key to continue...", (8, self.window_h - 12), (255, 255, 0)),
-        ):
-            cv2.putText(
-                frame, text, org, cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA
-            )
-        cv2.namedWindow(self.window_name)
-        cv2.imshow(self.window_name, cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
-        cv2.waitKey(0)
-        if cv2.getWindowProperty(self.window_name, cv2.WND_PROP_VISIBLE) >= 1:
-            cv2.destroyWindow(self.window_name)
 
     def run(self) -> None:
         """Main flow - groups maps by region and distinguishes each separately."""
         print(f"\n{_G}MapTracker Level Distinguisher{_0}")
         print(f"  Source dir  : {_C}{self.input_dir}{_0}")
         print(f"  Output dir  : {_C}{self.output_dir}{_0}")
-        print(f"  Layout dir  : {_C}{self.layout_dir}{_0}")
+        print(f"  Data dir    : {_C}{self.data_dir}{_0}")
         print(f"  Scale       : {_C}{SCALE_MAP_FACTOR}{_0}")
 
         ensure_output_dir(self.output_dir)
 
         # Load layouts
         print(f"\nLoading layouts...")
-        layouts = self._load_layouts()
+        layouts = RegionLayoutTable.load_from_dir(
+            self.data_dir, include_pattern=RegionLayoutTable.RE_INCLUDED_REGION_NAME
+        )
         if not layouts:
-            print(f"{_Y}No layout files found in {self.layout_dir}{_0}")
+            print(f"{_Y}No layout files found in {self.data_dir}{_0}")
             return
         print(f"  {len(layouts)} layout(s) loaded.")
 
@@ -682,27 +579,40 @@ class DistinMapPage:
             self._distinguish_group(group_key, group_maps, layout)
 
 
-def generate_map_bbox_json(input_dir: str, output_dir: str) -> str:
-    """Generate map bbox json for all map png files in directory recursively."""
-    ensure_output_dir(output_dir)
-    results: dict[str, list[int]] = {}
+def cmd_distinguish_levels(input_dir: str, output_dir: str, data_dir: str) -> None:
+    """Distinguish level images with island removal and overlap splitting."""
+    if not os.path.isdir(input_dir):
+        print(f"{_R}Input directory not found: {input_dir}{_0}")
+        return
+    if not os.path.isdir(data_dir):
+        print(f"{_R}Data directory not found: {data_dir}{_0}")
+        return
 
+    distinguisher = LevelMapDistinguisher(input_dir, output_dir, data_dir)
+    distinguisher.run()
+
+
+def cmd_bbox(input_dir: str, output_dir: str) -> None:
+    """Generate bounding box JSON for map images."""
+    if not os.path.isdir(input_dir):
+        print(f"{_R}Input directory not found: {input_dir}{_0}")
+        return
+    ensure_output_dir(output_dir)
+
+    results: dict[str, list[int]] = {}
     for root, _, files in os.walk(input_dir):
         for file in files:
-            if not file.endswith(".png"):
-                continue
-            if file.startswith("_"):
-                continue
-            map_name = os.path.splitext(file)[0]
-            img_path = os.path.join(root, file)
-            img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
-            if img is None:
+            if not file.endswith(".png") or file.startswith("_"):
                 continue
 
-            if img.ndim == 2:
-                rgb = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-            elif img.shape[2] == 3:
-                rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img = cv2.imread(os.path.join(root, file), cv2.IMREAD_UNCHANGED)
+            if img is not None and img.ndim == 3:
+                if img.shape[2] == 4:
+                    rgb = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
+                elif img.shape[2] == 3:
+                    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                else:
+                    continue
             else:
                 continue
 
@@ -714,37 +624,15 @@ def generate_map_bbox_json(input_dir: str, output_dir: str) -> str:
 
             min_x, max_x = int(xs.min()), int(xs.max())
             min_y, max_y = int(ys.min()), int(ys.max())
+
+            map_name = os.path.splitext(file)[0]
             results[map_name] = [min_x, min_y, max_x + 1, max_y + 1]
 
     output_path = os.path.join(output_dir, "map_bbox_data.json")
     with open(output_path, "w", encoding="utf-8") as f:
+        results = dict(sorted(results.items()))
         json.dump(results, f, indent=4, ensure_ascii=False)
     print(f"{_G}Saved map rectangles to {output_path}{_0}")
-    return output_path
-
-
-def cmd_distinguish_levels(
-    input_dir: str, output_dir: str, layout_dir: str, ui: bool = False
-) -> None:
-    """Distinguish level images into separate maps with island removal and automatic split."""
-    if not os.path.isdir(input_dir):
-        print(f"{_R}Input directory not found: {input_dir}{_0}")
-        return
-    if not os.path.isdir(layout_dir):
-        print(f"{_R}Layout directory not found: {layout_dir}{_0}")
-        return
-
-    distinguisher = DistinMapPage(input_dir, output_dir, layout_dir, ui)
-    distinguisher.run()
-
-
-def cmd_bbox(input_dir: str, output_dir: str) -> None:
-    """Generate bounding box JSON for map images."""
-    if not os.path.isdir(input_dir):
-        print(f"{_R}Input directory not found: {input_dir}{_0}")
-        return
-
-    generate_map_bbox_json(input_dir, output_dir)
 
 
 # Tier image filename format: region_level_gx_gy_tier_id.png
@@ -783,6 +671,84 @@ def _load_image_rgba(path: str) -> np.ndarray | None:
     if img.shape[2] == 4:
         return cv2.cvtColor(img, cv2.COLOR_BGRA2RGBA)
     return None
+
+
+CAMPFIRE_ICON_PATH = "assets/resource/image/MapTracker/MiniMapIcons/IconCampfire.png"
+CAMPFIRE_KEY_NAME = "int_campfire_v2"
+
+
+def cmd_attach_icons(
+    input_dir: str,
+    output_dir: str,
+    data_dir: str,
+) -> None:
+    """Attach campfire icons to non-tier map images."""
+    if not os.path.isdir(input_dir):
+        print(f"{_R}Input directory not found: {input_dir}{_0}")
+        return
+    if not os.path.isdir(data_dir):
+        print(f"{_R}Data directory not found: {data_dir}{_0}")
+        return
+    entities_file = os.path.join(data_dir, "maaend_entities.json")
+    if not os.path.isfile(entities_file):
+        print(f"{_R}Entities file not found: {entities_file}{_0}")
+        return
+
+    icon = cv2.imread(CAMPFIRE_ICON_PATH, cv2.IMREAD_UNCHANGED)
+    if icon is None:
+        print(f"{_R}Campfire icon not found: {CAMPFIRE_ICON_PATH}{_0}")
+        return
+    if icon.ndim == 2 or icon.shape[2] == 3:
+        icon = cv2.cvtColor(icon, cv2.COLOR_BGR2BGRA)
+
+    entities = EntitiesTable.load(entities_file)
+    ensure_output_dir(output_dir)
+    ih, iw = icon.shape[:2]
+    processed = 0
+    placed = 0
+
+    for fname in sorted(os.listdir(input_dir)):
+        if not fname.endswith(".png") or fname.startswith("_"):
+            continue
+        try:
+            map_name = MapName.parse(fname)
+        except ValueError:
+            continue
+        if map_name.map_type == "tier":
+            continue
+
+        region = entities.regions.get(map_name.map_id)
+        level = region.levels.get(map_name.map_level_id) if region else None
+        if level is None:
+            print(f"  {_Y}{fname}: entity data not found, skipped{_0}")
+            continue
+
+        path = os.path.join(input_dir, fname)
+        img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+        if img is None:
+            print(f"  {_Y}Failed to load {fname}{_0}")
+            continue
+        if img.ndim == 2 or img.shape[2] == 3:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
+
+        drawer = Drawer(img)
+        map_placed = 0
+        for entity in level.categories.get("special", []):
+            if entity.key_name != CAMPFIRE_KEY_NAME:
+                continue
+            px, py = (int(round(value)) for value in entity.map_location)
+            drawer.paste(icon, (px - iw // 2, py - ih // 2), with_alpha=True)
+            map_placed += 1
+
+        cv2.imwrite(os.path.join(output_dir, fname), img)
+        processed += 1
+        placed += map_placed
+        print(f"  {_C}{fname}{_0}: {map_placed} campfire icon(s) placed")
+
+    print(
+        f"\n  {_G}Done. Processed {processed} non-tier map(s), "
+        f"placed {placed} campfire icon(s).{_0}"
+    )
 
 
 def cmd_tidy_tiers(input_dir: str, output_dir: str) -> None:
@@ -888,7 +854,10 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="MapTracker merger - distinguish levels, tidy tiers, generate bounding boxes"
+        description=(
+            "MapTracker merger - distinguish levels, attach icons, tidy tiers, "
+            "generate bounding boxes"
+        )
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -906,12 +875,22 @@ def main():
         help="Output directory for distinguished maps",
     )
     p_distin.add_argument(
-        "--layout-dir", required=True, help="Directory containing *_layout.json files"
-    )
-    p_distin.add_argument(
-        "--ui", action="store_true", help="Show visual preview windows while exporting"
+        "--data-dir", required=True, help="Directory containing map data files"
     )
 
+    # attach_icons subcommand
+    p_icons = sub.add_parser(
+        "attach_icons", help="Attach campfire icons to non-tier map images"
+    )
+    p_icons.add_argument(
+        "-i", "--input-dir", required=True, help="Directory containing map images"
+    )
+    p_icons.add_argument(
+        "-o", "--output-dir", required=True, help="Output directory for map images"
+    )
+    p_icons.add_argument(
+        "--data-dir", required=True, help="Directory containing map data files"
+    )
     # tidy_tiers subcommand
     p_tiers = sub.add_parser(
         "tidy_tiers", help="Blend tier images with parent region-level images"
@@ -941,8 +920,12 @@ def main():
     args = parser.parse_args()
 
     if args.command == "distinguish_levels":
-        cmd_distinguish_levels(
-            args.input_dir, args.output_dir, args.layout_dir, args.ui
+        cmd_distinguish_levels(args.input_dir, args.output_dir, args.data_dir)
+    elif args.command == "attach_icons":
+        cmd_attach_icons(
+            args.input_dir,
+            args.output_dir,
+            args.data_dir,
         )
     elif args.command == "tidy_tiers":
         cmd_tidy_tiers(args.input_dir, args.output_dir)

@@ -76,6 +76,7 @@
             "[JumpBack]SceneWaitLoadingExit",
             "[JumpBack]__ScenePrivateLoginMonthlyPassConfirm",
             "[JumpBack]__ScenePrivateLoginPristineMonthlyPassConfirm",
+            "[JumpBack]__ScenePrivateLoginCompanionGiftConfirm",
             "__ScenePrivateLoginSuccess",
             "[JumpBack]__ScenePrivateLoginCloseDialog"
         ]
@@ -165,6 +166,28 @@
             "type": "Click"
         }
     },
+    "__ScenePrivateLoginCompanionGiftConfirm": {
+        "desc": "相伴赠礼，无法跳过必须领取",
+        "max_hit": 1, // 3d移动不好判断什么时候结束，因此只点一次防止影响到下一层弹窗
+        "recognition": {
+            "type": "OCR",
+            "param": {
+                "roi": [
+                    -500,
+                    -300,
+                    500,
+                    300
+                ],
+                "expected": [
+                    "点击领取奖励"
+                ]
+            }
+        },
+        "pre_delay": 1200, // 3d移动，pre_wait_freeze不生效
+        "action": {
+            "type": "Click"
+        }
+    },
     "__ScenePrivateLoginPristineMonthlyPassConfirm": {
         "desc": "领取焕新月卡，无法跳过必须领取",
         "max_hit": 1, // 3d移动不好判断什么时候结束，因此只点一次防止影响到下一层弹窗
@@ -196,6 +219,7 @@
     },
     "__ScenePrivateLoginCloseDialog": {
         "desc": "关闭所有待领取的弹窗，此功能目的是进入游戏，奖励领取统一在单独任务中处理",
+        "max_hit": 100,
         "action": {
             "type": "ClickKey",
             "param": {
@@ -209,7 +233,8 @@
                 100,
                 100
             ],
-            "time": 600
+            "time": 600,
+            "timeout": 2000
         }
     },
     "__ScenePrivateLoginSuccess": {

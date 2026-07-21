@@ -29,16 +29,32 @@
                 {
                     "name": "Yes",
                     "pipeline_override": {
-                        "VisitFriendsRemark": {
-                            "enabled": true
+                        // 备注优先独立改 Name OCR：expected 列表顺序 + order_by Expected
+                        "VisitFriendsRecognitionItemNameByEnterButton": {
+                            "recognition": {
+                                "param": {
+                                    "expected": [
+                                        ".*[（(].*#.*",
+                                        ".*#.*"
+                                    ],
+                                    "order_by": "Expected"
+                                }
+                            }
                         }
                     }
                 },
                 {
                     "name": "No",
                     "pipeline_override": {
-                        "VisitFriendsRemark": {
-                            "enabled": false
+                        "VisitFriendsRecognitionItemNameByEnterButton": {
+                            "recognition": {
+                                "param": {
+                                    "expected": [
+                                        ".*#.*"
+                                    ],
+                                    "order_by": "Vertical"
+                                }
+                            }
                         }
                     }
                 }
@@ -57,15 +73,17 @@
                     "name": "ProductionAssistControlNexus",
                     "label": "$option.ProductionAssistControl.ProductionAssistControlNexus.label",
                     "pipeline_override": {
-                        "VisitFriendsMenuScanTargetFriendNormalOpen": {
-                            "attach": {
-                                "control_nexus_assist": true
-                            }
+                        "VisitFriendsCheckAssistControlNexus": {
+                            "recognition": "And",
+                            "all_of": [
+                                "VisitFriendsRecognitionItemDetailControlNexusAssist"
+                            ]
                         },
-                        "VisitFriendsMenuScanTargetFriendRemarkOpen": {
-                            "attach": {
-                                "control_nexus_assist": true
-                            }
+                        "VisitFriendsMenuAssistControlNexusEntry": {
+                            "enabled": true
+                        },
+                        "VisitFriendsAssistFullInit": {
+                            "enabled": false
                         }
                     }
                 },
@@ -73,15 +91,20 @@
                     "name": "ProductionAssistMFGCabin",
                     "label": "$option.ProductionAssistControl.ProductionAssistMFGCabin.label",
                     "pipeline_override": {
-                        "VisitFriendsMenuScanTargetFriendNormalOpen": {
-                            "attach": {
-                                "mfg_cabin_assist": true
-                            }
+                        "VisitFriendsCheckAssistMFGCabin": {
+                            "recognition": "And",
+                            "all_of": [
+                                "VisitFriendsRecognitionItemDetailMFGCabinAssist"
+                            ]
                         },
-                        "VisitFriendsMenuScanTargetFriendRemarkOpen": {
-                            "attach": {
-                                "mfg_cabin_assist": true
-                            }
+                        "VisitFriendsMenuAssistMFGCabin1Entry": {
+                            "enabled": true
+                        },
+                        "VisitFriendsMenuAssistMFGCabin2Entry": {
+                            "enabled": true
+                        },
+                        "VisitFriendsAssistFullInit": {
+                            "enabled": false
                         }
                     }
                 },
@@ -89,15 +112,17 @@
                     "name": "ProductionAssistGrowthChamber",
                     "label": "$option.ProductionAssistControl.ProductionAssistGrowthChamber.label",
                     "pipeline_override": {
-                        "VisitFriendsMenuScanTargetFriendNormalOpen": {
-                            "attach": {
-                                "growth_chamber_assist": true
-                            }
+                        "VisitFriendsCheckAssistGrowthChamber": {
+                            "recognition": "And",
+                            "all_of": [
+                                "VisitFriendsRecognitionItemDetailGrowthChamberAssist"
+                            ]
                         },
-                        "VisitFriendsMenuScanTargetFriendRemarkOpen": {
-                            "attach": {
-                                "growth_chamber_assist": true
-                            }
+                        "VisitFriendsMenuAssistGrowthChamberSwipeEntry": {
+                            "enabled": true
+                        },
+                        "VisitFriendsAssistFullInit": {
+                            "enabled": false
                         }
                     }
                 }

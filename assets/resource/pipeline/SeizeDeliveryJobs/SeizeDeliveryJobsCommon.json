@@ -189,8 +189,7 @@
         }
     },
     "__SeizeDeliveryJobsStartTrackingTask": {
-        "desc": "在任务详情页面，若没找到定位按钮，此时需要先点击开始追踪任务按钮",
-        "max_hit": 5, // 此为回环节点，防死循环
+        "desc": "在任务详情页面，若没找到定位按钮，则点击开始追踪任务按钮",
         "recognition": "TemplateMatch",
         "roi": [
             1070,
@@ -201,9 +200,10 @@
         "template": "Common/Button/WhiteConfirmButtonType1.png",
         "order_by": "Score",
         "action": "Click",
+        "rate_limit": 500, // 加速等待大地图弹出
         "next": [
-            // 追踪任务后，界面会切换到大世界，此时需要回环执行前述流程
-            "SeizeDeliveryJobsEnterWulingJobList"
+            // 自游戏 1.4 版本开始，追踪任务按钮会直接打开大地图查看目的地，而非返回大世界
+            "__SeizeDeliveryJobsInDestinationMap"
         ],
         "focus": {
             "Node.Action.Starting": "点击开始追踪任务"
@@ -222,26 +222,89 @@
         "pre_delay": 0,
         "post_delay": 0,
         "next": [
-            "__SeizeDeliveryJobsPurifyDestinationMap"
+            "[Anchor]SeizeDeliveryJobsAfterEnterDestinationMap" // 外部调用者需要覆写此锚点的所指
         ],
         "focus": {
             "Node.Recognition.Succeeded": "正在查看任务位置"
         }
     },
-    "__SeizeDeliveryJobsPurifyDestinationMap": {
-        "desc": "在目的地地图界面，清理地图图标遮挡",
-        "action": "Custom",
-        "custom_action": "SubTask",
-        "custom_action_param": {
-            "sub": [
-                "MapTrackerBigMap_FilterNone"
-            ]
-        },
-        "anchor": {
-            "SeizeDeliveryAfterEnterWulingJobList": "" // 任务结束，置空锚点以防止误用
-        },
-        "next": [
-            "[Anchor]SeizeDeliveryJobsAfterEnterDestinationMap" // 外部调用者需要覆写此锚点的所指
+    // ===== 抢单核心识别（go 链式调用 + 价格下限过滤）=====
+    "__SeizeDeliveryJobsRecoWulingToken": {
+        "desc": "武陵城委托标记（仅识别，go 扫描整列拿多 box）",
+        "recognition": "TemplateMatch",
+        "roi": [
+            840,
+            190,
+            50,
+            430
+        ],
+        "template": [
+            "SeizeDeliveryJobs/DepotNodePage/WulingToken.png"
+        ],
+        "order_by": "Score"
+    },
+    "__SeizeDeliveryJobsRecoReward": {
+        "desc": "委托奖励金额（go per-box 覆写 roi）",
+        "recognition": "OCR",
+        "roi": [
+            840,
+            220,
+            50,
+            410
+        ],
+        "expected": [
+            "\\d+(\\.\\d+)?"
+        ],
+        "only_rec": true,
+        "order_by": "Vertical"
+    },
+    "__SeizeDeliveryJobsRecoOrigin": {
+        "desc": "委托出发地（go per-box 覆写 roi；expected 由 tasks 按地区覆写）",
+        "recognition": "OCR",
+        "roi": [
+            611,
+            182,
+            100,
+            410
+        ],
+        "expected": [
+            "武陵城"
+        ],
+        "order_by": "Vertical"
+    },
+    "__SeizeDeliveryJobsRecoAccept": {
+        "desc": "接取运送委托按钮文本（go per-box 覆写 roi）",
+        "recognition": "OCR",
+        "roi": [
+            1066,
+            216,
+            70,
+            410
+        ],
+        "expected": [
+            "接取运送委托"
+        ],
+        "order_by": "Vertical"
+    },
+    "__SeizeDeliveryJobsRecoViewLocation": {
+        "desc": "查看位置按钮文本（go per-box 覆写 roi）",
+        "recognition": "OCR",
+        "roi": [
+            625,
+            212,
+            34,
+            410
+        ],
+        "expected": [
+            "查看位置"
+        ],
+        "order_by": "Vertical"
+    },
+    "__SeizeDeliveryJobsMinReward": {
+        "desc": "价格下限配置仓库（不实际识别；expected 由 tasks 覆写为用户输入，go 读取 expected[0]）",
+        "recognition": "OCR",
+        "expected": [
+            "16.3"
         ]
     }
 }

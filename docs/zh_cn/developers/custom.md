@@ -39,6 +39,9 @@ Action 节点用于执行自定义动作。常见写法如下：
     - `sub: string[]`：子任务名列表，必填。
     - `continue?: bool`：某个子任务失败后是否继续执行后续子任务，默认 `false`。
     - `strict?: bool`：某个子任务失败时当前 Action 是否返回失败，默认 `true`。
+    - `random_choice?: int`：若指定且大于 `0`，则先将 `sub` 列表随机打乱，再从中挑选不超过该数量的子任务执行；超过列表长度时按列表长度处理。默认不随机，按原顺序执行全部子任务。
+
+    执行前会先剔除 `sub` 中无法解析或 `enabled` 为 `false` 的子任务节点（未显式声明 `enabled` 的节点视为启用），随后才进行随机挑选与执行。若过滤（及随机挑选）后没有可执行的子任务，当前 Action 不视为失败，仅记录一条 warn 日志并返回成功。
 
 示例文件：[`SubTask.json`](../../../assets/resource/pipeline/Interface/Example/SubTask.json)
 
@@ -80,6 +83,28 @@ Action 节点用于执行自定义动作。常见写法如下：
 `FalseAction` 实现位于 `agent/go-service/common/falseaction`，始终返回失败。常用于 Pipeline 中需要强制让 Action 执行失败的占位场景。
 
 - 参数：无。
+
+### RepeatUntilFoundAction / RepeatUntilNotFoundAction
+
+二者实现均位于 `agent/go-service/common/repeataction`，用于反复执行一次内置或自定义动作，每次执行后等待再识别；条件满足即成功，耗尽次数仍不满足则失败。
+
+- `RepeatUntilFoundAction`：`wait_nodes` 中**任一命中**即成功。
+- `RepeatUntilNotFoundAction`：`wait_node` **未命中**即成功。
+
+- 公共参数：
+    - `action: string`：内置动作类型（如 `Click`），与 `custom_action` 二选一。
+    - `custom_action?: string`：已注册的自定义动作名（如 `AutoAltClickAction`），与 `action` 二选一。
+    - `custom_action_param?: object`：透传给内层自定义动作的参数。
+    - `repeat_count?: int`：最大尝试次数；省略或 `<= 0` 时默认 `3`。
+    - `interval_ms?: int`：每次尝试后、识别前的等待（毫秒）；省略或 `0` 时默认 `1000`；负值非法。
+- `RepeatUntilFoundAction` 额外参数：
+    - `wait_nodes: string[]`：等待出现的 Pipeline 节点名列表，必填。
+- `RepeatUntilNotFoundAction` 额外参数：
+    - `wait_node: string`：等待消失的 Pipeline 节点名，必填；一次只支持一个节点。
+
+目标位置固定使用触发本 Action 的识别框 `box`（可由外层 `target` / `target_offset` 调整）。循环在任务停止信号（`Stopping`）时会立即中止并返回失败。
+
+示例文件：[`RepeatUntilFoundAction.json`](../../../assets/resource/pipeline/Interface/Example/RepeatUntilFoundAction.json)
 
 ### PipelineOverride
 
@@ -145,13 +170,6 @@ Action 节点用于执行自定义动作。常见写法如下：
     - `target_offset?: [int, int, int, int]`：可选。形如 `[dx, dy, dw, dh]`，叠加到 `box` 后再取中心点击，语义与内置 `Click` 动作的 `target_offset` 一致；省略时直接点击 `box` 中心。
 
 默认目标位置由 Pipeline 节点的 `box` 决定。
-
-### AutoAltLongPressAction
-
-`AutoAltLongPressAction` 实现位于 `agent/go-service/common/autoalt`，用于在指定位置执行 Alt + 长按操作。
-
-- 参数：
-    - `duration: int`：长按持续时间（毫秒），必填。
 
 ### AutoAltSwipeAction
 
@@ -244,6 +262,47 @@ Recognition 节点用于执行自定义识别。常见写法如下：
 - 表达式中的整数字面量，以及 OCR 换算后的数值，若超出当前平台 `int` 可表示范围，会自动钳制到 `int` 最大值或最小值（正溢出取最大值，负溢出取最小值），并输出警告日志；表达式会继续求值，而不是直接失败。
 - 该识别器只负责表达式求值，不负责业务语义本身，业务侧应在 Pipeline 中自行组织节点与阈值。
 
+### ListCompleteRecognition
+
+`ListCompleteRecognition` 实现位于 `agent/go-service/common/listcomplete`，用于通过 OCR 指纹是否变化判断列表是否仍在更新（常见于滑动列表到底检测）。
+
+参数：
+
+- `node: string`：必填。OCR 节点名，或 `And` 节点名（其 `box_index` 指向的子项必须是 OCR）。
+
+行为：
+
+1. 执行 `node` 识别；未命中或无法提取 OCR 文字时返回未命中。
+2. 从目标 OCR 结果收集命中（优先 `Filtered`，否则 `All`），按纵向（再按横向）排序后只取首尾两条用换行拼接为指纹（仅一条时用该条）；返回框取最上方一条。比只用 `Best` 更能发现「顶不变、底已滚」；比整屏 join 更耐中间 OCR 抖动。
+3. 读取当前自定义识别节点自身的 `attach.last_text`。
+4. 若 `last_text` 为空（首次成功）：返回命中，并把当前指纹写入 `attach.last_text`。
+5. 若当前指纹与 `last_text` 一致：返回未命中（视为列表已到底/未变化）。
+6. 若当前指纹与 `last_text` 不一致：更新 `attach.last_text` 并返回命中。
+
+对 `And` 节点，目标解析与 `ExpressionRecognition` 共用 `pkg/recogtarget`：先执行该 `And` 节点本身，再按其原生 `box_index`（默认 `0`）从本次 `CombinedResult` 中选取对应子识别结果，并从该子结果提取 OCR。节点定义阶段也会校验 `box_index` 目标含 OCR。
+
+示例文件：[`ListCompleteRecognition.json`](../../../assets/resource/pipeline/Interface/Example/ListCompleteRecognition.json)
+
+```json
+{
+    "recognition": {
+        "type": "Custom",
+        "param": {
+            "custom_recognition": "ListCompleteRecognition",
+            "custom_recognition_param": {
+                "node": "SomeListAnchorOCR"
+            }
+        }
+    }
+}
+```
+
+注意事项：
+
+- 状态保存在**当前 Custom 识别节点**的 `attach.last_text`，不是 `node` 指向的 OCR/`And` 节点。
+- 需要重新开始一轮列表扫描时，应清空该 Custom 节点的 `attach.last_text`（例如通过 `PipelineOverride`）。
+- 该识别器只负责“OCR 首尾指纹是否变化”，滑动、点击等流程仍由 Pipeline 组织。
+
 ### ScheduleRecognition
 
 `ScheduleRecognition` 实现位于 `agent/go-service/common/schedule`，用于按星期几判断当前任务是否应继续执行。它只返回识别是否命中，不在 Go 中直接运行子任务；后续流程应通过 Pipeline 的 `next` 组织。
@@ -269,13 +328,15 @@ Recognition 节点用于执行自定义识别。常见写法如下：
 | 按顺序跑一组子任务            | `SubTask`                     |
 | 清零某节点的命中计数          | `ClearHitCount`               |
 | 强制让 Action 失败            | `FalseAction`                 |
+| 重复动作直到节点出现          | `RepeatUntilFoundAction`      |
+| 重复动作直到节点消失          | `RepeatUntilNotFoundAction`   |
 | 主动停止当前任务              | `PostStop`                    |
 | 运行时改节点参数              | `PipelineOverride`            |
 | 把关键词拼成正则写回 OCR 节点 | `AttachToExpectedRegexAction` |
 | 计算 OCR 数值表达式           | `ExpressionRecognition`       |
+| 判断列表 OCR 文本是否变化     | `ListCompleteRecognition`     |
 | 按星期几门控后续节点          | `ScheduleRecognition`         |
 | 在指定位置 Alt + 点击         | `AutoAltClickAction`          |
-| 在指定位置 Alt + 长按         | `AutoAltLongPressAction`      |
 | Alt + 滑动                    | `AutoAltSwipeAction`          |
 
 所有 Custom 的 Go 代码实现在 `agent/go-service/` 下，Pipeline 作者不需要关心，照文档参数写 JSON 就行。

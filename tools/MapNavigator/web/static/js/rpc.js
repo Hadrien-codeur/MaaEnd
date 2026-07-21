@@ -125,13 +125,24 @@ export function getLoadStatus() {
 export async function getMesh(zoneId) {
   let res;
   try {
-    res = await fetch(`/mesh/${encodeURIComponent(String(zoneId))}`);
+    res = await fetch(`/mesh/${encodeURIComponent(String(zoneId))}`, { cache: 'no-store' });
   } catch (err) {
     throw new RpcError(`网络请求失败: /mesh/${zoneId} (${err && err.message ? err.message : err})`, 0);
   }
   if (res.status === 404) return null;
   if (!res.ok) throw new RpcError(await errorMessage(res), res.status);
   return res.arrayBuffer();
+}
+
+/**
+ * 追加一次性 query 参数。底图走 `new Image().src`，浏览器对这类脚本发起的请求在硬刷新时
+ * 也常直接命中旧缓存条目、根本不回源，于是更新了模板图仍显示旧图。变一下 URL 就没有可命中
+ * 的条目，必然回源；配合服务端 no-store，之后每次都是最新。
+ * @param {string} url
+ * @returns {string}
+ */
+function withCacheBust(url) {
+  return `${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}`;
 }
 
 /**
@@ -144,7 +155,7 @@ export function basemapUrl(imagePath) {
   const parts = String(imagePath)
     .split('/')
     .map((seg) => encodeURIComponent(seg));
-  return `/basemap/${parts.join('/')}`;
+  return withCacheBust(`/basemap/${parts.join('/')}`);
 }
 
 /**
@@ -156,7 +167,7 @@ export function basemapUrl(imagePath) {
  * @returns {string}
  */
 export function basemapByZoneUrl(zoneId) {
-  return `/basemap-by-zone?zone_id=${encodeURIComponent(String(zoneId))}`;
+  return withCacheBust(`/basemap-by-zone?zone_id=${encodeURIComponent(String(zoneId))}`);
 }
 
 /**
@@ -171,14 +182,54 @@ export function getZoneIds() {
 /**
  * Request an A* preview route. Resolves the backend payload verbatim, including the
  * `{ok:false, error}` "unreachable" case (see module note).
+ *
+ * `blind_start` / `blind_target` describe the straight lines the runtime walks with no
+ * navmesh under it (they are the actual ladder result, not an estimate). Their `reason` is
+ * `'off_mesh'` when the endpoint lies outside the mesh, `'disconnected'` when it stands on
+ * mesh the other end simply cannot be reached from — do not report the second as the first.
+ *
+ * `off_mesh` rides along on the `ok:false` case so a failure can say *why* — an endpoint
+ * outside the mesh reads very differently from two endpoints on disconnected pieces.
+ *
  * @param {{zone_id:number, start:number[], goal:number[], snap_radius?:number, floor_y?:?number}} req
- * @returns {Promise<{ok:boolean, points?:number[][], segment_breaks?:number[], cost?:number, error?:string}>}
+ * @returns {Promise<{ok:boolean, points?:number[][], segment_breaks?:number[], cost?:number,
+ *   blind_start?:?{entry:number[], distance:number, reason:string},
+ *   blind_target?:?{reached:number[], gap:number, reason:string},
+ *   off_mesh?:{start:?OffMeshProbe, goal:?OffMeshProbe}, error?:string}>}
  */
 export function postRoute(req) {
   return sendJson('/api/route', {
     zone_id: req.zone_id,
     start: req.start,
     goal: req.goal,
+    snap_radius: req.snap_radius === undefined ? 5.0 : req.snap_radius,
+    floor_y: req.floor_y === undefined ? null : req.floor_y,
+  });
+}
+
+/**
+ * @typedef {{distance:?number, nearest:?number[], budget:?number}} OffMeshProbe a point off the
+ *   walkable mesh: how far the nearest mesh point is and where it lies (both null when there is
+ *   no mesh at all within the runtime's blind-walk budget). `budget` is how far the runtime will
+ *   blind-walk at that endpoint's role, so only {@link postRoute} fills it in — a bare point does
+ *   not say whether it is a start or a goal, and the batch probe below leaves it null.
+ */
+
+/**
+ * Ask which of `points` lie off the walkable mesh. Resolves one entry per input point,
+ * `null` meaning "on the mesh" (the runtime snaps it silently — nothing to report).
+ *
+ * Geometry only. How far the runtime actually blind-walks to a *goal* depends on the start
+ * (it probes back along the goal→start line), so that number comes from {@link postRoute}
+ * alone — never present a `distance` from here as the blind walk.
+ *
+ * @param {{zone_id:number, points:number[][], snap_radius?:number, floor_y?:?number}} req
+ * @returns {Promise<{ok:boolean, results?:Array<?OffMeshProbe>, error?:string}>}
+ */
+export function postOffMeshProbe(req) {
+  return sendJson('/api/offmesh-probe', {
+    zone_id: req.zone_id,
+    points: req.points,
     snap_radius: req.snap_radius === undefined ? 5.0 : req.snap_radius,
     floor_y: req.floor_y === undefined ? null : req.floor_y,
   });

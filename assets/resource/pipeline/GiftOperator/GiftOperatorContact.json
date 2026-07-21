@@ -143,6 +143,7 @@
             "GiftOperatorSelect_Estella",
             "GiftOperatorSelect_Fluorite",
             "GiftOperatorSelect_Gilberta",
+            "GiftOperatorSelect_Jue",
             "GiftOperatorSelect_Laevatain",
             "GiftOperatorSelect_LastRite",
             "GiftOperatorSelect_Lifeng",
@@ -180,10 +181,10 @@
             "type": "Click",
             "param": {
                 "target_offset": [
-                    20,
-                    20,
-                    -40,
-                    -40
+                    45,
+                    39,
+                    -58,
+                    -51
                 ]
             }
         },

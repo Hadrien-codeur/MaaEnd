@@ -34,9 +34,12 @@ Action nodes are used to execute custom actions. A common format is as follows:
 The `SubTask` implementation is located in `agent/go-service/subtask` and is used to execute a series of subtasks sequentially.
 
 - Parameters:
-    - `sub: string[]`: A list of subtask names. Required.
-    - `continue?: bool`: Whether to continue executing subsequent subtasks if one fails. Default is `false`.
-    - `strict?: bool`: Whether the current Action returns a failure if any subtask fails. Default is `true`.
+    - `sub: string[]`: required list of subtask names.
+    - `continue?: bool`: whether to continue after a subtask fails. Default is `false`.
+    - `strict?: bool`: whether the current action should fail when a subtask fails. Default is `true`.
+    - `random_choice?: int`: if set and greater than `0`, the `sub` list is shuffled and at most this many subtasks are picked to run; values exceeding the list length are clamped to it. Defaults to running every subtask in order.
+
+    Before the random pick, subtask nodes in `sub` that cannot be resolved or whose `enabled` is `false` are filtered out (a node without an explicit `enabled` counts as enabled). If no runnable subtask remains after filtering (and the random pick), the action is not treated as a failure: it logs a single warning and returns success.
 
 Example file: [`SubTask.json`](../../../assets/resource/pipeline/Interface/Example/SubTask.json)
 
@@ -78,6 +81,28 @@ Example file: [`ClearHitCount.json`](../../../assets/resource/pipeline/Interface
 The `FalseAction` implementation is located in `agent/go-service/common/falseaction` and always returns a failure. It is commonly used as a placeholder in Pipelines where an Action needs to be forced to fail.
 
 - Parameters: None.
+
+### RepeatUntilFoundAction / RepeatUntilNotFoundAction
+
+Both are implemented in `agent/go-service/common/repeataction`. They repeatedly run a built-in or custom action, wait, then check recognition. They succeed when the wait condition is met, and fail after `repeat_count` attempts without success.
+
+- `RepeatUntilFoundAction`: succeeds when **any** `wait_nodes` entry hits.
+- `RepeatUntilNotFoundAction`: succeeds when `wait_node` misses.
+
+- Shared parameters:
+    - `action: string`: Built-in action type (e.g. `Click`). Mutually exclusive with `custom_action`.
+    - `custom_action?: string`: Registered custom action name (e.g. `AutoAltClickAction`). Mutually exclusive with `action`.
+    - `custom_action_param?: object`: Forwarded to the nested custom action.
+    - `repeat_count?: int`: Maximum attempts. Defaults to `3` when omitted or `<= 0`.
+    - `interval_ms?: int`: Wait after each attempt before recognition, in milliseconds. Defaults to `1000` when omitted or `0`. Negative values are invalid.
+- `RepeatUntilFoundAction` extra:
+    - `wait_nodes: string[]`: Pipeline node names to wait for. Required.
+- `RepeatUntilNotFoundAction` extra:
+    - `wait_node: string`: Single Pipeline node name to wait until it disappears. Required.
+
+The target position always uses the recognition `box` that triggered this Action (optionally adjusted by outer `target` / `target_offset`). The loop aborts immediately and returns failure when the tasker reports stopping.
+
+Example file: [`RepeatUntilFoundAction.json`](../../../assets/resource/pipeline/Interface/Example/RepeatUntilFoundAction.json)
 
 ### PipelineOverride
 
@@ -143,13 +168,6 @@ The `AutoAltClickAction` implementation is located in `agent/go-service/common/a
     - `target_offset?: [int, int, int, int]`: Optional. Format like `[dx, dy, dw, dh]`, overlaid onto `box` before clicking the center; semantics are consistent with the `target_offset` of the built-in `Click` action. If omitted, it directly clicks the center of `box`.
 
 The default target position is determined by the `box` of the Pipeline node.
-
-### AutoAltLongPressAction
-
-The `AutoAltLongPressAction` implementation is located in `agent/go-service/common/autoalt`. It performs an Alt + Long Press operation at a specified position.
-
-- Parameters:
-    - `duration: int`: Long press duration in milliseconds. Required.
 
 ### AutoAltSwipeAction
 
@@ -242,6 +260,47 @@ Important Notes:
 - Integer literals in expressions, and values converted from OCR, if they exceed the range representable by the platform's `int`, are automatically clamped to the `int` maximum or minimum (positive overflow takes the maximum, negative overflow takes the minimum), and a warning log is output; expression evaluation continues rather than failing immediately.
 - This recognizer is only responsible for expression evaluation, not for the business semantics itself; the business side should organize nodes and thresholds within the Pipeline.
 
+### ListCompleteRecognition
+
+The `ListCompleteRecognition` implementation is located in `agent/go-service/common/listcomplete`. It detects whether a list is still updating by checking whether an OCR fingerprint has changed (commonly used to detect when a scrollable list has reached the end).
+
+Parameters:
+
+- `node: string`: Required. An OCR node name, or an `And` node name whose `box_index` target must be OCR.
+
+Behavior:
+
+1. Run recognition on `node`; return no match if it misses or no OCR text can be extracted.
+2. Collect OCR hits from the target result (`Filtered`, else `All`), sort by vertical then horizontal position, and fingerprint only the first and last hits joined with a newline (or the single hit if there is only one); the returned box is the topmost hit. This still detects “top unchanged, bottom scrolled” better than `Best` alone, while staying more stable than joining every on-screen string.
+3. Read `attach.last_text` from the current custom recognition node itself.
+4. If `last_text` is empty (first success): return a match and write the current fingerprint into `attach.last_text`.
+5. If the current fingerprint equals `last_text`: return no match (treat as list complete / unchanged).
+6. If the current fingerprint differs from `last_text`: update `attach.last_text` and return a match.
+
+For `And` nodes, target resolution is shared with `ExpressionRecognition` via `pkg/recogtarget`: first run the `And` node itself, then read the corresponding sub-recognition result from this run's `CombinedResult` using that node's native `box_index` (default `0`), and extract OCR from that selected child. Node definition validation also requires the `box_index` target to contain OCR.
+
+Example file: [`ListCompleteRecognition.json`](../../../assets/resource/pipeline/Interface/Example/ListCompleteRecognition.json)
+
+```json
+{
+    "recognition": {
+        "type": "Custom",
+        "param": {
+            "custom_recognition": "ListCompleteRecognition",
+            "custom_recognition_param": {
+                "node": "SomeListAnchorOCR"
+            }
+        }
+    }
+}
+```
+
+Notes:
+
+- State is stored in `attach.last_text` on the **current Custom recognition node**, not on the OCR/`And` node referenced by `node`.
+- To restart a list scan, clear that Custom node's `attach.last_text` (for example via `PipelineOverride`).
+- This recognizer only answers "did the first/last OCR fingerprint change"; scrolling/clicking still belong in Pipeline.
+
 ### ScheduleRecognition
 
 The `ScheduleRecognition` implementation is located in `agent/go-service/common/schedule`. It is used to determine whether the current task should continue executing based on the day of the week. It only returns whether recognition matches; it does not directly run subtasks in Go; subsequent flows should be organized via the Pipeline's `next`.
@@ -267,13 +326,15 @@ When writing a Pipeline, the built-in `TemplateMatch` / `OCR` / `Click` / `Swipe
 | Run a series of subtasks in order        | `SubTask`                     |
 | Clear hit count of a node                | `ClearHitCount`               |
 | Force an Action to fail                  | `FalseAction`                 |
+| Repeat an action until a node appears    | `RepeatUntilFoundAction`      |
+| Repeat an action until a node disappears | `RepeatUntilNotFoundAction`   |
 | Actively stop the current task           | `PostStop`                    |
 | Change node parameters at runtime        | `PipelineOverride`            |
 | Write keywords as regex back to OCR node | `AttachToExpectedRegexAction` |
 | Evaluate OCR numerical expressions       | `ExpressionRecognition`       |
+| Detect whether list OCR text changed     | `ListCompleteRecognition`     |
 | Gate subsequent nodes by day of week     | `ScheduleRecognition`         |
 | Alt + Click at specified position        | `AutoAltClickAction`          |
-| Alt + Long Press at specified position   | `AutoAltLongPressAction`      |
 | Alt + Swipe                              | `AutoAltSwipeAction`          |
 
 All Custom Go code implementations are located under `agent/go-service/`. Pipeline authors do not need to concern themselves with this; just write the JSON according to the documentation parameters.

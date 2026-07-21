@@ -18,12 +18,15 @@ import (
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/expressionrecognition"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/failurecollector"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/falseaction"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/listcomplete"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/pipelineoverride"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/poststop"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/repeataction"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/schedule"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/common/subtask"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/creditshopping"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/dailyrewards"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/dijiangrewards"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/essencefilter"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/itemtransfer"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/maptracker"
@@ -61,10 +64,12 @@ func registerAll() {
 	clearhitcount.Register()
 	pipelineoverride.Register()
 	expressionrecognition.Register()
+	listcomplete.Register()
 	attachregex.Register()
 	autoalt.Register()
 	charactercontroller.Register()
 	falseaction.Register()
+	repeataction.Register()
 	poststop.Register()
 	schedule.Register()
 
@@ -77,6 +82,7 @@ func registerAll() {
 	bettersliding.Register()
 	essencefilter.Register()
 	dailyrewards.Register()
+	dijiangrewards.Register()
 	maptracker.Register()
 	batchaddfriends.Register()
 	autoecofarm.Register()

@@ -9,12 +9,13 @@
                 "AutoSellPriceCompareRecognition",
                 "AutoSellScanItemRecognition",
                 "AutoStockpile.Recognition",
-                "DailyEventUnreadItemInitRecognition",
+                "DailyEventGoToRecognition",
                 "EssenceFilterAfterBattleNthRecognition",
                 "EssenceGridAdvanceRecognition",
                 "EssenceGridPendingRecognition",
                 "ExpressionRecognition",
                 "ImageCheckNotPassedRecognition",
+                "ListCompleteRecognition",
                 "MapLocateAssertLocation",
                 "MapTrackerAssertLocation",
                 "MapTrackerAssertLocationCompatible",
@@ -22,15 +23,20 @@
                 "MapTrackerBigMapInfer",
                 "MapTrackerInfer",
                 "PuzzleRecognition",
+                "ReceptionRoomExchangeCountdownWithinThresholdRecognition",
+                "ReceptionRoomWaitExchangeKeepAliveDueRecognition",
                 "ScheduleRecognition",
-                "SellProductNormalizedItemMatch",
+                "SellProductCurrentBestOperator",
+                "SellProductOperatorCacheReady",
+                "SellProductOperatorListBottom",
+                "SellProductOperatorScanOutcome",
+                "SellProductPriorityItem",
+                "SellProductSelectBestOperator",
                 "TrialOfSwordmancy.Recognize",
-                "VisitFriendsMenuScanDetailAssistRecognition",
-                "VisitFriendsMenuScanDetailClueExchangeRecognition",
-                "VisitFriendsMenuScanScrollFinishRecognition",
-                "VisitFriendsMenuScanScrollFullRecognition",
-                "VisitFriendsMenuScanTargetFriendOpenRecognition",
+                "TrialOfSwordmancy.RecognizeAband",
+                "VisitFriendsSelectFriendRecognition",
                 "WeaponInventoryScanRecognition",
+                "SeizeDeliveryJobsFindTargetRecognition",
                 "SeizeDeliveryJobsScanTargetRecognition",
                 "autoEcoFarmCalculateSwipeTarget",
                 "autoEcoFarmFindNearestRecognitionResult"
@@ -38,6 +44,32 @@
         }
     },
     "allOf": [
+        {
+            "if": {
+                "type": "object",
+                "required": [ "custom_recognition" ],
+                "properties": { "custom_recognition": { "const": "ListCompleteRecognition" } }
+            },
+            "then": {
+                "type": "object",
+                "required": [ "custom_recognition_param" ],
+                "properties": {
+                    "custom_recognition_param": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [ "node" ],
+                        "properties": {
+                            "node": {
+                                "type": "string",
+                                "minLength": 1,
+                                "title": "Node",
+                                "description": "OCR node name, or an And node name whose native box_index target must be OCR. Compared across runs via attach.last_text on the current Custom recognition node."
+                            }
+                        }
+                    }
+                }
+            }
+        },
         {
             "if": {
                 "type": "object",

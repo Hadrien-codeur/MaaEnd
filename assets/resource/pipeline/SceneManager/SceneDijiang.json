@@ -163,12 +163,18 @@
                 ]
             }
         },
-        "pre_wait_freezes": 80,
+        "pre_wait_freezes": 200,
         "pre_delay": 0,
         "action": {
             "type": "Custom",
             "param": {
-                "custom_action": "AutoAltClickAction"
+                "custom_action": "RepeatUntilFoundAction",
+                "custom_action_param": {
+                    "custom_action": "AutoAltClickAction",
+                    "wait_nodes": [
+                        "__ScenePrivateWorldEnterMenuControlNexusSuccess"
+                    ]
+                }
             }
         },
         "post_delay": 0,
