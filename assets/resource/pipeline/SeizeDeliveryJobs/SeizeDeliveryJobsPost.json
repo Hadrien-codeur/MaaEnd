@@ -258,29 +258,33 @@
         }
     },
     "SeizeDeliveryJobsWulingCityWalkToZipline": {
-        "desc": "取货-滑索路线 步骤1：从传送落点步行到起点滑索架前",
+        "desc": "取货-滑索路线 步骤1：从传送落点步行到起点滑索架前【A方案：NAVMESH A*复测，base px；旧MapTrackerMove折线见git 9f98309a】",
         "pre_delay": 0,
         "action": "Custom",
-        "custom_action": "MapTrackerMove",
+        "custom_action": "MapNavigateAction",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "path": [
-                [
-                    663.87,
-                    733.9
-                ],
-                [
-                    665.7,
-                    733.1
-                ],
-                [
-                    670.36,
-                    731.79
-                ]
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        944.55,
+                        1777.02
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        948.73,
+                        1776.88
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
             ]
         },
         "focus": {
-            "Node.Recognition.Succeeded": "取货-步行到起点滑索"
+            "Node.Recognition.Succeeded": "取货-步行到起点滑索[NAVMESH]"
         }
     },
     "SeizeDeliveryJobsWulingCityZipline": {
@@ -300,37 +304,33 @@
         }
     },
     "SeizeDeliveryJobsWulingCityWalkFromZipline": {
-        "desc": "取货-滑索路线 步骤5：从②号滑索落点步行到取货点",
+        "desc": "取货-滑索路线 步骤5：从②号滑索落点步行到取货点【A方案：NAVMESH A*，base px；旧MapTrackerMove折线见git 9f98309a】",
         "pre_delay": 0,
         "action": "Custom",
-        "custom_action": "MapTrackerMove",
+        "custom_action": "MapNavigateAction",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "path": [
-                [
-                    682.25,
-                    786.75
-                ],
-                [
-                    683.3,
-                    786.8
-                ],
-                [
-                    684.4,
-                    787.9
-                ],
-                [
-                    675.8,
-                    788.1
-                ],
-                [
-                    674.99,
-                    788.58
-                ]
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        956.52,
+                        1831.68
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        951.74,
+                        1832.74
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
             ]
         },
         "focus": {
-            "Node.Recognition.Succeeded": "取货-步行到仓储节点"
+            "Node.Recognition.Succeeded": "取货-步行到仓储节点[NAVMESH]"
         }
     },
     "SeizeDeliveryJobsWalkToDepotNodeWulingCityBackward": {

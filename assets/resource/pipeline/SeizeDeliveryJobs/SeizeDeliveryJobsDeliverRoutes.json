@@ -63,37 +63,41 @@
 
     // ---------- 起点滑索步行（4 条路线共用，待录） ----------
     "SeizeDeliveryJobsDeliverWalkToZipline": {
-        "desc": "送货-步行到起点滑索架前（4 条路线共用）",
+        "desc": "送货-步行到起点滑索架前（4 条路线共用）【A方案：NAVMESH A*，base px；旧MapTrackerMove折线见git 9f98309a】",
         "pre_delay": 0,
         "action": "Custom",
-        "custom_action": "MapTrackerMove",
+        "custom_action": "MapNavigateAction",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "path": [
-                [
-                    675.7,
-                    788.1
-                ],
-                [
-                    683.3,
-                    787.9
-                ],
-                [
-                    683.3,
-                    786.7
-                ],
-                [
-                    684.5,
-                    786.7
-                ],
-                [
-                    684.5,
-                    785.5
-                ]
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        952.92,
+                        1832.72
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        960.88,
+                        1831.15
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        961.02,
+                        1830.51
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
             ]
         },
         "focus": {
-            "Node.Recognition.Succeeded": "送货-步行到起点滑索"
+            "Node.Recognition.Succeeded": "送货-步行到起点滑索[NAVMESH]"
         }
     },
 
