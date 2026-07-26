@@ -268,16 +268,16 @@
                 {
                     "action": "NAVMESH",
                     "target": [
-                        944.55,
-                        1777.02
+                        942.75,
+                        1778.95
                     ],
                     "zone_id": "Wuling_Base"
                 },
                 {
                     "action": "NAVMESH",
                     "target": [
-                        948.73,
-                        1776.88
+                        949.74,
+                        1777.67
                     ],
                     "zone_id": "Wuling_Base"
                 }
@@ -314,16 +314,16 @@
                 {
                     "action": "NAVMESH",
                     "target": [
-                        956.52,
-                        1831.68
+                        961.86,
+                        1831.55
                     ],
                     "zone_id": "Wuling_Base"
                 },
                 {
                     "action": "NAVMESH",
                     "target": [
-                        951.74,
-                        1832.74
+                        951.98,
+                        1832.68
                     ],
                     "zone_id": "Wuling_Base"
                 }

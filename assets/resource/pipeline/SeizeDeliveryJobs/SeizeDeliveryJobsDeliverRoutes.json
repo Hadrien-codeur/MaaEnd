@@ -54,6 +54,165 @@
         }
     },
 
+    // ===== 送货路线独立测试入口·猫头鹰（Owl） =====
+    "SeizeDeliveryJobsTestDeliverOwlEntry": {
+        "desc": "送货路线测试入口-猫头鹰（仅调试用）",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverOwlTeleport"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线测试开始（猫头鹰）**"
+        }
+    },
+    "SeizeDeliveryJobsTestDeliverOwlTeleport": {
+        "desc": "送货测试-传送到武陵城仓储节点锚点",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SceneEnterWorldWulingWulingCity5"
+            ]
+        },
+        "post_delay": 0,
+        "timeout": 10000,
+        "next": [
+            "SeizeDeliveryJobsTestDeliverOwlRun"
+        ]
+    },
+    "SeizeDeliveryJobsTestDeliverOwlRun": {
+        "desc": "送货测试-先跑取货路线到取货点，再跑猫头鹰送货路线（跑完即停）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsWulingCityWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsWulingCityZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsWulingCityWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteOwl"
+            ]
+        },
+        "post_delay": 0,
+        "next": [
+            // 跑完即停，供博士核对路线与落点
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线跑完（猫头鹰），请核对人物落点**"
+        }
+    },
+
+    // ===== 送货路线独立测试入口·材料研究所（MaterialResearchInstitute） =====
+    "SeizeDeliveryJobsTestDeliverMaterialResearchInstituteEntry": {
+        "desc": "送货路线测试入口-材料研究所（仅调试用）",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverMaterialResearchInstituteTeleport"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线测试开始（材料研究所）**"
+        }
+    },
+    "SeizeDeliveryJobsTestDeliverMaterialResearchInstituteTeleport": {
+        "desc": "送货测试-传送到武陵城仓储节点锚点",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SceneEnterWorldWulingWulingCity5"
+            ]
+        },
+        "post_delay": 0,
+        "timeout": 10000,
+        "next": [
+            "SeizeDeliveryJobsTestDeliverMaterialResearchInstituteRun"
+        ]
+    },
+    "SeizeDeliveryJobsTestDeliverMaterialResearchInstituteRun": {
+        "desc": "送货测试-先跑取货路线到取货点，再跑材料研究所送货路线（跑完即停）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsWulingCityWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsWulingCityZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsWulingCityWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteMaterialResearchInstitute"
+            ]
+        },
+        "post_delay": 0,
+        "next": [
+            // 跑完即停，供博士核对路线与落点
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线跑完（材料研究所），请核对人物落点**"
+        }
+    },
+
+    // ===== 送货路线独立测试入口·技术生产办公室（TechProductionOffice） =====
+    "SeizeDeliveryJobsTestDeliverTechProductionOfficeEntry": {
+        "desc": "送货路线测试入口-技术生产办公室（仅调试用）",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverTechProductionOfficeTeleport"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线测试开始（技术生产办公室）**"
+        }
+    },
+    "SeizeDeliveryJobsTestDeliverTechProductionOfficeTeleport": {
+        "desc": "送货测试-传送到武陵城仓储节点锚点",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SceneEnterWorldWulingWulingCity5"
+            ]
+        },
+        "post_delay": 0,
+        "timeout": 10000,
+        "next": [
+            "SeizeDeliveryJobsTestDeliverTechProductionOfficeRun"
+        ]
+    },
+    "SeizeDeliveryJobsTestDeliverTechProductionOfficeRun": {
+        "desc": "送货测试-先跑取货路线到取货点，再跑技术生产办公室送货路线（跑完即停）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsWulingCityWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsWulingCityZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsWulingCityWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteTechProductionOffice"
+            ]
+        },
+        "post_delay": 0,
+        "next": [
+            // 跑完即停，供博士核对路线与落点
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线跑完（技术生产办公室），请核对人物落点**"
+        }
+    },
+
     // ===== 武陵城 4 条预录滑索送货路线 =====
     // 每条 = 步行到起点滑索 → 上索 → 滑行(可多段) → 下索 → 步行到送货 NPC。
     // 由 Go (SeizeDeliveryJobsDepartureAction.runDeliverRoute) 按终点名调用：节点名 = SeizeDeliveryJobsDeliverRoute<Endpoint>。
@@ -73,24 +232,24 @@
                 {
                     "action": "NAVMESH",
                     "target": [
-                        952.92,
-                        1832.72
+                        952.86,
+                        1832.75
                     ],
                     "zone_id": "Wuling_Base"
                 },
                 {
                     "action": "NAVMESH",
                     "target": [
-                        960.88,
-                        1831.15
+                        961.06,
+                        1831.17
                     ],
                     "zone_id": "Wuling_Base"
                 },
                 {
                     "action": "NAVMESH",
                     "target": [
-                        961.02,
-                        1830.51
+                        960.78,
+                        1830.32
                     ],
                     "zone_id": "Wuling_Base"
                 }
@@ -111,7 +270,8 @@
             "sub": [
                 "SeizeDeliveryJobsDeliverWalkToZipline",
                 "MapTrackerOpenWorld_GetOnZipline",
-                "SeizeDeliveryJobsDeliverRouteOwlZipline",
+                "SeizeDeliveryJobsDeliverRouteOwlZiplineChainA",
+                "SeizeDeliveryJobsDeliverRouteOwlZiplineChainB",
                 "MapTrackerOpenWorld_GetOffZipline",
                 "SeizeDeliveryJobsDeliverRouteOwlWalkToNpc"
             ]
@@ -120,27 +280,62 @@
             "Node.Recognition.Succeeded": "送货-前往猫头鹰"
         }
     },
-    "SeizeDeliveryJobsDeliverRouteOwlZipline": {
-        "desc": "送货-猫头鹰 滑行到目的地滑索架",
+    // 连滑段A：朝首架 [663.7,807.3] 发射，按 8 次 E 接力经过 587/562.2/495.8/466/392.9/340.2/286.5，落在 [246.4,705.2]。
+    "SeizeDeliveryJobsDeliverRouteOwlZiplineChainA": {
+        "desc": "送货-猫头鹰 连滑段A（发射朝 [663.7,807.3]，按8次E接力，落 [246.4,705.2]）",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "target": [
-                // TODO(博士): 待录入猫头鹰滑索 target
-            ]
+                663.7,
+                807.3
+            ],
+            "chain_max_press": 8,
+            "timeout": 60000
+        }
+    },
+    // 连滑段B：落地后不重新上索，朝 [241.3,653.8] 发射，按 1 次 E 接力，落在 [226.0,604.2] 终点架。
+    "SeizeDeliveryJobsDeliverRouteOwlZiplineChainB": {
+        "desc": "送货-猫头鹰 连滑段B（发射朝 [241.3,653.8]，按1次E接力，落 [226.0,604.2] 终点架）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {
+            "map_name": "map02_lv002",
+            "target": [
+                241.3,
+                653.8
+            ],
+            "chain_max_press": 1,
+            "timeout": 30000
         }
     },
     "SeizeDeliveryJobsDeliverRouteOwlWalkToNpc": {
-        "desc": "送货-猫头鹰 下索后步行到送货 NPC",
+        "desc": "送货-猫头鹰 下索后步行到送货 NPC【NAVMESH A*，base px】",
         "pre_delay": 0,
         "action": "Custom",
-        "custom_action": "MapTrackerMove",
+        "custom_action": "MapNavigateAction",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "path": [
-                // TODO(博士): 待录入猫头鹰下索→NPC 步行路径
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        513.9,
+                        1652.66
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        513.7,
+                        1651.58
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
             ]
         }
     },
@@ -164,27 +359,46 @@
             "Node.Recognition.Succeeded": "送货-前往材料研究所"
         }
     },
+    // 单段连滑：朝首架 [663.7,807.3] 发射，按 9 次 E 接力经过 587/562.2/495.8/466/392.9/340.2/286.5/246.4，落在 [190.6,674.2]。
     "SeizeDeliveryJobsDeliverRouteMaterialResearchInstituteZipline": {
-        "desc": "送货-材料研究所 滑行到目的地滑索架",
+        "desc": "送货-材料研究所 连滑（发射朝 [663.7,807.3]，按9次E接力，落 [190.6,674.2] 终点架）",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "target": [
-                // TODO(博士): 待录入材料研究所滑索 target
-            ]
+                663.7,
+                807.3
+            ],
+            "chain_max_press": 9,
+            "timeout": 60000
         }
     },
     "SeizeDeliveryJobsDeliverRouteMaterialResearchInstituteWalkToNpc": {
-        "desc": "送货-材料研究所 下索后步行到送货 NPC",
+        "desc": "送货-材料研究所 下索后步行到送货 NPC【NAVMESH A*，base px】",
         "pre_delay": 0,
         "action": "Custom",
-        "custom_action": "MapTrackerMove",
+        "custom_action": "MapNavigateAction",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "path": [
-                // TODO(博士): 待录入材料研究所下索→NPC 步行路径
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        469.27,
+                        1716.49
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        463.76,
+                        1712.55
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
             ]
         }
     },
@@ -280,27 +494,38 @@
             "Node.Recognition.Succeeded": "送货-前往技术生产办公室"
         }
     },
+    // 单段连滑：朝首架 [673.6,732.4] 发射，按 14 次 E 接力经过 671.2/684.4/636.1/576.4/534.5/543.8/514.6/459.6/382.8/310.9/288.5/274.5/262.7，落在 [253.4,218.8]。
     "SeizeDeliveryJobsDeliverRouteTechProductionOfficeZipline": {
-        "desc": "送货-技术生产办公室 滑行到目的地滑索架",
+        "desc": "送货-技术生产办公室 连滑（发射朝 [673.6,732.4]，按14次E接力，落 [253.4,218.8] 终点架）",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "target": [
-                // TODO(博士): 待录入技术生产办公室滑索 target
-            ]
+                673.6,
+                732.4
+            ],
+            "chain_max_press": 14,
+            "timeout": 90000
         }
     },
     "SeizeDeliveryJobsDeliverRouteTechProductionOfficeWalkToNpc": {
-        "desc": "送货-技术生产办公室 下索后步行到送货 NPC",
+        "desc": "送货-技术生产办公室 下索后步行到送货 NPC【NAVMESH A*，base px】",
         "pre_delay": 0,
         "action": "Custom",
-        "custom_action": "MapTrackerMove",
+        "custom_action": "MapNavigateAction",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "path": [
-                // TODO(博士): 待录入技术生产办公室下索→NPC 步行路径
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        539.42,
+                        1250.45
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
             ]
         }
     }

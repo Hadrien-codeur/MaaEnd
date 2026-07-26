@@ -1,0 +1,17 @@
+{
+    "task": [
+        {
+            "name": "SeizeDeliveryJobsTestDeliverTechProductionOffice",
+            "description": "$task.SeizeDeliveryJobsTestDeliverTechProductionOffice.description",
+            "label": "$task.SeizeDeliveryJobsTestDeliverTechProductionOffice.label",
+            "entry": "SeizeDeliveryJobsTestDeliverTechProductionOfficeEntry",
+            "controller": [
+                "Win32-Front",
+                "Wlroots"
+            ],
+            "group": [
+                "regional_development"
+            ]
+        }
+    ]
+}

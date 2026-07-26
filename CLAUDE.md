@@ -448,70 +448,76 @@ python tools/build_and_install.py
 
 ## 18. 当前进度存档（接力时先读此节，确认后删除）
 
-### 18.1 状态：A 方案（步行段迁 NAVMESH）在本机初步跑通，取货三明治两段步行 + 送货起点步行已全部改 NAVMESH，待另一台电脑重录坐标复测
+### 18.1 状态：取货段完全测通；4 条送货路线（观测站+新 3 条）滑索段全部测通；**新 3 条 WalkToNpc 步行段待微调**；departure.go 4 终点坐标已填并重编
 
-**本次会话完成（2026-07-23，本机 = 已装 v2.20.0 二进制那台）**：
+**本次会话完成（2026-07-27，本机 = 已装 v2.21.0 二进制那台）**：
 
-1. **接力确认**：核实本机就是「2026-07-21 已更新二进制那台」（`cpp-algo.exe`=4.0MB 官方 v2.20.0；`go-service.exe`=本机自编译；备份 `install/_backup_pre_v2.20_20260721`）。A 方案可直接在此机测，无需再动二进制。删除了上一版第 18 节。
+1. **二进制升级到 v2.21.0**：本机无 cmake，用官方 v2.21.0 release zip 覆盖 `install/agent/cpp-algo.exe`（4233216 bytes）+ 全部 maafw dll；`go-service.exe` 本机自编译（保住博士的滑索修复）。备份在 `install/_backup_pre_v2.21_20260726/`。拉上游 v2 合并（166 commits，无冲突），博士滑索修复（`zipline.go` ChainMaxPress + 1s 发射延迟）已确认穿过合并保留。
 
-2. **🅰️ A 方案实测（NAVMESH 复测步行段）——初步成功**：把取货/送货的**步行段**从 `MapTrackerMove`（Go 折线）改成 `MapNavigateAction`（C++ 真 A\*，`NAVMESH` 动作，只给终点自动绕障）。滑索段（`MapTrackerZipline` + `GetOn/OffZipline`）一律不动。
-    - **结论**：新二进制下 NAVMESH 能可靠走到滑索架附近并**成功上索**（旧二进制的定位抖动问题消除）。→ **步行段迁 NAVMESH 可行**。
-    - **反直觉经验（重要）**：极短贴位段，落点受 navmesh 可行走边界限制，且**对 target 微调敏感、非线性**——实测 target 往架子推 0.1（③ `[948.64,1777]`）反而上索失败且差很多，而稍远的计算点（② `[948.4,1776.9]`）稳定能上索。**不能纯靠坐标推算找“最优点”，要实机挑稳定点。**
+2. **取货段完全测通**（`SeizeDeliveryJobsPost.json`，MapTracker 录 base px，博士实测无误）：
+   | 节点 | 段落 | base px 点 |
+   |---|---|---|
+   | `SeizeDeliveryJobsWulingCityWalkToZipline` | 传送点→上索点 | `[942.75,1778.95]`→`[949.74,1777.67]` |
+   | `SeizeDeliveryJobsWulingCityWalkFromZipline` | 下索点→取货点 | `[961.86,1831.55]`→`[951.98,1832.68]` |
+    - 反复调过：下索点用 MapTracker 新录值，取货点回退到 MapNavigator 版 `[951.98,1832.68]`（博士反馈单独回退这个点后才稳）。
 
-3. **本次已改的 3 段步行**（均 base px，均带 `zone_id:"Wuling_Base"`，`map_name:"map02_lv002"`；旧 MapTrackerMove 折线在 git `9f98309a`，可回退）：
-    | 节点 | 段落 | NAVMESH 点 | 文件 |
-    |---|---|---|---|
-    | `SeizeDeliveryJobsWulingCityWalkToZipline` | 取货：传送点→上索点 | 2 点 `[944.55,1777.02]`→`[948.73,1776.88]` | `SeizeDeliveryJobsPost.json` |
-    | `SeizeDeliveryJobsWulingCityWalkFromZipline` | 取货：下索点→取货点 | 2 点 `[956.52,1831.68]`→`[951.74,1832.74]` | `SeizeDeliveryJobsPost.json` |
-    | `SeizeDeliveryJobsDeliverWalkToZipline` | 送货：取货点→上索点（4 线共用） | 3 点 `[952.92,1832.72]`→`[960.88,1831.15]`→`[961.02,1830.51]` | `SeizeDeliveryJobsDeliverRoutes.json` |
-    - 坐标是博士本次用 MapNavigator web 工具（:8770）实机重录的 base px，已加中间标点让 A\* 走得更贴合。
-    - `pnpm check` 4 控制器全绿。**尚未在合并流程里最终复测这 3 段**（改完还没跑完整验证，见下一步）。
+3. **新 3 条送货路线全部录入 + 骨架完成**（`SeizeDeliveryJobsDeliverRoutes.json`，样板=已测通的 Observatory）。3 条共用起点滑索段 `SeizeDeliveryJobsDeliverWalkToZipline`（已 NAVMESH）。滑索段用 MapTracker 游戏坐标（`MapTrackerZipline`），步行段 WalkToNpc 用 NAVMESH base px（`MapNavigateAction`）。`chain_max_press` = 途中按 E 次数（连滑架数−1，末架落地不按）：
+   | 路线 | 滑索段 | chain_max_press | WalkToNpc base px |
+   |---|---|---|---|
+   | Owl（猫头鹰,右下） | 段A→`[663.7,807.3]` + 段B→`[241.3,653.8]` | 8 + 1 | `[513.9,1652.66]`→`[513.7,1651.58]` |
+   | MaterialResearchInstitute（材研所,左下） | 单段→`[663.7,807.3]` | 9 | `[469.27,1716.49]`→`[463.76,1712.55]` |
+   | TechProductionOffice（技术办,左上） | 单段→`[673.6,732.4]` | 14 | `[539.42,1250.45]`（单点） |
 
-4. **修正了 CLAUDE.md 18.2 的坐标换算笔误**（详见 18.2）：武陵 `offset_y` 真实是 **1056**，旧存档误记为 0，导致首次 NAVMESH target y 少 1056、落 navmesh 空洞、报 `unreachable`。已改用真实参数。
+4. **建了 3 个测试入口**（UI 在「地区建设」分组）：`🧪送货路线测试·猫头鹰/材料研究所/技术生产办公室(武陵城)`。对应 pipeline 节点 `SeizeDeliveryJobsTestDeliver{Owl,MaterialResearchInstitute,TechProductionOffice}Entry`（Entry/Teleport/Run 三段，SubTask 串同 Observatory）。配套：3 个 task 文件、5 语言文案、`interface.json` 注册 + 已同步 `install/interface.json`（复制文件）。
 
-### 18.2 ⚠️ 坐标系换算备注（博士回家在另一台电脑用 MapTracker 录坐标必读）
+5. **博士实测反馈**：3 条路线**滑索段全部没问题**，**WalkToNpc 步行段还需微调**（本次未调，下次继续）。
 
-**博士回家计划**：在另一台电脑按 NAVMESH 录路线，但**用 MapTracker 编辑器录坐标点**（`tools/map_tracker/map_tracker_editor.py`），看会不会比 MapNavigator web 更准。**MapTracker 录的是「MapTracker 游戏坐标」，NAVMESH 需要的是「base px」，两者不同系，必须换算后才能填进 `MapNavigateAction` 的 target。**
+6. **departure.go 4 终点世界坐标已填并重编**（坐标=各路线 WalkToNpc 最后一个 **MapTracker 游戏坐标**，与 big-map 蓝标同系；匹配半径 30）：
+    - Owl `{229.1, 604.6}`、MaterialResearchInstitute `{178.4, 666.5}`、Observatory `{617.1, 358.0}`、TechProductionOffice `{255.2, 197.4}`。
+    - 已 `gofmt` + `python tools/build_and_install.py` 重编安装 go-service（cpp-algo 未动）。
+    - ⚠️ 注意：终点坐标是 MapTracker 系（因蓝标匹配走 MapTracker 坐标），而 WalkToNpc 的 target 是 NAVMESH base px 系——两者取自同一个实机点但**不同坐标系**，别混。WalkToNpc 若下次微调，最后一点变了要**同步回填** departure.go 对应终点坐标（用 MapTracker 系那份数值），否则 Go 分流匹配不到。
+
+### 18.2 ⚠️ 坐标系换算备注（MapTracker 录坐标 → NAVMESH base px 必读）
+
+MapTracker 编辑器（`tools/map_tracker/map_tracker_editor.py`）录的是「MapTracker 游戏坐标」，NAVMESH（`MapNavigateAction` 的 target）需要「base px」，两系不同，必须换算。
 
 **换算公式**：`base = offset + mt × scale`（正向）；反向 `mt = (base − offset) / scale`。
 
-**权威参数只在** `assets/resource/image/MapLocator/maptracker_coordinate_transforms.json`（按 `map_name` 取行），**不要用速记值**。武陵 `map02_lv002` / `Wuling_Base`：
+**权威参数只在** `assets/resource/image/MapLocator/maptracker_coordinate_transforms.json`（按 `map_name` 取行）。武陵 `map02_lv002` / `Wuling_Base`：
 
-| 参数 | 值 |
-|---|---|
-| `offset_x` | **288.0** |
+| 参数       | 值                          |
+| ---------- | --------------------------- |
+| `offset_x` | **288.0**                   |
 | `offset_y` | **1056.0** ← 关键，不是 0！ |
-| `scale_x` | 0.985176738883 |
-| `scale_y` | 0.985074626866 |
+| `scale_x`  | 0.985176738883              |
+| `scale_y`  | 0.985074626866              |
 
-**MapTracker 游戏坐标 → NAVMESH base px 速算**：
 - `base_x = 288 + mt_x × 0.985176738883`
 - `base_y = 1056 + mt_y × 0.985074626866`
 
-**交叉验证**：AutoCollect 同起点（北锚点 MapTracker≈`[663,733]`）NAVMESH 首点是 base≈`[942,1779]`；用公式算 x=941、y=1778，吻合 ✅。换算后若某点 y 少了一千多，就是又把 `offset_y` 当成 0 了。
+**交叉验证**：AutoCollect 同起点（北锚点 MapTracker≈`[663,733]`）NAVMESH 首点是 base≈`[942,1779]`；公式算 x=941、y=1778，吻合 ✅。换算后若某点 y 少一千多，就是又把 `offset_y` 当 0 了。
 
-**⚠️ 另一台电脑二进制提醒（务必先确认）**：二进制**不随 git 同步**（`.gitignore`）。另一台电脑（cmake 那台）拉取本次改动后 `cpp-algo.exe` 仍是它本地旧版（6-30，缺 #4164/#4169 修复），**若不先升级到 v2.20.0 就复测 NAVMESH，会重现定位抖动、上索不稳、结论不可信**。复测前必须：`python tools/build_and_install.py --cpp-algo` 自编译，或用官方 v2.20.0 包覆盖 `install/agent/cpp-algo.exe` + `deps/bin/` maafw dll×16（**不覆盖** resource/tasks/locales/data 软链接），再 `python tools/build_and_install.py` 编 go-service。改完**完整重启 MaaEnd.exe**。
+### 18.3 下一步（下次继续，可能在公司电脑）
 
-### 18.3 下一步（博士回家后）
+1. **微调新 3 条路线的 WalkToNpc 步行段**（滑索段已 OK，只差下索后到 NPC 的步行落点精度）。用测试入口逐条跑，核对落点。
+2. WalkToNpc 定稿后，若最后一点变了 → **回填 `departure.go` 对应终点世界坐标**（MapTracker 系数值）→ 重编 go-service。
+3. 4 条路线全部核对通过后 → 走完整送货流程验证 Go 分流（`nearestEndpoint` 是否正确匹配蓝标到对应路线）。
+4. 全部通过后再考虑提交（本次改动**尚未 commit**，博士要求测通后再提）。
 
-1. **在另一台电脑（先确认已升 v2.20.0 二进制）用 MapTracker 录坐标 → 按 18.2 公式换算成 base px → 复测这 3 段步行**（对比 MapNavigator web 录的准不准）。
-2. 若 MapTracker 录+换算更准 → 沿用此法补录送货 3 终点（Owl / MaterialResearchInstitute / TechProductionOffice）的步行段。
-3. **A 方案定论后推进 🅱️ 录送货 3 终点**（见 18.4）。
+### 18.4 ⚠️ 公司电脑接力提醒（务必先确认二进制）
 
-### 18.4 🅱️ 送货 3 终点（A 方案定论后做，骨架已建、坐标 TODO）
+二进制**不随 git 同步**（`.gitignore`）。公司电脑拉本次改动后：
 
-- 文件 `SeizeDeliveryJobsDeliverRoutes.json`，样板 = **Observatory 路线（已实测通过）**。3 条新路线**共用起点滑索段** `SeizeDeliveryJobsDeliverWalkToZipline`（本次已改 NAVMESH）。
-- 每条 = SubTask 串：`DeliverWalkToZipline(共用) → GetOnZipline → <滑索段> → GetOffZipline → <WalkToNpc>`。骨架已建，`Zipline.target` / `WalkToNpc.path` 是 TODO 空占位。
-- 每条需博士提供：① 单段滑索 or 连滑（连滑要 `chain_max_press`=途中按 E 次数，实机滑一遍数）；② 滑索段 `target`（朝哪个架子发射）；③ 下索落点→NPC 步行折线。
-- **录完 WalkToNpc 后需同步** `departure.go:39-44` 三终点世界坐标（现 `{0,0}` 占位，`nearestEndpoint` 匹配半径 30），否则 Go 分流匹配不到。
+- 若 `cpp-algo.exe` 非 v2.21.0 → 定位/上索可能不稳，结论不可信。需先用官方 v2.21.0 包覆盖 `install/agent/cpp-algo.exe` + `deps/bin/` maafw dll（**不覆盖** resource/tasks/locales/data 软链接）。
+- `go-service.exe` 本次已含 departure.go 新坐标——公司电脑拉代码后需 `python tools/build_and_install.py` 重编才带上（或本机编好的 exe 不在 git，公司电脑必须自己重编）。
+- 改完**完整重启 MaaEnd.exe**。
 
 ### 18.5 复用节点 & 文件速查
 
-- **取货路线**：`SeizeDeliveryJobsPost.json`（取货三明治；两步行段已 NAVMESH，滑索段 MapTracker 不变）。测试入口 `SeizeDeliveryJobsTestPickupEntry`（UI：取货段测试）。
-- **送货路线**：`SeizeDeliveryJobsDeliverRoutes.json`（Observatory 已实测；起点步行已 NAVMESH；3 终点骨架已建、坐标待填）。测试入口 `SeizeDeliveryJobsTestDeliverObservatoryEntry`（UI：送货路线测试·观测站）。送货测试**复用取货步行段**（首段 NAVMESH 自动生效）。
-- **Go 分流**：`departure.go`（`nearestEndpoint`→`runDeliverRoute` RunTask 同名节点；改 pipeline 坐标不用动 Go，除非改终点世界坐标）。
-- **滑索**：`zipline.go`（`chain_max_press` 连滑 + 1s 发射延迟）；`MapTrackerZipline` target=发射朝向的滑索架。
-- **两个“MapNavigate”别混**：`MapNavigateAction`=C++ 真 A\*（NAVMESH，base px，本次用的）；`MapTrackerMoveCompatible`=Go 垫片，**会静默丢 NAVMESH 点，绝不能用**。断言若换：C++ 用 `MapLocateAssertLocation`（base px），Go 用 `MapTrackerAssertLocation`（MapTracker 坐标），别混。
-- **工具**：MapNavigator web `python tools/MapNavigator/main.py`→:8770（A\* 页选 Wuling/map02base zone 2 取 base px）；MapTracker 编辑器 `python tools/map_tracker/map_tracker_editor.py`（录 MapTracker 坐标，需按 18.2 换算）。
-- **二进制**：本机（这台）= 官方 v2.20.0 cpp-algo + 本机编 go-service，可直接测；另一台 = 需先升级（见 18.2 提醒）。
-
+- **取货路线**：`SeizeDeliveryJobsPost.json`（取货三明治；两步行段 NAVMESH base px，滑索段 MapTracker 不变；**已完全测通**）。测试入口 `SeizeDeliveryJobsTestPickupEntry`。
+- **送货路线**：`SeizeDeliveryJobsDeliverRoutes.json`（4 条：Observatory 已通；Owl/MaterialResearchInstitute/TechProductionOffice 滑索段已通、WalkToNpc 待微调）。起点步行 `SeizeDeliveryJobsDeliverWalkToZipline` 4 条共用（NAVMESH）。测试入口 `SeizeDeliveryJobsTestDeliver{Observatory,Owl,MaterialResearchInstitute,TechProductionOffice}Entry`。
+- **Go 分流**：`departure.go`（`nearestEndpoint`→`runDeliverRoute` RunTask 同名节点 `SeizeDeliveryJobsDeliverRoute<Endpoint>`；4 终点坐标已填 line 39-44）。改 pipeline 坐标不用动 Go，**除非改 WalkToNpc 最后一点**（要回填终点坐标）。
+- **滑索**：`zipline.go`（`chain_max_press` 连滑 + 1s 发射延迟）；`MapTrackerZipline` target=发射朝向的滑索架（MapTracker 游戏坐标）。
+- **两个“MapNavigate”别混**：`MapNavigateAction`=C++ 真 A\*（NAVMESH，base px，步行段用的）；`MapTrackerMoveCompatible`=Go 垫片，**会静默丢 NAVMESH 点，绝不能用**。断言：C++ 用 `MapLocateAssertLocation`（base px），Go 用 `MapTrackerAssertLocation`（MapTracker 坐标），别混。
+- **工具**：MapTracker 编辑器 `python tools/map_tracker/map_tracker_editor.py`（**从仓库根目录启动**，否则 WORK_DIR/ASSET_DIR 相对 CWD 解析出错报 503；需装 `maafw` pip 包，import 名是 `maa`）；MapNavigator web `python tools/MapNavigator/main.py`→:8770。
+- **二进制**：本机（这台）= 官方 v2.21.0 cpp-algo + 本机编 go-service，可直接测；公司电脑 = 需先升级（见 18.4）。

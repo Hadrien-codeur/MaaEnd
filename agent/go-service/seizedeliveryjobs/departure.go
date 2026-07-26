@@ -35,12 +35,12 @@ type seizeDeliveryJobsWulingEndpoint struct {
 }
 
 // seizeDeliveryJobsWulingEndpoints holds the four Wuling City delivery points and their world coordinates.
-// TODO(博士): 坐标为占位值，待实机用 map_tracker_editor.py 录入后替换（map02_lv002）。
+// 坐标 = 各路线 WalkToNpc 段最后一个 MapTracker 游戏坐标（与 big-map 蓝标匹配同系，map02_lv002）。
 var seizeDeliveryJobsWulingEndpoints = []seizeDeliveryJobsWulingEndpoint{
-	{Name: "Owl", Target: [2]float64{0, 0}},                       // 猫头鹰（右下）
-	{Name: "MaterialResearchInstitute", Target: [2]float64{0, 0}}, // 材料研究所（左下）
-	{Name: "Observatory", Target: [2]float64{617.1, 358.0}},       // 观测站（右上）
-	{Name: "TechProductionOffice", Target: [2]float64{0, 0}},      // 技术生产办公室（左上）
+	{Name: "Owl", Target: [2]float64{229.1, 604.6}},                       // 猫头鹰（右下）
+	{Name: "MaterialResearchInstitute", Target: [2]float64{178.4, 666.5}}, // 材料研究所（左下）
+	{Name: "Observatory", Target: [2]float64{617.1, 358.0}},               // 观测站（右上）
+	{Name: "TechProductionOffice", Target: [2]float64{255.2, 197.4}},      // 技术生产办公室（左上）
 }
 
 // SeizeDeliveryJobsDepartureAction navigates from the tracked task marker back in the open world.
