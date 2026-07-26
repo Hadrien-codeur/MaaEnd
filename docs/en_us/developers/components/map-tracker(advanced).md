@@ -38,7 +38,7 @@ Optional Parameters:
     - `^map01_lv001$`: Only matches "map01_lv001" (Valley IV - The Hub).
     - `^map01_lv\\d+$`: Matches all sub-regions of "map01" (Valley IV).
 
-- `precision`: A real number in the range $(0, 1]$, default `0.5`. Controls the matching precision. Larger values are stricter about matching map features, but may slow down matching; smaller values greatly improve matching speed, but may lead to incorrect results. When the number of maps to match is small (for example, matching only one map), a larger value is recommended for more accurate results.
+- `precision`: A real number in the range $(0, 1]$, default `0.7`. Controls the matching precision. Larger values are stricter about matching map features, but may slow down matching; smaller values greatly improve matching speed, but may lead to incorrect results. When the number of maps to match is small (for example, matching only one map), a larger value is recommended for more accurate results.
 
 - `threshold`: A real number in the range $(0, 1]$, default `0.4`. Controls the confidence threshold for matching. Match results below this value will not hit the recognition.
 
@@ -112,11 +112,15 @@ python tools/map_tracker/map_tracker_tester.py batch_test -i tests/MaaEndTestset
 >
 > As you can see, the test set is located in the `Win32/Official_CN/map_tracker` directory of the Git Submodule `tests/MaaEndTestset`. Make sure this Submodule has been pulled correctly to your local machine.
 
-If you need to collect new test sample images, you can run the following script to record them live from the game:
+If you need to collect new test sample images, first start the unified Web development tool:
 
 ```bash
-python tools/map_tracker/map_tracker_tester.py collect_data -o your_output_dir
+uv run tools/map_tracker/map_tracker_master.py
 ```
+
+Then open the **Collect Test Data** feature in the tool and start collection. The page continuously runs live inference. You can manually review candidate samples and write PNG images whose filenames are annotated from the inference results into the output directory.
+
+The sidebar **Candidates** and **Existing** tabs are used to review new screenshot samples and browse samples already in the output directory. You can correct the map name, coordinates, and heading in the detail form; after saving, the tool renames the PNG according to the sample filename format.
 
 ## Maintenance Methods
 

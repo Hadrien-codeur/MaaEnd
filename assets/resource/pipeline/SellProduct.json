@@ -78,81 +78,26 @@
         "post_delay": 0,
         "rate_limit": 0,
         "next": [
-            "SellProductInitializeReserveSession"
+            "SellProductPrepareSession"
         ]
     },
-    "SellProductLoop": {
-        "desc": "主循环，仅支持从地区建设界面开始",
-        "recognition": "And",
-        "all_of": [
-            "InRegionalDevelopment"
-        ],
-        "pre_delay": 0,
-        "post_delay": 0,
-        "rate_limit": 0,
-        "next": [
-            "SellProductValleyIV",
-            "SellProductWuling",
-            "SellProductTaskEnd"
-        ]
-    },
-    "SellProductValleyIV": {
-        "desc": "四号谷地售卖流程入口",
-        "max_hit": 1,
+    "SellProductPrepareSession": {
+        "desc": "初始化保留规则、优先售卖与干员会话",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "SubTask",
         "custom_action_param": {
             "sub": [
-                "SceneEnterMenuRegionalDevelopmentValleyIV"
+                "SellProductInitializeReserveSession",
+                "SellProductConfigurePrioritySession",
+                "SellProductInitializeOperatorSession"
             ]
         },
-        "post_delay": 0,
-        "rate_limit": 0,
-        "next": [
-            "SellProductOutpostLocked",
-            "SellProductValleyIVSell"
-        ]
-    },
-    "SellProductWuling": {
-        "desc": "武陵售卖流程入口",
-        "max_hit": 1,
-        "pre_delay": 0,
-        "action": "Custom",
-        "custom_action": "SubTask",
-        "custom_action_param": {
-            "sub": [
-                "SceneEnterMenuRegionalDevelopmentWuling"
-            ]
-        },
-        "post_delay": 0,
-        "rate_limit": 0,
-        "next": [
-            "SellProductOutpostLocked",
-            "SellProductWulingSell"
-        ]
-    },
-    "SellProductOutpostLocked": {
-        "desc": "据点管理未解锁",
-        "recognition": "TemplateMatch",
-        "roi": [
-            1178,
-            185,
-            35,
-            48
-        ],
-        "template": [
-            "SellProduct/SellProductDevelopmentLocked.png"
-        ],
-        "pre_delay": 0,
         "post_delay": 0,
         "rate_limit": 0,
         "next": [
             "SellProductLoop"
-        ],
-        "focus": {
-            "Node.Recognition.Succeeded": "$task.SellProduct.outpost_locked"
-        }
+        ]
     },
     "SellProductTaskEnd": {
         "desc": "任务结束",
