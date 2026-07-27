@@ -218,11 +218,12 @@
     // 由 Go (SeizeDeliveryJobsDepartureAction.runDeliverRoute) 按终点名调用：节点名 = SeizeDeliveryJobsDeliverRoute<Endpoint>。
     // 终点名与 SeizeDeliveryJobsEndpointFilter.json 一致：Owl / MaterialResearchInstitute / Observatory / TechProductionOffice。
     // 下索后不交货，交货由 Go runSubmitEntry（SeizeDeliveryJobsSubmitEntry）负责。
-    // TODO(博士): 所有 path / target 坐标为占位空值，待实机用 map_tracker_editor.py 录入（map02_lv002）后替换。
+    // 坐标均已实机录入（map02_lv002）。步行段 = NAVMESH(base px 走位) + HEADING(定朝向)，滑索段 = MapTracker 游戏坐标。
+    // 状态(2026-07-28)：Observatory / MaterialResearchInstitute / TechProductionOffice 已测通；Owl 待收尾。
 
-    // ---------- 起点滑索步行（4 条路线共用，待录） ----------
+    // ---------- 起点滑索步行（4 条路线共用；待加 HEADING 正对滑索架） ----------
     "SeizeDeliveryJobsDeliverWalkToZipline": {
-        "desc": "送货-步行到起点滑索架前（4 条路线共用）【A方案：NAVMESH A*，base px；旧MapTrackerMove折线见git 9f98309a】",
+        "desc": "送货-步行到起点滑索架前（4 条路线共用）【C方案：NAVMESH A*(base px) + HEADING 定朝向】",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapNavigateAction",
@@ -253,6 +254,9 @@
                     ],
                     "zone_id": "Wuling_Base"
                 }
+                // TODO(2026-07-28 博士明天处理): 加 HEADING 让上索前精准正对滑索架。
+                // 缺输入：起点滑索架的 MapTracker 坐标 → 换算 base px 后填 target。
+                // { "action": "HEADING", "target": [滑索架 base px x, y], "zone_id": "Wuling_Base" }
             ]
         },
         "focus": {
@@ -272,6 +276,7 @@
                 "MapTrackerOpenWorld_GetOnZipline",
                 "SeizeDeliveryJobsDeliverRouteOwlZiplineChainA",
                 "SeizeDeliveryJobsDeliverRouteOwlZiplineChainB",
+                "SeizeDeliveryJobsDeliverRouteOwlZiplineFaceBeforeGetOff",
                 "MapTrackerOpenWorld_GetOffZipline",
                 "SeizeDeliveryJobsDeliverRouteOwlWalkToNpc"
             ]
@@ -312,8 +317,23 @@
             "timeout": 30000
         }
     },
+    // 下索前在终点滑索架上原地转向 90°（正东）：Owl 的 NPC 在落点东侧，
+    // 不转向时下索后 NAVMESH 容易从 NPC 背后绕行，导致交互按钮识别不到。
+    "SeizeDeliveryJobsDeliverRouteOwlZiplineFaceBeforeGetOff": {
+        "desc": "送货-猫头鹰 下索前在终点滑索架上转向 90°(正东)，确保下索落点朝向 NPC 一侧",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerToward",
+        "custom_action_param": {
+            "angle": 90
+        },
+        "post_delay": 0,
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-猫头鹰 下索前转向90°"
+        }
+    },
     "SeizeDeliveryJobsDeliverRouteOwlWalkToNpc": {
-        "desc": "送货-猫头鹰 下索后步行到送货 NPC【NAVMESH A*，base px】",
+        "desc": "送货-猫头鹰 下索后步行到送货 NPC【C方案：NAVMESH A*(base px) + HEADING 正对 NPC】",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapNavigateAction",
@@ -335,8 +355,20 @@
                         1651.58
                     ],
                     "zone_id": "Wuling_Base"
+                },
+                // 正对 NPC（MapTracker [229.5,604.2] 换算，站位→NPC 约 45°/0.57m）
+                {
+                    "action": "HEADING",
+                    "target": [
+                        514.1,
+                        1651.18
+                    ],
+                    "zone_id": "Wuling_Base"
                 }
             ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-猫头鹰 步行到 NPC[NAVMESH]"
         }
     },
 
@@ -376,7 +408,7 @@
         }
     },
     "SeizeDeliveryJobsDeliverRouteMaterialResearchInstituteWalkToNpc": {
-        "desc": "送货-材料研究所 下索后步行到送货 NPC【NAVMESH A*，base px】",
+        "desc": "送货-材料研究所 下索后步行到送货 NPC【C方案：NAVMESH A*(base px) + HEADING 正对 NPC】",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapNavigateAction",
@@ -398,8 +430,20 @@
                         1712.55
                     ],
                     "zone_id": "Wuling_Base"
+                },
+                // 正对 NPC（MapTracker [177.8,667.3] 换算，站位→NPC 约 217°/1.0m）
+                {
+                    "action": "HEADING",
+                    "target": [
+                        463.16,
+                        1713.34
+                    ],
+                    "zone_id": "Wuling_Base"
                 }
             ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-材料研究所 步行到 NPC[NAVMESH]"
         }
     },
 
@@ -456,22 +500,36 @@
         }
     },
     "SeizeDeliveryJobsDeliverRouteObservatoryWalkToNpc": {
-        "desc": "送货-观测站 下索后步行到送货 NPC",
+        "desc": "送货-观测站 下索后步行到送货 NPC【C方案：NAVMESH A*(base px) + HEADING 正对 NPC；base px 由原 MapTracker 点 [619.5,358.0]/[617.1,358.0] 换算】",
         "pre_delay": 0,
         "action": "Custom",
-        "custom_action": "MapTrackerMove",
+        "custom_action": "MapNavigateAction",
         "custom_action_param": {
             "map_name": "map02_lv002",
             "path": [
-                [
-                    619.5,
-                    358.0
-                ],
-                [
-                    617.1,
-                    358.0
-                ]
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        898.32,
+                        1408.66
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        895.95,
+                        1408.66
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
+                // TODO(博士): 填 NPC 站位 base px 后启用（二选一，target 优先）：
+                // { "action": "HEADING", "target": [NPC base px x, y], "zone_id": "Wuling_Base" }
+                // { "action": "HEADING", "angle": 0, "zone_id": "Wuling_Base" }
             ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-观测站 步行到 NPC[NAVMESH]"
         }
     },
 
@@ -511,7 +569,7 @@
         }
     },
     "SeizeDeliveryJobsDeliverRouteTechProductionOfficeWalkToNpc": {
-        "desc": "送货-技术生产办公室 下索后步行到送货 NPC【NAVMESH A*，base px】",
+        "desc": "送货-技术生产办公室 下索后步行到送货 NPC【C方案：NAVMESH A*(base px) + HEADING 正对 NPC】",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapNavigateAction",
@@ -525,8 +583,20 @@
                         1250.45
                     ],
                     "zone_id": "Wuling_Base"
+                },
+                // 正对 NPC（MapTracker [254,198] 换算，站位→NPC 约 243°/1.34m）
+                {
+                    "action": "HEADING",
+                    "target": [
+                        538.23,
+                        1251.04
+                    ],
+                    "zone_id": "Wuling_Base"
                 }
             ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-技术生产办公室 步行到 NPC[NAVMESH]"
         }
     }
 }

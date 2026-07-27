@@ -258,7 +258,7 @@
         }
     },
     "SeizeDeliveryJobsWulingCityWalkToZipline": {
-        "desc": "取货-滑索路线 步骤1：从传送落点步行到起点滑索架前【A方案：NAVMESH A*复测，base px；旧MapTrackerMove折线见git 9f98309a】",
+        "desc": "取货-滑索路线 步骤1：从传送落点步行到起点滑索架前【C方案：NAVMESH A*(base px) + HEADING 定朝向】",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapNavigateAction",
@@ -281,6 +281,8 @@
                     ],
                     "zone_id": "Wuling_Base"
                 }
+                // TODO(博士): 如需上索前正对滑索架，在此追加：
+                // { "action": "HEADING", "target": [滑索架 base px x, y], "zone_id": "Wuling_Base" }
             ]
         },
         "focus": {
@@ -304,7 +306,7 @@
         }
     },
     "SeizeDeliveryJobsWulingCityWalkFromZipline": {
-        "desc": "取货-滑索路线 步骤5：从②号滑索落点步行到取货点【A方案：NAVMESH A*，base px；旧MapTrackerMove折线见git 9f98309a】",
+        "desc": "取货-滑索路线 步骤5：从②号滑索落点步行到取货点【C方案：NAVMESH A*(base px) + HEADING 定朝向】",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapNavigateAction",
@@ -327,6 +329,8 @@
                     ],
                     "zone_id": "Wuling_Base"
                 }
+                // TODO(博士): 取货段已测通，暂不加 HEADING。若接货按钮偶发不出，在此追加：
+                // { "action": "HEADING", "target": [仓储节点 base px x, y], "zone_id": "Wuling_Base" }
             ]
         },
         "focus": {
