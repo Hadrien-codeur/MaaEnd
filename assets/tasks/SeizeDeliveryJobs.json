@@ -368,8 +368,9 @@
                     "pipeline_override": {
                         "SeizeDeliveryJobsRunDeparture": {
                             "custom_action_param": {
-                                "map_name_regex": "map02_lv002|map02_lv005", // 所有可用的送货地图名称（后续增加新地区需要更新此值）
-                                "zipline_policy": "Lazy",
+                                "map_name_regex": "^(map02_lv002|map02_lv005)$", // 所有可用的送货地图名称（后续增加新地区需要更新此值）
+                                // 更新此值需要同时更新 assets\resource\pipeline\SeizeDeliveryJobs\SeizeDeliveryJobsPostDeparture.json 中对应的值
+                                "zipline_policy": "Lazy", // custom_delivery 命中固定路线时不使用此值；仅参数校验需要
                                 "is_retry": false,
                                 "custom_delivery": true
                             }

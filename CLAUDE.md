@@ -284,13 +284,15 @@ agent/go-service/**                # 复杂逻辑（复杂识别、计算、特�
 }
 ```
 
-### 工具：`tools/map_tracker/map_tracker_editor.py`
+### 工具：`tools/map_tracker/map_tracker_master.py`
 
-录路径、框 AssertLocation 区域。运行：
+录路径、框 AssertLocation 区域。**必须从仓库根目录运行**，否则 WORK_DIR/ASSET_DIR 相对 CWD 解析出错报 503：
 
 ```bash
-python tools/map_tracker/map_tracker_editor.py
+python tools/map_tracker/map_tracker_master.py   # → http://127.0.0.1:8060/web/
 ```
+
+> 旧名 `map_tracker_editor.py` 已不存在（上游 v2 合并改名）。需装 `maafw` pip 包（import 名是 `maa`）。
 
 ---
 
@@ -356,8 +358,10 @@ python tools/build_and_install.py
 - `assets/tasks/*.json` — 任务选项定义
 - `assets/resource/pipeline/**/*.json` — Pipeline 节点
 - `assets/locales/interface/zh_cn.json`（+其余 4 语言）— i18n 文案
-- `assets/interface.json` — 任务导入（通过 `include "tasks/Xxx.json"` 引用，新任务才需要加）
+- `assets/interface.json` — 任务导入（通过 `include "tasks/Xxx.json"` 引用，新任务才需要加）；改了要手动同步 `install/interface.json`（复制文件，非软链接）
 - `tests/**/*.json` — 节点测试（识别节点写好后补测试用例）
+
+**录送货滑索路线**（本分支的核心工作）请先读专门文档：[docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md](docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md)
 
 ---
 
@@ -448,125 +452,71 @@ python tools/build_and_install.py
 
 ## 18. 当前进度存档（接力时先读此节，确认后删除）
 
-### 18.0 最新状态（2026-07-28 家里电脑，读这节就够）
+### 18.0 最新状态（2026-07-29 家里电脑，读这节就够）
 
-**步行段方案已定稿：NAVMESH（走位）+ HEADING（朝向），全部在 `MapNavigateAction` 一个 action 内。**
+**🎉 武陵城 4 条送货路线 + 取货路线全部实测通过，功能已合并进抢委托送货主流程。**
 
-实测结果：**材料研究所 / 技术生产办公室 / 观测站 3 条已 OK**；**Owl 还差一点**（下索前已加 90° 转向，仍未完全到位）。
+本阶段目标（把送货段替换成固定滑索路线）**已达成**。技术细节已沉淀成正式文档，不再堆在这里：
 
-明天两件事：
+> **[docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md](docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md)**
+> ——录制规范全文（三明治结构、需要博士提供哪些坐标、HEADING 两条硬规矩、坐标换算、排查指南、术语对照）。
+> 新增其他地图路线时**先读它**，本节只留状态和待办。
 
-1. **Owl 收尾**——下索前转向节点 `SeizeDeliveryJobsDeliverRouteOwlZiplineFaceBeforeGetOff`（`MapTrackerToward`，`angle: 90`）已加，但实测「还差一点」。需要博士说明具体现象（转了没有 / 转过头 / 下索点位置不对 / 还是绕背），再定是调 angle、调 WalkToNpc 首点，还是换别的招。
-2. **给送货段通用步行到上索点加 HEADING**——节点 `SeizeDeliveryJobsDeliverWalkToZipline`（4 条共用），目的：步行到上索点后精准面向滑索架，便于上索。**缺一个输入：起点滑索架的 MapTracker 坐标**，博士明天录一下给我换算填入。里面已留 TODO 注释占位。
+#### 18.0.1 UI 入口（2026-07-29 定稿）
 
-本次会话（2026-07-28）改动**尚未 commit**。只改了 pipeline JSON，**不用重编 go-service**，但要**完整重启 MaaEnd.exe**。
+**抢单结束后的操作 → 全自动送货 → 「萧然Q滑索送货」**（switch，默认关）。
 
-#### 18.0.1 为什么放弃 MapTrackerMove 折线（别再走回头路）
+- 就是原来那个「自定义送货」开关改名而来（选项 key 仍是 `SeizeDeliveryJobsCustomDelivery`，博士当时忘了自己开过这个功能，名字太含糊）。
+- **没有**在下拉框加第 5 项——博士明确要求替换旧开关，不新增下拉项。
+- 开启后 `custom_delivery: true` → Go 侧 `nearestEndpoint` 按 big-map 蓝标匹配预录路线；匹配不到**直接失败，不回退寻路**（[departure.go:151-167](agent/go-service/seizedeliveryjobs/departure.go#L151-L167)）。
 
-中途试过「MapTrackerMove 多断点调朝向」，实测坐标不准、常冲出去一段。根因：`MapTrackerMove` 是**开环**推算（截图定位→转镜头→按方向键，`arrival_threshold` 默认 2.5，远距离拉 sprint，截图延迟直接变过冲距离；`fine_approach` 只在末点且是时间估算）。而 NAVMESH 是 C++ 读 `.nav` 真 A\*，`strict_arrival = true` 硬编码（[navi_param_parser.cpp:588](agent/cpp-algo/source/MapNavigator/navi_param_parser.cpp#L588)），停得住。结论：**走位一律 NAVMESH，朝向交给 HEADING**。
+#### 18.0.2 已测通的路线一览
 
-#### 18.0.2 HEADING 用法（本次新掌握，重要）
+| 路线                                      | 滑索段 target（MapTracker）               | chain_max_press | 状态 |
+| ----------------------------------------- | ----------------------------------------- | --------------- | ---- |
+| 取货（锚点→仓储节点）                     | `[682.9, 785.25]`                         | 0（单段）       | ✅   |
+| Owl（猫头鹰，右下）                       | 段A `[663.7,807.3]` + 段B `[241.3,653.8]` | 8 + 1           | ✅   |
+| MaterialResearchInstitute（材研所，左下） | `[663.7, 807.3]`                          | 9               | ✅   |
+| Observatory（观测站，右上）               | —                                         | —               | ✅   |
+| TechProductionOffice（技术办，左上）      | `[673.6, 732.4]`                          | 14              | ✅   |
 
-`MapNavigateAction` 的 path 里可直接写 HEADING 节点，是**闭环**的（转镜头→前冲 270ms 贴合身体→重新定位读角度→残差超容差再修，见 [semantic_nodes.cpp:376-427](agent/cpp-algo/source/MapNavigator/semantic_nodes.cpp#L376-L427)）。`has_position = false`，纯控制节点不移动位置（但那 270ms 前冲脉冲会让人物微移半米内）。
+**Owl 最后是怎么修好的**（唯一一条卡过的）：原 HEADING target 距站位只有 **0.57m**，角度被 MapLocator 的 ~0.7m 单帧抖动完全主导（±51°），转向纯随机。重录 NPC 点拉到 **2.07m** 后即稳。索上转向 `MapTrackerToward` 由 90° 调成 **100°**。
 
-```jsonc
-{ "action": "HEADING", "target": [x, y], "zone_id": "Wuling_Base" }  // 朝某坐标，推荐
-{ "action": "HEADING", "angle": 90, "zone_id": "Wuling_Base" }        // 绝对角度
-```
+⚠️ **取货段是无条件走固定滑索路线的**（[SeizeDeliveryJobsPost.json:235-248](assets/resource/pipeline/SeizeDeliveryJobs/SeizeDeliveryJobsPost.json#L235-L248) 硬替换了上游的 `MapTrackerGoal`），不受选项控制。这是博士 2026-07-29 明确决定保留的现状，不是遗漏。
 
-**角度约定**（[navi_math.cpp:9-18](agent/cpp-algo/source/MapNavigator/navi_math.cpp#L9-L18) 确认）：`atan2(dx, -dy)`，**0 = 正北（y 减小方向），顺时针**，故 90 = 正东。
+#### 18.0.3 departure.go 终点坐标（当前值，无需改动）
 
-- HEADING 的 target 是「要面朝的对象（NPC/滑索架）」，NAVMESH 的 target 是「人要站的位置」，**是两个不同的点**，别录成同一个（否则算不出角度）。
-- 滑索上转向不能用 HEADING（它只能当 MapNavigateAction 的 path 节点），要用 Go 侧独立 action `MapTrackerToward`（[toward.go](agent/go-service/maptracker/default/toward.go)，已注册）。⚠️ 它的实现是「转镜头 + 后退 250ms + 前进 75ms」贴合身体，**在索上按方向键是否会提前脱索/位移未经静态确认**，实测为准。
+[departure.go:39-44](agent/go-service/seizedeliveryjobs/departure.go#L39-L44)，**MapTracker 游戏坐标**（与蓝标同系，不是 base px），匹配半径 30：
 
-#### 18.0.3 本次填入的 HEADING 值
+Owl `{229.1, 604.6}`、MaterialResearchInstitute `{178.4, 666.5}`、Observatory `{617.1, 358.0}`、TechProductionOffice `{255.2, 197.4}`
 
-| 路线                      | NPC（MapTracker，博士录） | 换算 base px        | 站位→NPC     | 状态        |
-| ------------------------- | ------------------------- | ------------------- | ------------ | ----------- |
-| Owl                       | `[229.5, 604.2]`          | `[514.1, 1651.18]`  | 45° / 0.57m  | ⚠️ 还差一点 |
-| MaterialResearchInstitute | `[177.8, 667.3]`          | `[463.16, 1713.34]` | 217° / 1.00m | ✅ OK       |
-| TechProductionOffice      | `[254, 198]`              | `[538.23, 1251.04]` | 243° / 1.34m | ✅ OK       |
-| Observatory               | 未改（博士说不用动）      | —                   | —            | ✅ OK       |
+Owl 的 NAVMESH 末点 2026-07-29 挪了 1.3m，远在半径 30 内，故**未回填、未重编 go-service**。
 
-⚠️ **NAVMESH target 一个都没改**，所以 `departure.go` 4 个终点坐标**无需回填、无需重编 go-service**。
+### 18.1 下一步（可选，本阶段已收尾）
 
-#### 18.0.4 ⚠️ 工具改名（18.5 那条已过期）
+1. **走一遍完整送货流程**验证 Go 分流——开「萧然Q滑索送货」跑真实抢单，确认 `nearestEndpoint` 把 4 种蓝标都正确匹配到对应路线（单条路线已用测试入口验过，端到端分流还没专门跑）。
+2. **录试验园区（`map02_lv005`）路线**——按录制规范文档 §2 的清单录坐标。注意该地图 offset/scale 与武陵城不同，查 `maptracker_coordinate_transforms.json`。
+3. 考虑向上游提 PR（取货段硬替换 `MapTrackerGoal` 那处需要先改成受选项控制，否则改了官方行为）。
 
-`tools/map_tracker/map_tracker_editor.py` **已不存在**，现名 `tools/map_tracker/map_tracker_master.py`（上游 v2 合并带来）。启动：`python tools/map_tracker/map_tracker_master.py` → http://127.0.0.1:8060/web/ （仍需从仓库根目录启动）。
-
----
-
-### 18.1 状态（上次会话，2026-07-27）：取货段完全测通；4 条送货路线滑索段全部测通
-
-**上次会话完成（2026-07-27，本机 = 已装 v2.21.0 二进制那台）**：
-
-1. **二进制升级到 v2.21.0**：本机无 cmake，用官方 v2.21.0 release zip 覆盖 `install/agent/cpp-algo.exe`（4233216 bytes）+ 全部 maafw dll；`go-service.exe` 本机自编译（保住博士的滑索修复）。备份在 `install/_backup_pre_v2.21_20260726/`。拉上游 v2 合并（166 commits，无冲突），博士滑索修复（`zipline.go` ChainMaxPress + 1s 发射延迟）已确认穿过合并保留。
-
-2. **取货段完全测通**（`SeizeDeliveryJobsPost.json`，MapTracker 录 base px，博士实测无误）：
-   | 节点 | 段落 | base px 点 |
-   |---|---|---|
-   | `SeizeDeliveryJobsWulingCityWalkToZipline` | 传送点→上索点 | `[942.75,1778.95]`→`[949.74,1777.67]` |
-   | `SeizeDeliveryJobsWulingCityWalkFromZipline` | 下索点→取货点 | `[961.86,1831.55]`→`[951.98,1832.68]` |
-    - 反复调过：下索点用 MapTracker 新录值，取货点回退到 MapNavigator 版 `[951.98,1832.68]`（博士反馈单独回退这个点后才稳）。
-
-3. **新 3 条送货路线全部录入 + 骨架完成**（`SeizeDeliveryJobsDeliverRoutes.json`，样板=已测通的 Observatory）。3 条共用起点滑索段 `SeizeDeliveryJobsDeliverWalkToZipline`（已 NAVMESH）。滑索段用 MapTracker 游戏坐标（`MapTrackerZipline`），步行段 WalkToNpc 用 NAVMESH base px（`MapNavigateAction`）。`chain_max_press` = 途中按 E 次数（连滑架数−1，末架落地不按）：
-   | 路线 | 滑索段 | chain_max_press | WalkToNpc base px |
-   |---|---|---|---|
-   | Owl（猫头鹰,右下） | 段A→`[663.7,807.3]` + 段B→`[241.3,653.8]` | 8 + 1 | `[513.9,1652.66]`→`[513.7,1651.58]` |
-   | MaterialResearchInstitute（材研所,左下） | 单段→`[663.7,807.3]` | 9 | `[469.27,1716.49]`→`[463.76,1712.55]` |
-   | TechProductionOffice（技术办,左上） | 单段→`[673.6,732.4]` | 14 | `[539.42,1250.45]`（单点） |
-
-4. **建了 3 个测试入口**（UI 在「地区建设」分组）：`🧪送货路线测试·猫头鹰/材料研究所/技术生产办公室(武陵城)`。对应 pipeline 节点 `SeizeDeliveryJobsTestDeliver{Owl,MaterialResearchInstitute,TechProductionOffice}Entry`（Entry/Teleport/Run 三段，SubTask 串同 Observatory）。配套：3 个 task 文件、5 语言文案、`interface.json` 注册 + 已同步 `install/interface.json`（复制文件）。
-
-5. **博士实测反馈**：3 条路线**滑索段全部没问题**，**WalkToNpc 步行段还需微调**（→ 已于 2026-07-28 用 NAVMESH+HEADING 方案处理，见 18.0）。
-
-6. **departure.go 4 终点世界坐标已填并重编**（坐标=各路线 WalkToNpc 最后一个 **MapTracker 游戏坐标**，与 big-map 蓝标同系；匹配半径 30）：
-    - Owl `{229.1, 604.6}`、MaterialResearchInstitute `{178.4, 666.5}`、Observatory `{617.1, 358.0}`、TechProductionOffice `{255.2, 197.4}`。
-    - 已 `gofmt` + `python tools/build_and_install.py` 重编安装 go-service（cpp-algo 未动）。
-    - ⚠️ 注意：终点坐标是 MapTracker 系（因蓝标匹配走 MapTracker 坐标），而 WalkToNpc 的 target 是 NAVMESH base px 系——两者取自同一个实机点但**不同坐标系**，别混。WalkToNpc 若下次微调，最后一点变了要**同步回填** departure.go 对应终点坐标（用 MapTracker 系那份数值），否则 Go 分流匹配不到。
-
-### 18.2 ⚠️ 坐标系换算备注（MapTracker 录坐标 → NAVMESH base px 必读）
-
-MapTracker 编辑器（`tools/map_tracker/map_tracker_master.py`）录的是「MapTracker 游戏坐标」，NAVMESH（`MapNavigateAction` 的 target）需要「base px」，两系不同，必须换算。
-
-**换算公式**：`base = offset + mt × scale`（正向）；反向 `mt = (base − offset) / scale`。
-
-**权威参数只在** `assets/resource/image/MapLocator/maptracker_coordinate_transforms.json`（按 `map_name` 取行）。武陵 `map02_lv002` / `Wuling_Base`：
-
-| 参数       | 值                          |
-| ---------- | --------------------------- |
-| `offset_x` | **288.0**                   |
-| `offset_y` | **1056.0** ← 关键，不是 0！ |
-| `scale_x`  | 0.985176738883              |
-| `scale_y`  | 0.985074626866              |
-
-- `base_x = 288 + mt_x × 0.985176738883`
-- `base_y = 1056 + mt_y × 0.985074626866`
-
-**交叉验证**：AutoCollect 同起点（北锚点 MapTracker≈`[663,733]`）NAVMESH 首点是 base≈`[942,1779]`；公式算 x=941、y=1778，吻合 ✅。换算后若某点 y 少一千多，就是又把 `offset_y` 当 0 了。
-
-### 18.3 下一步（明天继续，家里电脑）
-
-1. **Owl 收尾**：`SeizeDeliveryJobsDeliverRouteOwlZiplineFaceBeforeGetOff`（下索前 `MapTrackerToward` angle=90）已加，实测「还差一点」。先问清具体现象再动手。
-2. **`SeizeDeliveryJobsDeliverWalkToZipline` 加 HEADING**：需博士录**起点滑索架 MapTracker 坐标** → 换算 base px → 追加 HEADING 节点（文件内已留 TODO 占位）。
-3. 4 条路线全通后 → 走完整送货流程验证 Go 分流（`nearestEndpoint` 是否正确匹配蓝标到对应路线）。
-4. 全部通过后再考虑提交（改动**尚未 commit**，博士要求测通后再提）。
-
-### 18.4 ⚠️ 换电脑接力提醒（务必先确认二进制）
+### 18.2 ⚠️ 换电脑接力提醒（务必先确认二进制）
 
 二进制**不随 git 同步**（`.gitignore`）。**家里电脑（`d:\Github project\Maaend`）已装 v2.21.0，可直接测**。若换到公司电脑：
 
 - 若 `cpp-algo.exe` 非 v2.21.0 → 定位/上索可能不稳，结论不可信。需先用官方 v2.21.0 包覆盖 `install/agent/cpp-algo.exe` + `deps/bin/` maafw dll（**不覆盖** resource/tasks/locales/data 软链接）。
 - `go-service.exe` 含 departure.go 4 终点坐标，编好的 exe 不在 git，另一台电脑必须自己 `python tools/build_and_install.py` 重编。
-- ⚠️ 注意 CLAUDE.md 第 1 节写的本地路径 `e:\TestBase2\MaaEnd` 是另一台机器的，家里这台是 `d:\Github project\Maaend`。
-- 改完**完整重启 MaaEnd.exe**。
+- ⚠️ CLAUDE.md 第 1 节写的 `e:\TestBase2\MaaEnd` 是另一台机器的路径，家里这台是 `d:\Github project\Maaend`。
+- 改完**完整重启 MaaEnd.exe**（pipeline JSON 改动不会热重载）。
 
-### 18.5 复用节点 & 文件速查
+### 18.3 文件速查
 
-- **取货路线**：`SeizeDeliveryJobsPost.json`（取货三明治；两步行段 NAVMESH base px，滑索段 MapTracker 不变；**已完全测通**）。测试入口 `SeizeDeliveryJobsTestPickupEntry`。两段都留了 HEADING TODO 占位，已测通故未启用。
-- **送货路线**：`SeizeDeliveryJobsDeliverRoutes.json`（4 条：Observatory / MaterialResearchInstitute / TechProductionOffice 已通；**Owl 还差一点**）。步行段一律 `MapNavigateAction`（NAVMESH base px 走位 + HEADING 定朝向）。起点步行 `SeizeDeliveryJobsDeliverWalkToZipline` 4 条共用（**待加 HEADING**）。测试入口 `SeizeDeliveryJobsTestDeliver{Observatory,Owl,MaterialResearchInstitute,TechProductionOffice}Entry`。
-- **Go 分流**：`departure.go`（`nearestEndpoint`→`runDeliverRoute` RunTask 同名节点 `SeizeDeliveryJobsDeliverRoute<Endpoint>`；4 终点坐标已填 line 39-44）。改 pipeline 坐标不用动 Go，**除非改 NAVMESH 最后一个走位点**（要回填终点坐标，用 MapTracker 系数值）。加 HEADING 不影响。
-- **滑索**：`zipline.go`（`chain_max_press` 连滑 + 1s 发射延迟）；`MapTrackerZipline` target=发射朝向的滑索架（MapTracker 游戏坐标）。索上转向用 `MapTrackerToward`（angle 模式，不吃地图坐标）。
-- **两个“MapNavigate”别混**：`MapNavigateAction`=C++ 真 A\*（NAVMESH，base px，步行段用的）；`MapTrackerMoveCompatible`=Go 垫片，**会静默丢 NAVMESH 点，绝不能用**。断言：C++ 用 `MapLocateAssertLocation`（base px），Go 用 `MapTrackerAssertLocation`（MapTracker 坐标），别混。
-- **工具**：MapTracker `python tools/map_tracker/map_tracker_master.py`（**注意已改名，不再是 map_tracker_editor.py**；**从仓库根目录启动**，否则 WORK_DIR/ASSET_DIR 相对 CWD 解析出错报 503；需装 `maafw` pip 包，import 名是 `maa`）→ http://127.0.0.1:8060/web/ ；MapNavigator web `python tools/MapNavigator/main.py`→:8770。
-- **二进制**：家里电脑（`d:\Github project\Maaend`）= 官方 v2.21.0 cpp-algo + 本机编 go-service，可直接测；公司电脑 = 需先升级（见 18.4）。
+| 内容                     | 位置                                                                                                                                                                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **录制规范（先读这个）** | [docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md](docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md)                                                                                |
+| 取货路线                 | `assets/resource/pipeline/SeizeDeliveryJobs/SeizeDeliveryJobsPost.json`（测试入口 `SeizeDeliveryJobsTestPickupEntry`）                                                                                                  |
+| 送货 4 条路线            | `assets/resource/pipeline/SeizeDeliveryJobs/SeizeDeliveryJobsDeliverRoutes.json`（测试入口 `SeizeDeliveryJobsTestDeliver{Observatory,Owl,MaterialResearchInstitute,TechProductionOffice}Entry`，UI 在「地区建设」分组） |
+| UI 选项                  | `assets/tasks/SeizeDeliveryJobs.json` 的 `SeizeDeliveryJobsCustomDelivery`                                                                                                                                              |
+| Go 分流                  | `agent/go-service/seizedeliveryjobs/departure.go`                                                                                                                                                                       |
+| 滑索实现                 | `agent/go-service/maptracker/default/zipline.go`（`chain_max_press` + 1s 发射延迟，博士的修复）                                                                                                                         |
+| 索上转向                 | `agent/go-service/maptracker/default/toward.go`（⚠️ 会位移，见规范 §4.4）                                                                                                                                               |
+| 坐标换算参数             | `assets/resource/image/MapLocator/maptracker_coordinate_transforms.json`                                                                                                                                                |
+| MapTracker 工具          | `python tools/map_tracker/map_tracker_master.py` → http://127.0.0.1:8060/web/ （**从仓库根目录启动**）                                                                                                                  |

@@ -221,9 +221,9 @@
     // 坐标均已实机录入（map02_lv002）。步行段 = NAVMESH(base px 走位) + HEADING(定朝向)，滑索段 = MapTracker 游戏坐标。
     // 状态(2026-07-28)：Observatory / MaterialResearchInstitute / TechProductionOffice 已测通；Owl 待收尾。
 
-    // ---------- 起点滑索步行（4 条路线共用；待加 HEADING 正对滑索架） ----------
+    // ---------- 起点滑索步行（4 条路线共用；末尾 HEADING 正对滑索架） ----------
     "SeizeDeliveryJobsDeliverWalkToZipline": {
-        "desc": "送货-步行到起点滑索架前（4 条路线共用）【C方案：NAVMESH A*(base px) + HEADING 定朝向】",
+        "desc": "送货-步行到起点滑索架前（4 条路线共用）【C方案：NAVMESH A*(base px) + HEADING 正对滑索架】",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapNavigateAction",
@@ -253,10 +253,17 @@
                         1830.32
                     ],
                     "zone_id": "Wuling_Base"
+                },
+                // 正对起点滑索架（把滑索架当 NPC 识别，同其他路线 WalkToNpc 的做法）。
+                // MapTracker [684.5,784.4] 换算，站位→滑索架约 44°/2.26m。
+                {
+                    "action": "HEADING",
+                    "target": [
+                        962.35,
+                        1828.69
+                    ],
+                    "zone_id": "Wuling_Base"
                 }
-                // TODO(2026-07-28 博士明天处理): 加 HEADING 让上索前精准正对滑索架。
-                // 缺输入：起点滑索架的 MapTracker 坐标 → 换算 base px 后填 target。
-                // { "action": "HEADING", "target": [滑索架 base px x, y], "zone_id": "Wuling_Base" }
             ]
         },
         "focus": {
@@ -317,19 +324,21 @@
             "timeout": 30000
         }
     },
-    // 下索前在终点滑索架上原地转向 90°（正东）：Owl 的 NPC 在落点东侧，
+    // 下索前在终点滑索架上原地转向 100°：Owl 的 NPC 在落点东侧偏南，
     // 不转向时下索后 NAVMESH 容易从 NPC 背后绕行，导致交互按钮识别不到。
+    // 注意：MapTrackerToward 每轮循环净后退（后退250ms/前进75ms），索上会把落点推偏数米；
+    // 下面 WalkToNpc 的 NAVMESH 会从实际位置重新 A* 走回来，故可接受。
     "SeizeDeliveryJobsDeliverRouteOwlZiplineFaceBeforeGetOff": {
-        "desc": "送货-猫头鹰 下索前在终点滑索架上转向 90°(正东)，确保下索落点朝向 NPC 一侧",
+        "desc": "送货-猫头鹰 下索前在终点滑索架上转向 100°，确保下索落点朝向 NPC 一侧",
         "pre_delay": 0,
         "action": "Custom",
         "custom_action": "MapTrackerToward",
         "custom_action_param": {
-            "angle": 90
+            "angle": 100
         },
         "post_delay": 0,
         "focus": {
-            "Node.Recognition.Succeeded": "送货-猫头鹰 下索前转向90°"
+            "Node.Recognition.Succeeded": "送货-猫头鹰 下索前转向100°"
         }
     },
     "SeizeDeliveryJobsDeliverRouteOwlWalkToNpc": {
@@ -340,28 +349,30 @@
         "custom_action_param": {
             "map_name": "map02_lv002",
             "path": [
+                // 下索点位（MapTracker [228.7,605.8] 换算）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        513.31,
+                        1652.76
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 步行路线点（MapTracker [229.3,605.9] 换算）
                 {
                     "action": "NAVMESH",
                     "target": [
                         513.9,
-                        1652.66
+                        1652.86
                     ],
                     "zone_id": "Wuling_Base"
                 },
-                {
-                    "action": "NAVMESH",
-                    "target": [
-                        513.7,
-                        1651.58
-                    ],
-                    "zone_id": "Wuling_Base"
-                },
-                // 正对 NPC（MapTracker [229.5,604.2] 换算，站位→NPC 约 45°/0.57m）
+                // 正对 NPC（MapTracker [229.4,603.8] 换算，站位→NPC 约 3°/2.07m）
                 {
                     "action": "HEADING",
                     "target": [
-                        514.1,
-                        1651.18
+                        514.0,
+                        1650.79
                     ],
                     "zone_id": "Wuling_Base"
                 }

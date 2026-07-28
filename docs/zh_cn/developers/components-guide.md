@@ -57,11 +57,12 @@ MaaEnd 基于 [MaaFramework](https://github.com/MaaXYZ/MaaFramework)，主体流
 
 以下任务有专门的维护文档。**修改这些任务前必须先阅读对应文档**：
 
-| 任务                      | 文档                                                                     |
-| ------------------------- | ------------------------------------------------------------------------ |
-| AutoStockpile 自动囤货    | [tasks/auto-stockpile-maintain.md](./tasks/auto-stockpile-maintain.md)   |
-| DijiangRewards 基建任务   | [tasks/dijiang-rewards-maintain.md](./tasks/dijiang-rewards-maintain.md) |
-| CreditShopping 信用点商店 | [tasks/credit-shopping-maintain.md](./tasks/credit-shopping-maintain.md) |
+| 任务                                             | 文档                                                                                           |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| AutoStockpile 自动囤货                           | [tasks/auto-stockpile-maintain.md](./tasks/auto-stockpile-maintain.md)                         |
+| DijiangRewards 基建任务                          | [tasks/dijiang-rewards-maintain.md](./tasks/dijiang-rewards-maintain.md)                       |
+| CreditShopping 信用点商店                        | [tasks/credit-shopping-maintain.md](./tasks/credit-shopping-maintain.md)                       |
+| SeizeDeliveryJobs 抢委托送货（固定滑索路线录制） | [tasks/seize-delivery-jobs-route-recording.md](./tasks/seize-delivery-jobs-route-recording.md) |
 
 ## 外部文档
 
