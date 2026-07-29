@@ -28,23 +28,23 @@ SellProductSchedule                                  (Task entry, weekday gate)
 
 The six reserve-rule registration nodes are always enabled and form a fixed slot-order chain. Task options override the stable `itemId` only for configured slots. Unconfigured slots keep an empty `item_id`, which the Custom Action treats as a successful no-op. The next node records the independent priority-selling master switch and whether only preferred products may be sold. Outpost registration nodes use the same fixed-chain approach: task options set `active` to `true` only for enabled outposts, while inactive outposts are successful no-ops. Neither initialization stage needs progressively shortened `next` candidate lists for every possible enabled-slot combination.
 
-`SellProductLoop` always executes regions in the fixed order Valley IV → Wuling. Outposts within each region follow the stable order in the generated model. Disabled regions and outposts are skipped by their entries, so the same enabled set always produces the same selling order. A region entry uses SceneManager to open outpost management, prepares the operator cache, then executes each outpost through `[JumpBack]`:
+`SellProductLoop` always executes regions in reverse order so that newer regions are processed first. Outposts within each region still follow the stable order in the generated model. Disabled regions and outposts are skipped by their entries, so the same enabled set always produces the same selling order. A region entry uses SceneManager to open outpost management, prepares the operator cache, then executes each outpost through `[JumpBack]`:
 
 ```text
 SellProductLoop                                      (Regional Development main loop)
-  ├─ SellProductValleyIVSell                         (enter Valley IV outpost management)
-  │    ├─ SellProductValleyIVInitializePrioritySession
-  │    │    └─ SellProductValleyIVRegisterPriorityItem{1..6} (activate regional priority table)
-  │    ├─ SellProductValleyIVPrepareOperatorCache    (prepare operator cache)
-  │    └─ [JumpBack]SellProductRefugeeCamp → SellProductInfraStation
-  │       → SellProductReconstructionHQ
-  │         (execute three outposts through JumpBack)
   ├─ SellProductWulingSell                           (enter Wuling outpost management)
   │    ├─ SellProductWulingInitializePrioritySession
   │    │    └─ SellProductWulingRegisterPriorityItem{1..6} (activate regional priority table)
   │    ├─ SellProductWulingPrepareOperatorCache      (prepare/reuse operator cache)
   │    └─ [JumpBack]SellProductSkyKingFlatsConstructionSite
   │       → SellProductCardiacRemediationStation → SellProductXiranflowCloudseederStation
+  │         (execute three outposts through JumpBack)
+  ├─ SellProductValleyIVSell                         (enter Valley IV outpost management)
+  │    ├─ SellProductValleyIVInitializePrioritySession
+  │    │    └─ SellProductValleyIVRegisterPriorityItem{1..6} (activate regional priority table)
+  │    ├─ SellProductValleyIVPrepareOperatorCache    (prepare operator cache)
+  │    └─ [JumpBack]SellProductRefugeeCamp → SellProductInfraStation
+  │       → SellProductReconstructionHQ
   │         (execute three outposts through JumpBack)
   └─ SellProductTaskEnd                              (all enabled regions are complete)
 ```
@@ -156,8 +156,10 @@ Post-sale production assignment must prevent one operator from occupying multipl
 1. Maximize the number of outposts that can be restored;
 2. With equal coverage, keep the selling operator already assigned before selling whenever possible to avoid unnecessary switches;
 3. With the same number of kept operators, maximize final assignments in each outpost's highest bonus tier (perfect for both selling and restoration) so later runs need no switch;
-4. With the same number of reusable assignments, choose the plan with the smaller total candidate `Priority`;
+4. With the same number of reusable assignments, choose the plan with the smaller total candidate `Priority` when both plans cover the same outpost set; when they cover different outposts, preserve the newer-region-first order;
 5. Lock each confirmed `location -> operator` assignment so later outposts cannot reuse it.
+
+Regional selling uses the same newer-region-first order, while outposts within each region remain in game order. This lets completed assignments in newer regions be locked first, preventing older regions from taking those operators later.
 
 A missing selling target or failed scan stops the task to avoid selling with the wrong operator. An unavailable restoration target is recorded as skipped so the current outpost can finish and the task continues.
 
@@ -187,16 +189,17 @@ SellProductSellLoop                                  (unbounded selling loop)
                                  ├─ SellProductSell → SellProductSellCheck
                                  │      (no reserve rule; sell all)
                                  ├─ SellProductSellThenLoop → SellProductSellCheckThenLoop
-                                 │      (sell with a reserve; below the target, return to BetterSliding
-                                 │        and keep selling the current item; on reaching it, mark the
-                                 │        item satisfied via SellProductReserveTargetReached)
-                                 └─ SellProductSkipToNextSellLoop
+                                 │      (sell with a reserve; after the trade, check vouchers first and
+                                 │        end if exhausted; otherwise mark the item satisfied via
+                                 │        SellProductReserveQuantityReached when the reserve quantity is reached,
+                                 │        or return to BetterSliding and continue selling)
+                                 └─ SellProductReserveAlreadySatisfied
                                       (stock not above the reserve; mark satisfied and skip)
                                      └─ SellProductSellLoop
                                           (continue until an exit condition is met)
 ```
 
-Each round checks the voucher balance before selecting goods. After a goods change, the insufficient-voucher check still takes precedence over an out-of-stock item, preventing traversal of later priority items once vouchers are exhausted. Insufficient vouchers on initial entry produce a notice; after a completed trade, the outpost selling loop ends silently.
+Each round checks the voucher balance before selecting goods. After a goods change, the insufficient-voucher check still takes precedence over an out-of-stock item, preventing traversal of later priority items once vouchers are exhausted. After a reserve-based trade completes, the flow also checks vouchers before deciding whether the reserve has been reached or running BetterSliding again. Insufficient vouchers on initial entry produce a notice; after a completed trade, the outpost selling loop ends silently.
 
 `SellProductPriorityItem` Custom Recognition only records the selected item as pending during recognition. After Pipeline clicks and confirms it and recognizes the outpost sell screen again, `SellProductPrioritySession` marks it attempted. A failed click or one-frame OCR fluctuation cannot skip a higher-priority item.
 
@@ -208,14 +211,14 @@ The loop ends only when:
 - Every known visible item is unavailable as a candidate (attempted, out of stock, reserve-satisfied, or never-sell), and the same set is recognized twice consecutively;
 - `SellProductAidQuotaExceededStop` stops the task because the exchange limit was exceeded.
 
-An empty OCR result does not mean “no remaining goods.” Out-of-stock items remain in the stable recognized set but are no longer candidates. Zero stock, a completed trade, reaching the reserve target, or a reserve-based skip continues to the next round.
+An empty OCR result does not mean “no remaining goods.” Out-of-stock items remain in the stable recognized set but are no longer candidates. Zero stock, a completed trade, reaching the reserve quantity, or a reserve-based skip continues to the next round.
 
 Independent reserve rules provide six slots. Each stable `itemId` can use either **Keep Specified Quantity** or **Never Sell**:
 
 - Without a matching rule, BetterSliding uses the default sell-all behavior.
-- **Keep Specified Quantity** uses `TargetReverse` to sell only stock above the reserve.
-- When a single trade reaches the reserve target, the trade confirmation marks the item as satisfied for this task via `SellProductReserveTargetReached`; below the target, the flow returns to the quantity slider and keeps selling the current item.
-- If stock is not above the reserve, `SellProductSkipToNextSellLoop` skips the trade and likewise marks the item as satisfied for this task.
+- **Keep Specified Quantity** uses `ReverseTarget` to sell only stock above the reserve.
+- When a single trade reaches the reserve quantity, the trade confirmation marks the item as satisfied for this task via `SellProductReserveQuantityReached`; below the reserve quantity, the flow returns to the quantity slider and keeps selling the current item.
+- If stock is not above the reserve, `SellProductReserveAlreadySatisfied` skips the trade and likewise marks the item as satisfied for this task.
 - Satisfied items are skipped during goods selection at later outposts, with a runtime notice on the first mark.
 - **Never Sell** excludes the item during selection, before switching goods, and does not report it as out of stock. Internally it uses quantity `-1`; users do not enter this sentinel value.
 - Later slots override earlier slots for the same item. Quantity `0` means no reserve.
@@ -224,18 +227,18 @@ Independent reserve rules provide six slots. Each stable `itemId` can use either
 
 The generator lives under `tools/pipeline-generate/SellProduct/`. `model.mjs` defines outpost IDs, multilingual OCR candidates, task options, and template data from zmdmap. `selection-data.mjs` produces the Go deployment resource at `assets/data/SellProduct/selection_data.json`. `tools/pipeline-generate/data/` is the generator's source-data directory.
 
-| Maintenance entry                                    | Generated artifact                                                       |
+| Maintenance entry | Generated artifact |
 | ---------------------------------------------------- | ------------------------------------------------------------------------ |
-| `model.mjs`                                          | Shared outpost, region, and multilingual OCR model                       |
-| `pipeline-template.jsonc`                            | `assets/resource/pipeline/SellProduct/{Region}/{Location}.json`          |
-| `pipeline-adb-template.jsonc`                        | `assets/resource_adb/pipeline/SellProduct/{Region}/{Location}.json`      |
-| `sell-template.jsonc`                                | `assets/resource/pipeline/SellProduct/{Region}/SellProduct{Region}.json` |
-| `loop-template.jsonc`                                | `assets/resource/pipeline/SellProduct/Loop.json`                         |
-| `session-template.jsonc`                             | `assets/resource/pipeline/SellProduct/OperatorSession.json`              |
-| `task-template.jsonc`                                | `assets/tasks/SellProduct.json`                                          |
-| `sync-locales.mjs`                                   | Five-language outpost and operator keys plus missing item keys           |
-| `selection-data.mjs`                                 | `assets/data/SellProduct/selection_data.json`                            |
-| `tools/pipeline-generate/data/settlement_trade.json` | Upstream zmdmap trade data                                               |
+| `model.mjs` | Shared outpost, region, and multilingual OCR model |
+| `pipeline-template.jsonc` | `assets/resource/pipeline/SellProduct/{Region}/{Location}.json` |
+| `pipeline-adb-template.jsonc` | `assets/resource_adb/pipeline/SellProduct/{Region}/{Location}.json` |
+| `sell-template.jsonc` | `assets/resource/pipeline/SellProduct/{Region}/SellProduct{Region}.json` |
+| `loop-template.jsonc` | `assets/resource/pipeline/SellProduct/Loop.json` |
+| `session-template.jsonc` | `assets/resource/pipeline/SellProduct/OperatorSession.json` |
+| `task-template.jsonc` | `assets/tasks/SellProduct.json` |
+| `sync-locales.mjs` | Five-language outpost and operator keys plus missing item keys |
+| `selection-data.mjs` | `assets/data/SellProduct/selection_data.json` |
+| `tools/pipeline-generate/data/settlement_trade.json` | Upstream zmdmap trade data |
 
 These files are maintained manually and are outside generator output:
 

@@ -106,6 +106,12 @@ Action 节点用于执行自定义动作。常见写法如下：
 
 示例文件：[`RepeatUntilFoundAction.json`](../../../assets/resource/pipeline/Interface/Example/RepeatUntilFoundAction.json)
 
+### CharacterSearchAction
+
+`CharacterSearchAction` 实现位于 `agent/go-service/common/charactercontroller`，用于找不到交互点时按固定 WASD 绕圈路径微调位置并识别目标节点。详细参数与路径说明见 [CharacterController 参考文档](./components/character-controller.md#action-charactersearchaction)。
+
+示例文件：[`CharacterController.json`](../../../assets/resource/pipeline/Interface/Example/CharacterController.json)
+
 ### PipelineOverride
 
 `PipelineOverride` 实现位于 `agent/go-service/common/pipelineoverride`，用于在运行时把**按节点组织的局部 JSON** 合并到当前 Pipeline 中（`ctx.OverridePipeline`）。适合在**不改静态流转拓扑**的前提下，动态切换节点开关或调整识别/动作参数。
@@ -372,21 +378,21 @@ Recognition 节点用于执行自定义识别。常见写法如下：
 
 写 Pipeline 时，内置的 `TemplateMatch` / `OCR` / `Click` / `Swipe` 能解决绝大多数需求。遇到它们搞不定的——比如要比较两个 OCR 数值、运行时动态调参数、批量跑子任务——再来查这篇，看有没有现成的 Custom 能用。
 
-| 场景                          | 用什么                        |
+| 场景 | 用什么 |
 | ----------------------------- | ----------------------------- |
-| 按顺序跑一组子任务            | `SubTask`                     |
-| 清零某节点的命中计数          | `ClearHitCount`               |
-| 强制让 Action 失败            | `FalseAction`                 |
-| 重复动作直到节点出现          | `RepeatUntilFoundAction`      |
-| 重复动作直到节点消失          | `RepeatUntilNotFoundAction`   |
-| 主动停止当前任务              | `PostStop`                    |
-| 运行时改节点参数              | `PipelineOverride`            |
+| 按顺序跑一组子任务 | `SubTask` |
+| 清零某节点的命中计数 | `ClearHitCount` |
+| 强制让 Action 失败 | `FalseAction` |
+| 重复动作直到节点出现 | `RepeatUntilFoundAction` |
+| 重复动作直到节点消失 | `RepeatUntilNotFoundAction` |
+| 主动停止当前任务 | `PostStop` |
+| 运行时改节点参数 | `PipelineOverride` |
 | 把关键词拼成正则写回 OCR 节点 | `AttachToExpectedRegexAction` |
-| 计算 OCR 数值表达式           | `ExpressionRecognition`       |
-| 判断列表 OCR 文本是否变化     | `ListCompleteRecognition`     |
-| 消费性点选（visited 排除）    | `ExpendableRecognition`       |
-| 按星期几门控后续节点          | `ScheduleRecognition`         |
-| 在指定位置 Alt + 点击         | `AutoAltClickAction`          |
-| Alt + 滑动                    | `AutoAltSwipeAction`          |
+| 计算 OCR 数值表达式 | `ExpressionRecognition` |
+| 判断列表 OCR 文本是否变化 | `ListCompleteRecognition` |
+| 消费性点选（visited 排除） | `ExpendableRecognition` |
+| 按星期几门控后续节点 | `ScheduleRecognition` |
+| 在指定位置 Alt + 点击 | `AutoAltClickAction` |
+| Alt + 滑动 | `AutoAltSwipeAction` |
 
 所有 Custom 的 Go 代码实现在 `agent/go-service/` 下，Pipeline 作者不需要关心，照文档参数写 JSON 就行。

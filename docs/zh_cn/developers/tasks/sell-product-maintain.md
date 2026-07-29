@@ -28,23 +28,23 @@ SellProductSchedule                                  （Task 入口，按星期�
 
 6 个保留规则注册节点始终启用，并按槽位顺序固定串联。任务选项只覆盖已配置槽位的稳定 `itemId`；未配置槽位保留空 `item_id`，Custom Action 将其作为 no-op 成功跳过。随后独立记录优先售卖总开关与是否只售卖优先产品。据点注册节点同样固定串联，任务选项只把启用据点的 `active` 参数设为 `true`，非活跃据点直接 no-op。两段初始化流程均无需为任意启用组合维护逐层缩短的 `next` 候选列表。
 
-`SellProductLoop` 始终按“四号谷地 → 武陵”的固定地区顺序执行；地区内据点也按生成模型中的固定顺序执行。未启用地区或据点由对应入口直接跳过，因此相同的启用组合总会得到相同的售卖顺序。地区入口通过 SceneManager 进入据点管理页，准备干员缓存，再用 `[JumpBack]` 依次执行该地区的据点：
+`SellProductLoop` 始终按新地区优先的倒序执行；地区内据点仍按生成模型中的固定顺序执行。未启用地区或据点由对应入口直接跳过，因此相同的启用组合总会得到相同的售卖顺序。地区入口通过 SceneManager 进入据点管理页，准备干员缓存，再用 `[JumpBack]` 依次执行该地区的据点：
 
 ```text
 SellProductLoop                                      （地区建设主循环）
-  ├─ SellProductValleyIVSell                         （进入四号谷地据点管理）
-  │    ├─ SellProductValleyIVInitializePrioritySession
-  │    │    └─ SellProductValleyIVRegisterPriorityItem{1..6} （切换地区优先表）
-  │    ├─ SellProductValleyIVPrepareOperatorCache    （准备干员缓存）
-  │    └─ [JumpBack]SellProductRefugeeCamp → SellProductInfraStation
-  │       → SellProductReconstructionHQ
-  │         （通过 JumpBack 依次执行三个据点）
   ├─ SellProductWulingSell                           （进入武陵据点管理）
   │    ├─ SellProductWulingInitializePrioritySession
   │    │    └─ SellProductWulingRegisterPriorityItem{1..6} （切换地区优先表）
   │    ├─ SellProductWulingPrepareOperatorCache      （准备/复用干员缓存）
   │    └─ [JumpBack]SellProductSkyKingFlatsConstructionSite
   │       → SellProductCardiacRemediationStation → SellProductXiranflowCloudseederStation
+  │         （通过 JumpBack 依次执行三个据点）
+  ├─ SellProductValleyIVSell                         （进入四号谷地据点管理）
+  │    ├─ SellProductValleyIVInitializePrioritySession
+  │    │    └─ SellProductValleyIVRegisterPriorityItem{1..6} （切换地区优先表）
+  │    ├─ SellProductValleyIVPrepareOperatorCache    （准备干员缓存）
+  │    └─ [JumpBack]SellProductRefugeeCamp → SellProductInfraStation
+  │       → SellProductReconstructionHQ
   │         （通过 JumpBack 依次执行三个据点）
   └─ SellProductTaskEnd                              （所有启用地区处理完成）
 ```
@@ -156,8 +156,10 @@ SellProduct 缓存统一保存在 `debug/record/SellProductCache.json`，按哈�
 1. 最大化能够恢复的据点数量；
 2. 覆盖数相同时，尽量保留各据点售前已经派驻的售卖干员，减少无意义切换；
 3. 沿用数量也相同时，尽量让最终派驻仍属于对应据点的最高加成档（同时满足售卖与恢复），使后续任务无需再次切换；
-4. 后续可沿用数量也相同时，选择候选 `Priority` 总和更小的方案；
+4. 后续可沿用数量也相同时，若方案覆盖相同的据点集合，选择候选 `Priority` 总和更小的方案；若覆盖不同据点，则保留新地区优先顺序；
 5. 已确认的 `location -> operator` 立即锁定，后续据点不能重复分配该干员。
+
+地区售卖同样按新地区优先执行；地区内据点仍保持游戏顺序。这样新地区完成的恢复结果会先锁定，后续旧地区不能再次调走对应干员。
 
 售卖目标找不到或扫描失败会停止任务，避免带着错误的干员继续交易；恢复目标不可用时记录跳过，完成当前据点后继续任务。
 
@@ -187,16 +189,16 @@ SellProductSellLoop                                  （不限次数的售卖循
                                  ├─ SellProductSell → SellProductSellCheck
                                  │      （无保留规则，全部售出）
                                  ├─ SellProductSellThenLoop → SellProductSellCheckThenLoop
-                                 │      （按保留数量交易；未达保留目标时回到 BetterSliding
-                                 │        继续售卖当前货品，达到后经 SellProductReserveTargetReached
-                                 │        标记本次任务已满足）
-                                 └─ SellProductSkipToNextSellLoop
+                                 │      （按保留数量交易；交易后先检查调度券，不足则结束；
+                                 │        充足时，达到保留数量则经 SellProductReserveQuantityReached
+                                 │        标记本次任务已满足，否则回到 BetterSliding 继续售卖）
+                                 └─ SellProductReserveAlreadySatisfied
                                       （库存不高于保留量，标记已满足并跳过）
                                      └─ SellProductSellLoop
                                           （继续下一候选，直到满足结束条件）
 ```
 
-每轮选择货品前都会先检查调度券。换货后再次检查时，调度券不足的判断仍优先于当前货品缺货，避免调度券耗尽后继续遍历后续优先物品。首次进入据点即发现不足时显示提示；已有交易完成后则静默结束该据点售卖循环。
+每轮选择货品前都会先检查调度券。换货后再次检查时，调度券不足的判断仍优先于当前货品缺货，避免调度券耗尽后继续遍历后续优先物品。按保留数量完成一笔交易后，也会先检查调度券，再判断保留目标是否达到或重新进入 BetterSliding。首次进入据点即发现不足时显示提示；已有交易完成后则静默结束该据点售卖循环。
 
 `SellProductPriorityItem` 自定义识别器只在识别阶段把选中的货品记录为待提交。Pipeline 点击并确认货品、重新识别到据点售卖界面后，`SellProductPrioritySession` 才把该货品标记为已尝试。点击失败或单帧 OCR 波动不会跳过高优先级货品。
 
@@ -208,14 +210,14 @@ SellProductSellLoop                                  （不限次数的售卖循
 - 当前可见的已知货品全部不可成为候选（已尝试、已缺货、已达保留量或配置为永不售卖），且连续两次识别到相同集合；
 - 超出兑换上限时由 `SellProductAidQuotaExceededStop` 停止整个任务。
 
-空 OCR 结果不会被当作“无剩余货品”。缺货物品仍保留在稳定识别集合中，但不会再次成为候选；缺货、交易完成、达到保留目标或因保留量跳过都会继续下一轮。
+空 OCR 结果不会被当作“无剩余货品”。缺货物品仍保留在稳定识别集合中，但不会再次成为候选；缺货、交易完成、达到保留数量或因保留量跳过都会继续下一轮。
 
 独立保留规则提供六个槽位，每个槽位按稳定 `itemId` 选择“保留指定数量”或“永不售卖”：
 
 - 未命中规则时，BetterSliding 使用默认“全部售出”。
-- “保留指定数量”使用 `TargetReverse` 只售卖高于保留量的部分。
-- 单次交易达到保留目标时，交易确认成功后经 `SellProductReserveTargetReached` 把该物品标记为本次任务已满足；未达到目标时回到数量滑块继续售卖当前货品。
-- 当前库存不高于保留量时，通过 `SellProductSkipToNextSellLoop` 跳过交易，同样把该物品标记为本次任务已满足。
+- “保留指定数量”使用 `ReverseTarget` 只售卖高于保留量的部分。
+- 单次交易达到保留数量时，交易确认成功后经 `SellProductReserveQuantityReached` 把该物品标记为本次任务已满足；未达到保留数量时回到数量滑块继续售卖当前货品。
+- 当前库存不高于保留量时，通过 `SellProductReserveAlreadySatisfied` 跳过交易，同样把该物品标记为本次任务已满足。
 - 已满足的物品在后续据点的选品阶段直接跳过，并在首次标记时输出提示。
 - “永不售卖”在选货识别阶段直接排除物品，不切换货品，也不会记为缺货；内部以数量 `-1` 表示，用户界面不要求输入该哨兵值。
 - 同一物品重复配置时，后面的槽位覆盖前面的槽位；数量 `0` 等价于不保留。
@@ -224,18 +226,18 @@ SellProductSellLoop                                  （不限次数的售卖循
 
 生成器位于 `tools/pipeline-generate/SellProduct/`。`model.mjs` 根据 zmdmap 数据定义据点 ID、多语言 OCR、任务选项和模板数据；`selection-data.mjs` 生成 Go 使用的部署数据 `assets/data/SellProduct/selection_data.json`。`tools/pipeline-generate/data/` 是生成器的数据源目录。
 
-| 维护入口                                             | 生成产物                                                                 |
+| 维护入口 | 生成产物 |
 | ---------------------------------------------------- | ------------------------------------------------------------------------ |
-| `model.mjs`                                          | 据点、地区、多语言 OCR 的共享模型                                        |
-| `pipeline-template.jsonc`                            | `assets/resource/pipeline/SellProduct/{Region}/{Location}.json`          |
-| `pipeline-adb-template.jsonc`                        | `assets/resource_adb/pipeline/SellProduct/{Region}/{Location}.json`      |
-| `sell-template.jsonc`                                | `assets/resource/pipeline/SellProduct/{Region}/SellProduct{Region}.json` |
-| `loop-template.jsonc`                                | `assets/resource/pipeline/SellProduct/Loop.json`                         |
-| `session-template.jsonc`                             | `assets/resource/pipeline/SellProduct/OperatorSession.json`              |
-| `task-template.jsonc`                                | `assets/tasks/SellProduct.json`                                          |
-| `sync-locales.mjs`                                   | 五语言据点名、干员键和缺失的物品键                                       |
-| `selection-data.mjs`                                 | `assets/data/SellProduct/selection_data.json`                            |
-| `tools/pipeline-generate/data/settlement_trade.json` | zmdmap 上游贸易数据源                                                    |
+| `model.mjs` | 据点、地区、多语言 OCR 的共享模型 |
+| `pipeline-template.jsonc` | `assets/resource/pipeline/SellProduct/{Region}/{Location}.json` |
+| `pipeline-adb-template.jsonc` | `assets/resource_adb/pipeline/SellProduct/{Region}/{Location}.json` |
+| `sell-template.jsonc` | `assets/resource/pipeline/SellProduct/{Region}/SellProduct{Region}.json` |
+| `loop-template.jsonc` | `assets/resource/pipeline/SellProduct/Loop.json` |
+| `session-template.jsonc` | `assets/resource/pipeline/SellProduct/OperatorSession.json` |
+| `task-template.jsonc` | `assets/tasks/SellProduct.json` |
+| `sync-locales.mjs` | 五语言据点名、干员键和缺失的物品键 |
+| `selection-data.mjs` | `assets/data/SellProduct/selection_data.json` |
+| `tools/pipeline-generate/data/settlement_trade.json` | zmdmap 上游贸易数据源 |
 
 以下文件由手工维护，生成器不处理：
 
