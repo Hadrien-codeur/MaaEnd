@@ -24,6 +24,7 @@
         "post_delay": 0,
         "rate_limit": 0,
         "next": [
+            "GiftOperatorMoveResetBackward",
             "GiftOperatorMoveLocation3",
             //"GiftOperatorMoveLocation3Move",
             "GiftOperatorMoveLocation2",
@@ -32,6 +33,34 @@
             //"GiftOperatorMoveLocation1Move",
             "GiftOperatorMoveFail"
         ]
+    },
+    "GiftOperatorMoveResetBackward": {
+        "desc": "向后(S)一步，再向前(W)重置视角",
+        "max_hit": 1,
+        "pre_delay": 0,
+        "action": {
+            "type": "ClickKey",
+            "param": {
+                "key": 83
+            }
+        },
+        "post_delay": 0,
+        "rate_limit": 0,
+        "next": [
+            "GiftOperatorMoveResetForward"
+        ]
+    },
+    "GiftOperatorMoveResetForward": {
+        "desc": "向前(W)一步，完成视角重置",
+        "pre_delay": 0,
+        "action": {
+            "type": "ClickKey",
+            "param": {
+                "key": 87
+            }
+        },
+        "post_delay": 0,
+        "rate_limit": 0
     },
     "GiftOperatorMoveFail": {
         "desc": "移动未能接触到干员，炸掉程序",
