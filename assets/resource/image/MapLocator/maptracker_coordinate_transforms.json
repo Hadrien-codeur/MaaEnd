@@ -642,6 +642,14 @@
                 627.0,
                 273.0
             ]
+        },
+        {
+            "map_name": "map02_lv005",
+            "zone_id": "Wuling_Base",
+            "offset_x": 960.0,
+            "offset_y": 1344.0,
+            "scale_x": 0.985337243402,
+            "scale_y": 0.984615384615
         }
     ]
 }

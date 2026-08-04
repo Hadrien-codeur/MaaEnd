@@ -47,48 +47,56 @@ MapLocator 单帧定位抖动约 0.7m，目标太近时角度被噪声主导：
 - 按 **`G`** = 复制当前位置坐标到剪贴板，格式 `[x, y]`，同时显示 `zone`
 - 按 **`X`** = 在当前位置打一个严格到达点
 
-> ⚠️ **`zone` 值要一起记下来**。武陵城是 `Wuling_Base`，试验园区的 zone 需要实测确认（`map02_lv005` 属于哪个 zone 表里没写）。
+> ⚠️ **`zone` 值要一起记下来**。试验园区和武陵城一样是 **`Wuling_Base`**（见 §2）。
 
 ---
 
-## 2. ⚠️ 第一步：标定坐标换算参数（必须先做）
+## 2. ✅ 坐标换算参数已解算完毕（无需实机标定）
 
-### 为什么必须先做
+**2026-08-05 更新：这一步已经做完，博士不用管了。** 原计划要实机站 3 个点读两套坐标，现在改用图像匹配离线解算，结论已写进 [maptracker_coordinate_transforms.json](../../../../assets/resource/image/MapLocator/maptracker_coordinate_transforms.json)：
 
-`map02_lv005` **不在** [maptracker_coordinate_transforms.json](../../../../assets/resource/image/MapLocator/maptracker_coordinate_transforms.json) 里 —— 表里只有 `map02_lv001/002/003/004`。
-
-没有 `offset_x/offset_y/scale_x/scale_y`，MapTracker 坐标就换不成 base px，**所有步行段的 NAVMESH 都写不出来**。
-
-滑索段、`departure.go` 终点、`MapTrackerBigMapPick` 直接吃 MapTracker 坐标，不受影响。
-
-### 怎么标定
-
-**同时开着两个工具**，站在同一个位置分别读两个数。
-
-找 **3 个位置**，要求：
-
-- 两两之间**尽量远**（越远越准，建议横跨大半张图）
-- 站得稳、地面平整、周围没有会挤过来的 NPC/玩家
-- 前 2 个用来解方程，第 3 个用来交叉验证
-
-| 点 | MapTracker 坐标 | base px 坐标 | zone |
-| --- | --------------- | ------------ | ---- |
-| C1 | `[    ,     ]` | `[    ,     ]` | |
-| C2 | `[    ,     ]` | `[    ,     ]` | |
-| C3（验证用） | `[    ,     ]` | `[    ,     ]` | |
-
-**操作**：站定 → 在 MapTracker 网页读坐标记下 → 切到 MapNavigator 按 `G` 复制 → 记下。**人不要动**，两个数必须是同一位置。
+```json
+{
+    "map_name": "map02_lv005",
+    "zone_id": "Wuling_Base",
+    "offset_x": 960.0,
+    "offset_y": 1344.0,
+    "scale_x": 0.985337243402,
+    "scale_y": 0.984615384615
+}
+```
 
 换算公式（规范 §6）：
 
 ```
-base_x = offset_x + mt_x × scale_x
-base_y = offset_y + mt_y × scale_y
+base_x = 960.0  + mt_x × 0.985337243402
+base_y = 1344.0 + mt_y × 0.984615384615
 ```
 
-两点两组解出 offset/scale，第 3 点验证。**误差 1px 内算通过。**
+### 怎么解出来的（复现方法，以后加新图照抄）
 
-> 如果 MapNavigator 在试验园区读不出位置（定位失败/zone 不认），**先告诉我，不要硬录** —— 说明这张图 base.nav 可能不覆盖，方案要换。
+这些 transform 本质是「关卡小图 → MapLocator Base 大图」的裁剪+缩放关系，两张图都在仓库里，所以能纯离线算：
+
+1. 把 `assets/resource/image/MapTracker/map/map02_lv005.png`（682×585）缩放后模板匹配到 `assets/resource/image/MapLocator/Wuling/Base.png`（2016×2976），得 offset 粗值。
+2. SIFT + RANSAC 拟合仿射，对 x/y 分别一元线性回归求 scale/offset，迭代剔除 2σ 外点。
+3. **在已知的 `map02_lv001/002/003/004` 上验证方法**：offset 复现误差 <0.02px，残差 0.05px —— 方法可信。
+4. 精确化：发现所有图的 `offset` 和 `span = size × scale` **都是 96 的整数倍**（Base.png 本身就是 2016×2976 = 96×21 × 96×31 的网格切片）。据此把拟合值吸附到精确有理数：
+    - lv005 `span_x = 672 = 96×7` → `scale_x = 672/682 = 0.985337243402`
+    - lv005 `span_y = 576 = 96×6` → `scale_y = 576/585 = 0.984615384615`
+    - `offset = (960, 1344) = (96×10, 96×14)`
+5. 反向验证：按参数 warp lv005 叠到 Base.png，重叠区相关系数 **0.979**，±3px 网格搜索最优解就在 (0,0)。
+
+### base.nav 覆盖已确认
+
+清单原来担心「MapNavigator 在试验园区可能读不出位置」——**这个风险不存在**。解压 `assets/resource/model/map/navmesh/base.nav.gz` 查 zone 列表，里面有 `Wuling_Base` 和 `Wuling_L5_314/316/318/319/321/322/324/326`，试验园区被完整覆盖。
+
+### ⚠️ 唯一残留坑：lv005 的 tier（高架层）没进表
+
+lv005 有 8 张 tier 图（314/316/318/319/321/322/324/326），但换算表里**只有 base 层条目、没有 tier 条目**。落在高架层上的点会错用 base 层参数。
+
+已知 **`SceneEnterWorldWulingTestArea2` 锚点 `[391.6, 362.5]` 就落在 tier 322 上**。
+
+**录制时的判断办法**：如果某个 NAVMESH 点在高架/桥面/二层平台上，标一句"这点在高架上"告诉我，我补 tier 条目（需要 `parent_map_name` + `source_bbox`）。地面点不受影响。
 
 ---
 
@@ -101,11 +109,11 @@ base_y = offset_y + mt_y × scale_y
 | 节点名 | 位置 | MapTracker 坐标 |
 | ------ | ---- | --------------- |
 | `SceneEnterWorldWulingTestArea1` | 综合科研区下 | `[336.3, 420.1]` |
-| `SceneEnterWorldWulingTestArea2` | 测试区 | `[391.6, 362.5]` |
+| `SceneEnterWorldWulingTestArea2` | 测试区 | `[391.6, 362.5]`（⚠️ 在 tier 322 高架层上，见 §2） |
 
 **要定的**：哪个锚点离起点滑索架更近 → 选它。
 
-已知取货点在 `[297.5, 414.3]`（上游现值），看着 TestArea1 更近，但**要实机确认滑索架在哪**才能定。
+已知取货点在 **`[297.5, 413.3]`**（上游 [#4760](https://github.com/MaaEnd/MaaEnd/pull/4760) 2026-08-04 从 `414.3` 调到 `413.3`，修站位不准导致取不到货），看着 TestArea1 更近，但**要实机确认滑索架在哪**才能定。
 
 **填**：选用锚点 = `SceneEnterWorldWulingTestArea____`
 
@@ -176,12 +184,14 @@ base_y = offset_y + mt_y × scale_y
 
 | 组 | 内容 | 数量 |
 | --- | ---- | ---- |
-| 标定 | 3 个点 × (MapTracker + base px + zone) | 3 组 |
+| ~~标定~~ | ~~3 个点 × (MapTracker + base px + zone)~~ | ✅ **已离线解算，不用录**（§2） |
 | 取货 | P1–P11 | 1 套 |
 | 送货共用起点 | D0-1 ~ D0-4 | 1 套 |
 | 送货各路线 | D1–D7 + 路线名 | ×3 |
 
-约 **25–30 个坐标 + 4 个滑索架计数 + 3 个路线名 + 1 个锚点选择**。
+约 **22–27 个坐标 + 4 个滑索架计数 + 3 个路线名 + 1 个锚点选择**。
+
+坐标**全部用 MapTracker 读**即可（换算参数已有，我这边换 base px）。顺手标一下哪些点在高架层上。
 
 ---
 
@@ -189,8 +199,8 @@ base_y = offset_y + mt_y × scale_y
 
 不用博士操心，列出来只为让您知道进度怎么算：
 
-1. 解算 lv005 的 offset/scale，写进 `maptracker_coordinate_transforms.json`
-2. 换算所有步行段坐标 → base px
+1. ~~解算 lv005 的 offset/scale，写进 `maptracker_coordinate_transforms.json`~~ ✅ 2026-08-05 已完成
+2. 换算所有步行段坐标 → base px（必要时补 tier 条目）
 3. 写 pipeline 节点 → `SeizeDeliveryJobsDeliverRoutes.json`（送货）+ `SeizeDeliveryJobsPost.json`（取货）
 4. 加 3 个终点坐标 → [departure.go](../../../../agent/go-service/seizedeliveryjobs/departure.go) 的 endpoints 表
 5. 建 4 个测试入口（3 送货 + 1 取货）
@@ -204,7 +214,8 @@ base_y = offset_y + mt_y × scale_y
 
 | 现象 | 怎么处理 |
 | ---- | -------- |
-| MapNavigator 在试验园区读不出位置 | **停下告诉我**，说明 base.nav 可能不覆盖这张图，方案要换 |
+| MapNavigator 在试验园区读不出位置 | base.nav **已确认覆盖** lv005（§2），若仍读不出是定位/二进制问题，告诉我 |
+| 某个点在高架/桥面/二层平台上 | 标注一下，我补 tier 换算条目（§2 末） |
 | 两个工具读出的 zone 不一致 | 记下两个值都告诉我 |
 | HEADING 目标找不到 ≥2m 的点 | 往后退两步再录，或换个更远的地标当朝向目标 |
 | 滑索架数不清 | 宁可多跑一次数准，`chain_max_press` 数错是最常见的失败原因 |
