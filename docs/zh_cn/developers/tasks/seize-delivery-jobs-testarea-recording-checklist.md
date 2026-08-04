@@ -90,13 +90,19 @@ base_y = 1344.0 + mt_y × 0.984615384615
 
 清单原来担心「MapNavigator 在试验园区可能读不出位置」——**这个风险不存在**。解压 `assets/resource/model/map/navmesh/base.nav.gz` 查 zone 列表，里面有 `Wuling_Base` 和 `Wuling_L5_314/316/318/319/321/322/324/326`，试验园区被完整覆盖。
 
-### ⚠️ 唯一残留坑：lv005 的 tier（高架层）没进表
+### ⚠️ 唯一残留坑：lv005 的 tier（高架层）没进表，且**不能照上面的方法算**
 
 lv005 有 8 张 tier 图（314/316/318/319/321/322/324/326），但换算表里**只有 base 层条目、没有 tier 条目**。落在高架层上的点会错用 base 层参数。
 
 已知 **`SceneEnterWorldWulingTestArea2` 锚点 `[391.6, 362.5]` 就落在 tier 322 上**。
 
-**录制时的判断办法**：如果某个 NAVMESH 点在高架/桥面/二层平台上，标一句"这点在高架上"告诉我，我补 tier 条目（需要 `parent_map_name` + `source_bbox`）。地面点不受影响。
+**我试过把上面的离线方法套到 tier 上，不成立**，如实记录以免以后重复踩：
+
+- tier 条目映射的目标是各自独立的小图（如 `Lv005Tier318.png` 256×256），**不是 Base.png 的裁剪**，所以 base 层那套模板匹配不适用
+- 拿已知的 lv002/lv003 tier 条目验证：SIFT 拟合虽然自洽（残差 0.1px），但结果和表里的真值差很远 —— 例如 `tier_298` 拟合 `scale_y=0.984` 而真值是 `1.072`，offset 差 40px；另有 2 个条目特征点不足直接失败
+- 结论：tier 的变换不是简单相似变换（高架层小图与父图内容对应关系更复杂），**不能离线凑数**。我没有硬写一组数进表。
+
+**所以录制时要靠博士标一下**：如果某个 NAVMESH 点在高架/桥面/二层平台上，标一句「这点在高架上」告诉我。届时按上游已有 tier 条目的做法人工确定 `parent_map_name` + `source_bbox`。**地面点不受影响，可以放心录。**
 
 ---
 
@@ -154,7 +160,9 @@ lv005 有 8 张 tier 图（314/316/318/319/321/322/324/326），但换算表里*
 
 ### 4.2 每条路线各录一组（×3）
 
-**先给 3 条路线起英文名**（PascalCase，按地标起）。武陵城用的是 `Owl` / `MaterialResearchInstitute` / `Observatory` / `TechProductionOffice`。这个名字会用在节点名、`departure.go`、i18n 三处，**必须严格一致**。
+**先给 3 条路线起英文名**（PascalCase，按地标起）。这个名字会用在节点名、`departure.go`、i18n 三处，**必须严格一致**。
+
+⚠️ **不能和武陵城的 4 个名字重复**：`Owl` / `MaterialResearchInstitute` / `Observatory` / `TechProductionOffice`。因为 `runDeliverRoute` 是用 `前缀 + 名字` 拼节点名的，撞名会直接串到武陵城的路线节点上（见 §6）。
 
 | 路线 | 英文名 | 大致方位 |
 | ---- | ------ | -------- |
@@ -202,11 +210,25 @@ lv005 有 8 张 tier 图（314/316/318/319/321/322/324/326），但换算表里*
 1. ~~解算 lv005 的 offset/scale，写进 `maptracker_coordinate_transforms.json`~~ ✅ 2026-08-05 已完成
 2. 换算所有步行段坐标 → base px（必要时补 tier 条目）
 3. 写 pipeline 节点 → `SeizeDeliveryJobsDeliverRoutes.json`（送货）+ `SeizeDeliveryJobsPost.json`（取货）
-4. 加 3 个终点坐标 → [departure.go](../../../../agent/go-service/seizedeliveryjobs/departure.go) 的 endpoints 表
+4. **改 [departure.go](../../../../agent/go-service/seizedeliveryjobs/departure.go) 支持多地图**（⚠️ 见下，不只是加坐标）
 5. 建 4 个测试入口（3 送货 + 1 取货）
 6. 5 语言 i18n + `interface.json` 注册 + 同步 `install/interface.json`
 7. `pnpm format && pnpm check` + `python tools/build_and_install.py`（改了 Go）
 8. 交回给博士实机测
+
+### ⚠️ 第 4 步不是「加 3 行坐标」那么简单
+
+2026-08-05 复查 `departure.go` 发现：**现在的分流写死了只认武陵城**，试验园区路线录好了也不会被匹配上。三处要改：
+
+| 位置 | 现状 | 要改成 |
+| ---- | ---- | ------ |
+| `seizeDeliveryJobsWulingCityMap = "map02_lv002"`（[:22](../../../../agent/go-service/seizedeliveryjobs/departure.go#L22)） | 单地图常量 | 支持 lv002 + lv005 |
+| `nearestEndpoint` 首行 `if mapName != seizeDeliveryJobsWulingCityMap { return "" }`（[:228](../../../../agent/go-service/seizedeliveryjobs/departure.go#L228)） | 非武陵城直接返回空 | 按地图查对应的 endpoints 组 |
+| `seizeDeliveryJobsWulingEndpoints`（[:39](../../../../agent/go-service/seizedeliveryjobs/departure.go#L39)） | 平铺 4 个武陵坐标 | 改成 `map[mapName][]endpoint` |
+
+> ✅ 好消息：`map_name_regex` 已经是 `^(map02_lv002|map02_lv005)$`（上游本来就支持试验园区送货），pipeline 侧不用动。
+>
+> ⚠️ 注意 `runDeliverRoute` 用 `prefix + endpoint` 拼节点名，所以**两张图的路线英文名不能重复**，否则会串到武陵城的节点上。起名时避开 `Owl` / `MaterialResearchInstitute` / `Observatory` / `TechProductionOffice` 这 4 个。
 
 ---
 
