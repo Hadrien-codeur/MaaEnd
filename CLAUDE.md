@@ -452,13 +452,36 @@ python tools/build_and_install.py
 
 ## 18. 当前进度存档（接力时先读此节，确认后删除）
 
-### 18.0 最新状态（2026-07-30 家里电脑，读这节就够）
+### 18.-1 公司电脑更新存档（2026-08-04，`e:\TestBase2\MaaEnd`，仅更新未测试）
+
+> ✅ **此轮更新+合并已 push 到 `myfork/feature/zipline-fast`（含合并 `005e667f` + 本存档）。**
+> **家里电脑接力方式**：`git checkout feature/zipline-fast` → `git pull myfork feature/zipline-fast` → `git submodule update --init --recursive`。直接拿到公司这份已验证的合并（零冲突、pnpm check 全绿），**不用再合并一次，两台零分叉**。拉完即可开发。
+
+**本轮做完（公司电脑）**：
+
+1. **拉取家里进度**：快进到 `19daee19`（家里 7-30 推的：合上游 25 commit + 定位抖动根因 + 试验园区清单），子模块已同步。
+2. **换二进制到官方 v2.22.0**：
+    - `cpp-algo.exe`（4313600 B）+ maafw dll×17 + WebView2 用官方 Release **MaaEnd-win-x86_64-v2.22.0**（2026-07-31）覆盖；
+    - `go-service.exe` 本机 `python tools/build_and_install.py` 重编（有 go 1.26.2；本机**无 CMake/MSVC**，编不了 C++）；
+    - 旧版（7-21 的 v2.20.0 二进制）备份在 `install/_backup_pre_v2.22_20260804/`；
+    - 修正了 `version.json`（旧值误记 v2.15.0）。**注：`install/` 全目录被 .gitignore 忽略，二进制改动不进 git、无需提交。**
+3. **合并上游 v2**：本地 `v2` 快进到官方最新 `2bf95253`，`merge v2` 进 `feature/zipline-fast`（commit `005e667f`）——**零冲突**。冲突热点 `SeizeDeliveryJobsPost.json` 自动合并语义已验证：上游 #4659 `FalseAction`（526 行）+ 我们私有取货步行段（243/261/309 行）两侧都在。`pnpm check` 7 控制器全绿（上游新增 CloudADB / MacOS 控制器）。
+4. **今天只更新、未测试**（博士明确要求）。
+
+#### 18.-1.1 ⚠️ 二进制又落后于源码了（回家测 NAVMESH 前必看）
+
+合并后**代码已超过 v2.22.0 tag**：上游在 v2.22.0 发布后又合入 **C++ 导航算法大改**（Recast，`RecastNavRoute.cpp` 等 19 个 C++ 文件 +841 行，含 #4682 移二向箔 / #4632 立面跨越约束 / #4630 走廊消费 / #4585 起点离网 等）。所以任何 v2.22.0 的 `cpp-algo.exe` 都缺这批新算法。
+
+- ✅ **官方已出 `v2.23.0-beta.4`（2026-08-03）预发布版**，大概率含这批 Recast 算法 —— **回家测 NAVMESH 前，用它覆盖 `cpp-algo.exe` + maafw dll**（家里电脑有 CMake 也可自编）。
+- go-service 也被上游大改（100 文件），家里重编即可。
+
+#### 18.0 家里电脑上一轮状态（2026-07-30，读这节就够）
 
 **本轮做完：合并上游 25 个 commit + 定位取货步行段抖动根因 + 出试验园区录制清单。**
 
-#### 18.0.-2 ⚠️ 明天开工先做这三件（按顺序）
+#### 18.0.-2 ⚠️ 开工先做这三件（按顺序）
 
-1. **更新 `cpp-algo.exe`** —— 现在是 7-26 的旧版，**不含** #4576 箭头修复。本机没装 CMake/VS，编不了 C++（源码已在树里，只差编译）。用官方新 Release 覆盖 `install/agent/` 三件套 + `deps/bin/` maafw dll，**不覆盖** resource/tasks/locales/data（软链接）。
+1. **更新 `cpp-algo.exe`** —— 见 18.-1.1，**用官方 `v2.23.0-beta.4` 覆盖**（不再是 v2.22.0，因合并后代码已超过 v2.22.0）。用官方 Release 覆盖 `install/agent/cpp-algo.exe` + maafw dll，**不覆盖** resource/tasks/locales/data（软链接）。
 2. **完整重启 MaaEnd.exe**，跑完整「全自动送货」档位复测取货段（**不要**用取货段独立测试入口，见下）。
 3. **实机确认试验园区地图**（博士说要再看一下），然后按清单录坐标。
 
