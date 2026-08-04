@@ -28,6 +28,8 @@ struct CorridorProjection
     double t = 0.0;
     navmesh::WorldPoint point {};
     double cross_track = std::numeric_limits<double>::infinity();
+    bool before_window = false;
+    bool after_window = false;
 };
 
 bool CanUseNavRunSteering(const Waypoint& waypoint)
@@ -65,6 +67,8 @@ std::optional<CorridorProjection> ProjectOntoCorridor(const navmesh::WorldPath& 
                 .t = t,
                 .point = { .x = px, .y = py },
                 .cross_track = cross,
+                .before_window = edge == start_edge && raw_t < 0.0,
+                .after_window = edge + 1 == num_edges && raw_t > 1.0,
             };
         }
     }
@@ -295,6 +299,10 @@ bool NavRunController::buildPlan(
     if (authored.size() >= 2) {
         navmesh::WorldPath literal_path;
         literal_path.points = std::move(authored);
+        const navmesh::WorldPoint& span_start = literal_path.points.front();
+        if (std::hypot(position.x - span_start.x, position.y - span_start.y) > kMeasurementDefaultPositionQuantum) {
+            literal_path.points.insert(literal_path.points.begin(), { .x = position.x, .y = position.y });
+        }
         commit(std::move(literal_path), true);
         return true;
     }
@@ -310,16 +318,10 @@ bool NavRunController::buildPlan(
     return true;
 }
 
-double NavRunController::chooseLookaheadDistance(const RouteTrackingState& route, bool sprint_active, double upcoming_turn_deg) const
+double NavRunController::chooseLookaheadDistance(const RouteTrackingState& route) const
 {
-    if (upcoming_turn_deg >= kNavRunSharpTurnDeg) {
-        return kNavRunLookaheadSharpTurnM;
-    }
     if (!route.startup_motion_confirmed) {
         return kNavRunLookaheadLowSpeedM;
-    }
-    if (sprint_active) {
-        return kNavRunLookaheadSprintM;
     }
     return kNavRunLookaheadWalkM;
 }
@@ -340,7 +342,6 @@ NavRunTickResult NavRunController::tick(
     const NaviParam& param,
     size_t anchor_index,
     const Waypoint& anchor,
-    bool sprint_active,
     std::chrono::steady_clock::time_point now)
 {
     NavRunTickResult result;
@@ -416,6 +417,10 @@ NavRunTickResult NavRunController::tick(
         }
     }
 
+    if ((projection->before_window || projection->after_window) && projection->cross_track > kNavRunCrossTrackFailM) {
+        return result;
+    }
+
     const double remaining = RemainingAlongCorridor(plan_.path, *projection);
     if (last_remaining_to_anchor_ - remaining >= kRouteProgressEpsilon) {
         last_progress_seen_ = now;
@@ -426,7 +431,7 @@ NavRunTickResult NavRunController::tick(
     }
 
     const double upcoming_turn = UpcomingCorridorTurnDeg(plan_.path, *projection, kNavRunUpcomingTurnLookaheadM);
-    const double lookahead_distance = chooseLookaheadDistance(route, sprint_active, upcoming_turn);
+    const double lookahead_distance = chooseLookaheadDistance(route);
     const navmesh::WorldPoint lookahead = LookaheadOnCorridor(plan_.path, *projection, lookahead_distance);
     const double corridor_heading = NaviMath::CalcTargetRotation(position.x, position.y, lookahead.x, lookahead.y);
 
@@ -439,7 +444,16 @@ NavRunTickResult NavRunController::tick(
     const double character_arc = CorridorArcLengthTo(plan_.path, plan_.corridor_arc_prefix, *projection);
     const size_t corridor_passed =
         CountCorridorPassedRunWaypoints(*session, plan_.path, plan_.corridor_arc_prefix, anchor_index, character_arc);
-    if (route.startup_motion_confirmed) {
+    const bool clamped_without_passage =
+        projection->before_window || (projection->after_window && projection->cross_track > kNavRunCrossTrackWarnM);
+    if (clamped_without_passage) {
+        if (corridor_passed > 0) {
+            LogDebug << "Corridor passed advance suppressed; corridor projection clamped outside the window." << VAR(corridor_passed)
+                     << VAR(session->current_node_idx()) << VAR(projection->before_window) << VAR(projection->after_window)
+                     << VAR(projection->cross_track);
+        }
+    }
+    else if (route.startup_motion_confirmed) {
         result.passed_run_waypoints = corridor_passed;
     }
     else if (corridor_passed > 0) {

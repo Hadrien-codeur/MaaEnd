@@ -64,10 +64,10 @@
                 {
                     "map_name": "map02_lv004",
                     "target": [
-                        630.6,
+                        629.6,
                         345.6,
-                        9.6,
-                        9.2
+                        10.2,
+                        9.3
                     ]
                 }
             ]
@@ -79,26 +79,12 @@
     "AutoCollectRoute12GotoFindLine1": {
         "desc": "前往中红柱状菌采集点",
         "action": "Custom",
-        "custom_action": "MapTrackerMove",
+        "custom_action": "MapTrackerGoal",
         "custom_action_param": {
             "map_name": "map02_lv004",
-            "path": [
-                [
-                    607.5,
-                    326.3
-                ],
-                [
-                    635.0,
-                    323.8
-                ],
-                [
-                    641.0,
-                    342.1
-                ],
-                [
-                    633.8,
-                    348.8
-                ]
+            "target": [
+                633.8,
+                348.8
             ]
         }
     },
@@ -109,10 +95,6 @@
         "custom_action_param": {
             "map_name": "map02_lv004",
             "path": [
-                [
-                    632.5,
-                    348.3
-                ],
                 [
                     623.8,
                     352.6
@@ -134,10 +116,6 @@
             "map_name": "map02_lv004",
             "path": [
                 [
-                    632.5,
-                    348.3
-                ],
-                [
                     626.3,
                     353.8
                 ]
@@ -158,10 +136,6 @@
             "map_name": "map02_lv004",
             "path": [
                 [
-                    632.5,
-                    348.3
-                ],
-                [
                     628.7,
                     355.1
                 ]
@@ -181,10 +155,6 @@
         "custom_action_param": {
             "map_name": "map02_lv004",
             "path": [
-                [
-                    632.5,
-                    348.3
-                ],
                 [
                     628.7,
                     355.1
@@ -222,10 +192,6 @@
             "map_name": "map02_lv004",
             "path": [
                 [
-                    632.5,
-                    348.3
-                ],
-                [
                     630.0,
                     355.1
                 ]
@@ -261,10 +227,6 @@
         "custom_action_param": {
             "map_name": "map02_lv004",
             "path": [
-                [
-                    632.5,
-                    348.3
-                ],
                 [
                     628.7,
                     357.6
@@ -302,10 +264,6 @@
             "map_name": "map02_lv004",
             "path": [
                 [
-                    623.7,
-                    351.3
-                ],
-                [
                     631.2,
                     353.9
                 ]
@@ -333,10 +291,6 @@
         "custom_action_param": {
             "map_name": "map02_lv004",
             "path": [
-                [
-                    623.7,
-                    351.3
-                ],
                 [
                     632.5,
                     353.8
