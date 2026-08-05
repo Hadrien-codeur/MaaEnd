@@ -18,8 +18,6 @@ const (
 	seizeDeliveryJobsBlueTaskLocationTemplate    = "image/SeizeDeliveryJobs/BlueTaskLocation.png"
 	seizeDeliveryJobsBlueTaskLocationTemplateAlt = "image/SeizeDeliveryJobs/BlueTaskLocation2.png"
 
-	// seizeDeliveryJobsWulingCityMap is the map where the pre-recorded zipline delivery routes apply.
-	seizeDeliveryJobsWulingCityMap = "map02_lv002"
 	// seizeDeliveryJobsDeliverRoutePrefix is the pipeline node prefix for the pre-recorded delivery routes.
 	seizeDeliveryJobsDeliverRoutePrefix = "SeizeDeliveryJobsDeliverRoute"
 	// seizeDeliveryJobsEndpointMatchRadius is the max distance (in map units) within which a blue marker
@@ -27,20 +25,28 @@ const (
 	seizeDeliveryJobsEndpointMatchRadius = 30.0
 )
 
-// seizeDeliveryJobsWulingEndpoint names a fixed delivery endpoint in Wuling City. The names match the
-// endpoint nodes in SeizeDeliveryJobsEndpointFilter.json and the route nodes in SeizeDeliveryJobsDeliverRoutes.json.
-type seizeDeliveryJobsWulingEndpoint struct {
+// seizeDeliveryJobsEndpoint names a fixed delivery endpoint. The names match the endpoint nodes in
+// SeizeDeliveryJobsEndpointFilter.json and the route nodes in SeizeDeliveryJobsDeliverRoutes.json.
+// ⚠️ Endpoint names must be unique across ALL maps: runDeliverRoute builds the pipeline node name as
+// seizeDeliveryJobsDeliverRoutePrefix + Name, so a duplicate name would run another map's route.
+type seizeDeliveryJobsEndpoint struct {
 	Name   string
 	Target [2]float64
 }
 
-// seizeDeliveryJobsWulingEndpoints holds the four Wuling City delivery points and their world coordinates.
-// 坐标 = 各路线 WalkToNpc 段最后一个 MapTracker 游戏坐标（与 big-map 蓝标匹配同系，map02_lv002）。
-var seizeDeliveryJobsWulingEndpoints = []seizeDeliveryJobsWulingEndpoint{
-	{Name: "Owl", Target: [2]float64{229.1, 604.6}},                       // 猫头鹰（右下）
-	{Name: "MaterialResearchInstitute", Target: [2]float64{178.4, 666.5}}, // 材料研究所（左下）
-	{Name: "Observatory", Target: [2]float64{617.1, 358.0}},               // 观测站（右上）
-	{Name: "TechProductionOffice", Target: [2]float64{255.2, 197.4}},      // 技术生产办公室（左上）
+// seizeDeliveryJobsEndpoints holds the fixed delivery points of each supported map, keyed by map name.
+// 坐标 = 各路线 WalkToNpc 段最后一个 MapTracker 游戏坐标（与 big-map 蓝标匹配同系）。
+var seizeDeliveryJobsEndpoints = map[string][]seizeDeliveryJobsEndpoint{
+	// 武陵城
+	"map02_lv002": {
+		{Name: "Owl", Target: [2]float64{229.1, 604.6}},                       // 猫头鹰（右下）
+		{Name: "MaterialResearchInstitute", Target: [2]float64{178.4, 666.5}}, // 材料研究所（左下）
+		{Name: "Observatory", Target: [2]float64{617.1, 358.0}},               // 观测站（右上）
+		{Name: "TechProductionOffice", Target: [2]float64{255.2, 197.4}},      // 技术生产办公室（左上）
+	},
+	// 试验园区：路线待录制，坐标填入后即生效（名称沿用 SeizeDeliveryJobsEndpointFilter.json 中的
+	// No1TypeCAnchorArea / No3TypeCAnchorArea / JingweiFieldArea，与武陵城不重名）。
+	"map02_lv005": {},
 }
 
 // SeizeDeliveryJobsDepartureAction navigates from the tracked task marker back in the open world.
@@ -221,17 +227,23 @@ func (a *SeizeDeliveryJobsDepartureAction) findAndCacheTarget(ctx *maa.Context, 
 	return screenTarget, true
 }
 
-// nearestEndpoint returns the name of the fixed Wuling City delivery endpoint closest to the given
-// world target, provided it lies within seizeDeliveryJobsEndpointMatchRadius. It returns an empty
-// string for non-Wuling maps or when no endpoint is close enough (caller falls back to NavMesh).
+// nearestEndpoint returns the name of the fixed delivery endpoint of the given map closest to the
+// given world target, provided it lies within seizeDeliveryJobsEndpointMatchRadius. It returns an
+// empty string for maps without pre-recorded routes or when no endpoint is close enough (caller
+// falls back to NavMesh).
 func (a *SeizeDeliveryJobsDepartureAction) nearestEndpoint(mapName string, target [2]float64) string {
-	if mapName != seizeDeliveryJobsWulingCityMap {
+	endpoints := seizeDeliveryJobsEndpoints[mapName]
+	if len(endpoints) == 0 {
+		log.Warn().
+			Str("component", seizeDeliveryJobsDepartureComponent).
+			Str("map", mapName).
+			Msg("no pre-recorded delivery route for this map, falling back to NavMesh")
 		return ""
 	}
 
 	bestName := ""
 	bestDist := math.MaxFloat64
-	for _, ep := range seizeDeliveryJobsWulingEndpoints {
+	for _, ep := range endpoints {
 		dx := ep.Target[0] - target[0]
 		dy := ep.Target[1] - target[1]
 		dist := math.Hypot(dx, dy)
@@ -244,6 +256,7 @@ func (a *SeizeDeliveryJobsDepartureAction) nearestEndpoint(mapName string, targe
 	if bestName == "" || bestDist > seizeDeliveryJobsEndpointMatchRadius {
 		log.Warn().
 			Str("component", seizeDeliveryJobsDepartureComponent).
+			Str("map", mapName).
 			Float64("targetX", target[0]).
 			Float64("targetY", target[1]).
 			Float64("nearestDist", bestDist).
