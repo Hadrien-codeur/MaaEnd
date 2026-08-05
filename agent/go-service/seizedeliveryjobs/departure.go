@@ -44,9 +44,12 @@ var seizeDeliveryJobsEndpoints = map[string][]seizeDeliveryJobsEndpoint{
 		{Name: "Observatory", Target: [2]float64{617.1, 358.0}},               // 观测站（右上）
 		{Name: "TechProductionOffice", Target: [2]float64{255.2, 197.4}},      // 技术生产办公室（左上）
 	},
-	// 试验园区：路线待录制，坐标填入后即生效（名称沿用 SeizeDeliveryJobsEndpointFilter.json 中的
-	// No1TypeCAnchorArea / No3TypeCAnchorArea / JingweiFieldArea，与武陵城不重名）。
-	"map02_lv005": {},
+	// 试验园区（名称沿用 SeizeDeliveryJobsEndpointFilter.json，与武陵城不重名）
+	"map02_lv005": {
+		{Name: "No1TypeCAnchorArea", Target: [2]float64{126.7, 114.2}}, // 一号丙型辅桩区（左上）
+		{Name: "No3TypeCAnchorArea", Target: [2]float64{415.9, 193.8}}, // 三号丙型辅桩区（右上）
+		{Name: "JingweiFieldArea", Target: [2]float64{429.7, 294.7}},   // 经纬田区（右）
+	},
 }
 
 // SeizeDeliveryJobsDepartureAction navigates from the tracked task marker back in the open world.

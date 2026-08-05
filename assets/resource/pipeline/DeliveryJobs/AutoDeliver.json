@@ -34,8 +34,9 @@
             // 已在任务界面（刚点过「查看任务」）则点定位；未追踪时改点开始追踪
             "DeliveryJobsAutoDeliverViewDestinationMap",
             "DeliveryJobsAutoDeliverStartTrackingTask",
-            // 在本地仓储节点则先点「查看任务」
+            // 在本地仓储节点则先点「查看任务」（武陵城区 / 试验园区同页两张卡，命中哪张走哪张）
             "DeliveryJobsAutoDeliverViewJob",
+            "DeliveryJobsAutoDeliverViewJobTestArea",
             // 都不在（例如刚从大世界回来）则先回到本地仓储节点
             "[JumpBack]SceneEnterMenuRegionalDevelopmentWulingDepotNode"
         ]
@@ -60,6 +61,28 @@
         ],
         "focus": {
             "Node.Action.Starting": "打开当前送货任务详情"
+        }
+    },
+    "DeliveryJobsAutoDeliverViewJobTestArea": {
+        "desc": "在本地仓储节点，点击试验园区的「查看任务」进入送货任务详情（此节点默认关闭）",
+        "enabled": false,
+        "recognition": "And",
+        "all_of": [
+            "DeliveryJobsCheckLocalDepotNodeTestAreaText",
+            "DeliveryJobsCheckTestAreaDeliveryJob"
+        ],
+        "box_index": 1,
+        "pre_delay": 0,
+        "action": "Click",
+        "post_wait_freezes": 500, // 等待任务详情界面弹出
+        "post_delay": 0,
+        "rate_limit": 500,
+        "next": [
+            "DeliveryJobsAutoDeliverViewDestinationMap",
+            "DeliveryJobsAutoDeliverStartTrackingTask"
+        ],
+        "focus": {
+            "Node.Action.Starting": "打开当前送货任务详情（试验园区）"
         }
     },
     "DeliveryJobsAutoDeliverViewDestinationMap": {

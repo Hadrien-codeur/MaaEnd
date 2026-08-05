@@ -1,0 +1,17 @@
+{
+    "task": [
+        {
+            "name": "SeizeDeliveryJobsTestDeliverNo3TypeCAnchorArea",
+            "description": "$task.SeizeDeliveryJobsTestDeliverNo3TypeCAnchorArea.description",
+            "label": "$task.SeizeDeliveryJobsTestDeliverNo3TypeCAnchorArea.label",
+            "entry": "SeizeDeliveryJobsTestDeliverNo3TypeCAnchorAreaEntry",
+            "controller": [
+                "Win32-Front",
+                "Wlroots"
+            ],
+            "group": [
+                "regional_development"
+            ]
+        }
+    ]
+}

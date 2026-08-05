@@ -609,5 +609,469 @@
         "focus": {
             "Node.Recognition.Succeeded": "送货-技术生产办公室 步行到 NPC[NAVMESH]"
         }
+    },
+
+    // ============================================================================
+    // 试验园区（map02_lv005）送货路线
+    // 换算参数：zone_id=Wuling_Base，offset=(960.0, 1344.0)，scale=(0.985337243402, 0.984615384615)
+    // 状态(2026-08-06)：No1TypeCAnchorArea 坐标已录入，待实机验证；
+    //                   No3TypeCAnchorArea / JingweiFieldArea 待录制。
+    // ============================================================================
+
+    // ---------- 送货路线独立测试入口·一号丙型辅桩区（试验园区） ----------
+    // 流程：确保回大世界 → 传送试验园区 → 跑取货路线到取货点（真实送货起点）→ 跑本条送货路线 → 停。
+    // 全程不做取货/提交识别，仅供核对路线与人物落点。
+    "SeizeDeliveryJobsTestDeliverNo1TypeCAnchorAreaEntry": {
+        "desc": "送货路线测试入口-一号丙型辅桩区（仅调试用）",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverNo1TypeCAnchorAreaTeleport"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线测试开始（一号丙型辅桩区）**"
+        }
+    },
+    "SeizeDeliveryJobsTestDeliverNo1TypeCAnchorAreaTeleport": {
+        "desc": "送货测试-传送到试验园区综合科研区锚点",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SceneEnterWorldWulingTestArea1"
+            ]
+        },
+        "post_delay": 0,
+        "timeout": 10000,
+        "next": [
+            "SeizeDeliveryJobsTestDeliverNo1TypeCAnchorAreaRun"
+        ]
+    },
+    "SeizeDeliveryJobsTestDeliverNo1TypeCAnchorAreaRun": {
+        "desc": "送货测试-先跑取货路线到取货点，再跑一号丙型辅桩区送货路线（跑完即停）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsTestAreaWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsTestAreaZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsTestAreaWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteNo1TypeCAnchorArea"
+            ]
+        },
+        "post_delay": 0,
+        "next": [
+            // 跑完即停，供核对路线与落点
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线跑完（一号丙型辅桩区），请核对人物落点**"
+        }
+    },
+
+    // ---------- 送货路线独立测试入口·三号丙型辅桩区（试验园区） ----------
+    "SeizeDeliveryJobsTestDeliverNo3TypeCAnchorAreaEntry": {
+        "desc": "送货路线测试入口-三号丙型辅桩区（仅调试用）",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverNo3TypeCAnchorAreaTeleport"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线测试开始（三号丙型辅桩区）**"
+        }
+    },
+    "SeizeDeliveryJobsTestDeliverNo3TypeCAnchorAreaTeleport": {
+        "desc": "送货测试-传送到试验园区综合科研区锚点",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SceneEnterWorldWulingTestArea1"
+            ]
+        },
+        "post_delay": 0,
+        "timeout": 10000,
+        "next": [
+            "SeizeDeliveryJobsTestDeliverNo3TypeCAnchorAreaRun"
+        ]
+    },
+    "SeizeDeliveryJobsTestDeliverNo3TypeCAnchorAreaRun": {
+        "desc": "送货测试-先跑取货路线到取货点，再跑三号丙型辅桩区送货路线（跑完即停）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsTestAreaWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsTestAreaZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsTestAreaWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteNo3TypeCAnchorArea"
+            ]
+        },
+        "post_delay": 0,
+        "next": [
+            // 跑完即停，供核对路线与落点
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线跑完（三号丙型辅桩区），请核对人物落点**"
+        }
+    },
+
+    // ---------- 送货路线独立测试入口·经纬田区（试验园区） ----------
+    "SeizeDeliveryJobsTestDeliverJingweiFieldAreaEntry": {
+        "desc": "送货路线测试入口-经纬田区（仅调试用）",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverJingweiFieldAreaTeleport"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线测试开始（经纬田区）**"
+        }
+    },
+    "SeizeDeliveryJobsTestDeliverJingweiFieldAreaTeleport": {
+        "desc": "送货测试-传送到试验园区综合科研区锚点",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SceneEnterWorldWulingTestArea1"
+            ]
+        },
+        "post_delay": 0,
+        "timeout": 10000,
+        "next": [
+            "SeizeDeliveryJobsTestDeliverJingweiFieldAreaRun"
+        ]
+    },
+    "SeizeDeliveryJobsTestDeliverJingweiFieldAreaRun": {
+        "desc": "送货测试-先跑取货路线到取货点，再跑经纬田区送货路线（跑完即停）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsTestAreaWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsTestAreaZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsTestAreaWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteJingweiFieldArea"
+            ]
+        },
+        "post_delay": 0,
+        "next": [
+            // 跑完即停，供核对路线与落点
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**送货路线跑完（经纬田区），请核对人物落点**"
+        }
+    },
+
+    // ---------- 起点滑索步行（试验园区各路线共用） ----------
+    // 起点滑索架与取货段是同一架（取货段下索点 [298.2,408.2] = 本段上索点），故本段从取货点走回该架。
+    "SeizeDeliveryJobsDeliverTestAreaWalkToZipline": {
+        "desc": "送货-试验园区 步行到起点滑索架前（各路线共用）【NAVMESH A*(base px) + HEADING 正对滑索架】",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map02_lv005",
+            "path": [
+                // 取货点站位（MapTracker [297.2,413.3] 换算）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1252.84,
+                        1750.94
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 上索站位（MapTracker [298.2,408.2] 换算，即取货段的下索点，距取货点 5.20m）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1253.83,
+                        1745.92
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 正对起点滑索架（MapTracker [298.9,407.4] 换算，站位→滑索架 约 41.2°/1.06m）
+                // ⚠️ 距站位仅 1.06m，低于规范 §3.2 建议的 2m。已测通的材料研究所路线同为 1.0m 且稳定，
+                //    故先按现值跑。若上索失败/朝向乱摆，把 target 换成同方向更远处的点（≥2m）。
+                {
+                    "action": "HEADING",
+                    "target": [
+                        1254.52,
+                        1745.13
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-试验园区 步行到起点滑索[NAVMESH]"
+        }
+    },
+
+    // ========== 终点 5：No1TypeCAnchorArea（一号丙型辅桩区，左上） ==========
+    "SeizeDeliveryJobsDeliverRouteNo1TypeCAnchorArea": {
+        "desc": "送货路线-一号丙型辅桩区（左上）：步行→上索→滑行→下索→步行到 NPC",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsDeliverTestAreaWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteNo1TypeCAnchorAreaZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteNo1TypeCAnchorAreaWalkToNpc"
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-前往一号丙型辅桩区"
+        }
+    },
+    // 单段连滑，全程不落地：朝首架 [298.9,407.4] 发射，按 5 次 E 接力，
+    // 依次经过 [250.1,348.7] → [235,273.1] → [165.5,226.5] → [126,192.7]，落在 [131.7,120.2] 终点架。
+    // 逐段跨度 76.3 / 77.1 / 83.7 / 52.0 / 72.7 m，共 6 架 → chain_max_press = 6 − 1 = 5。
+    "SeizeDeliveryJobsDeliverRouteNo1TypeCAnchorAreaZipline": {
+        "desc": "送货-一号丙型辅桩区 连滑（发射朝 [298.9,407.4]，按5次E接力，落 [131.7,120.2] 终点架）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {
+            "map_name": "map02_lv005",
+            "target": [
+                298.9,
+                407.4
+            ],
+            "chain_max_press": 5,
+            "timeout": 60000
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteNo1TypeCAnchorAreaWalkToNpc": {
+        "desc": "送货-一号丙型辅桩区 下索后步行到送货 NPC【NAVMESH A*(base px) + HEADING 正对 NPC】",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map02_lv005",
+            "path": [
+                // 下索落点（MapTracker [131.7,120.2] 换算，即终点滑索架处）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1089.77,
+                        1462.35
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 送货点站位（MapTracker [126.7,114.2] 换算，距下索点 7.81m）
+                // ⚠️ 此点同时是 departure.go 的终点匹配坐标（匹配半径 30）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1084.84,
+                        1456.44
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 正对 NPC（MapTracker [125.9,113.3] 换算，站位→NPC 约 318.4°/1.20m）
+                // ⚠️ 距站位仅 1.20m，低于规范 §3.2 建议的 2m。已测通的材料研究所路线同为 1.0m 且稳定，
+                //    故先按现值跑。若交互按钮不出/朝向乱摆，把 target 换成同方向更远处的点（≥2m）。
+                {
+                    "action": "HEADING",
+                    "target": [
+                        1084.05,
+                        1455.56
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-一号丙型辅桩区 步行到 NPC[NAVMESH]"
+        }
+    },
+
+    // ========== 终点 6：No3TypeCAnchorArea（三号丙型辅桩区，右上） ==========
+    "SeizeDeliveryJobsDeliverRouteNo3TypeCAnchorArea": {
+        "desc": "送货路线-三号丙型辅桩区（右上）：步行→上索→滑行→下索→步行到 NPC",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsDeliverTestAreaWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteNo3TypeCAnchorAreaZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteNo3TypeCAnchorAreaWalkToNpc"
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-前往三号丙型辅桩区"
+        }
+    },
+    // 单段连滑，全程不落地：朝首架 [298.9,407.4] 发射，按 5 次 E 接力，
+    // 依次经过 [335.9,407.9] → [363.3,333.4] → [408.9,289.7] → [417.2,276.9]，落在 [416.1,196.1] 终点架。
+    // 逐段跨度 37.0 / 79.4 / 63.2 / 15.3 / 80.8 m，共 6 架 → chain_max_press = 6 − 1 = 5。
+    // ⚠️ 第 4→5 架仅 15.26 m，明显短于其余各段；若实机落错架，先核对架数是否为 6。
+    "SeizeDeliveryJobsDeliverRouteNo3TypeCAnchorAreaZipline": {
+        "desc": "送货-三号丙型辅桩区 连滑（发射朝 [298.9,407.4]，按5次E接力，落 [416.1,196.1] 终点架）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {
+            "map_name": "map02_lv005",
+            "target": [
+                298.9,
+                407.4
+            ],
+            "chain_max_press": 5,
+            "timeout": 60000
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteNo3TypeCAnchorAreaWalkToNpc": {
+        "desc": "送货-三号丙型辅桩区 下索后步行到送货 NPC【NAVMESH A*(base px)】",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map02_lv005",
+            "path": [
+                // 下索落点（MapTracker [416.6,195] 换算，距终点滑索架仅 1.21m，即下索就落在 NPC 旁）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1370.49,
+                        1536.0
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 送货点站位（MapTracker [415.9,193.8] 换算，距下索点 1.39m）
+                // ⚠️ 此点同时是 departure.go 的终点匹配坐标（匹配半径 30）
+                // TODO(博士): 录制时 NPC 朝向点与本站位坐标完全相同（相距 0m），算不出角度，故暂不加 HEADING。
+                //   与武陵城取货段做法一致（那条也无 HEADING 且已测通）。若交互按钮不出，补录 NPC 本体坐标后在此追加：
+                //   { "action": "HEADING", "target": [NPC 本体 base px x, y], "zone_id": "Wuling_Base" }
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1369.8,
+                        1534.82
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-三号丙型辅桩区 步行到 NPC[NAVMESH]"
+        }
+    },
+
+    // ========== 终点 7：JingweiFieldArea（经纬田区，右） ==========
+    "SeizeDeliveryJobsDeliverRouteJingweiFieldArea": {
+        "desc": "送货路线-经纬田区（右）：步行→上索→滑行→下索→步行到 NPC",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsDeliverTestAreaWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteJingweiFieldAreaZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteJingweiFieldAreaWalkToNpc"
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-前往经纬田区"
+        }
+    },
+    // 单段连滑，全程不落地：朝首架 [298.9,407.4] 发射，按 3 次 E 接力，
+    // 依次经过 [335.9,407.9] → [363.3,333.4]，落在 [408.9,289.7] 终点架。
+    // 逐段跨度 37.0 / 79.4 / 63.2 m，共 4 架 → chain_max_press = 4 − 1 = 3。
+    // 本条与三号丙型辅桩区共用同一主干的前 4 架，只是在此提前下索。
+    "SeizeDeliveryJobsDeliverRouteJingweiFieldAreaZipline": {
+        "desc": "送货-经纬田区 连滑（发射朝 [298.9,407.4]，按3次E接力，落 [408.9,289.7] 终点架）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {
+            "map_name": "map02_lv005",
+            "target": [
+                298.9,
+                407.4
+            ],
+            "chain_max_press": 3,
+            "timeout": 60000
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteJingweiFieldAreaWalkToNpc": {
+        "desc": "送货-经纬田区 下索后步行到送货 NPC【NAVMESH A*(base px)】",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map02_lv005",
+            "path": [
+                // 下索落点（MapTracker [412.8,290.9] 换算）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1366.75,
+                        1630.42
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 步行途经点 1（MapTracker [412.3,292.5] 换算，距下索点 1.68m）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1366.25,
+                        1632.0
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 步行途经点 2（MapTracker [412.6,293.9] 换算，距上一点 1.43m）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1366.55,
+                        1633.38
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 送货点站位（MapTracker [429.7,294.7] 换算，距上一点 17.12m）
+                // ⚠️ 此点同时是 departure.go 的终点匹配坐标（匹配半径 30）
+                // TODO(博士): 录制时 NPC 朝向点与本站位坐标完全相同（相距 0m），算不出角度，故暂不加 HEADING。
+                //   与武陵城取货段做法一致（那条也无 HEADING 且已测通）。若交互按钮不出，补录 NPC 本体坐标后在此追加：
+                //   { "action": "HEADING", "target": [NPC 本体 base px x, y], "zone_id": "Wuling_Base" }
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1383.4,
+                        1634.17
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "送货-经纬田区 步行到 NPC[NAVMESH]"
+        }
     }
 }

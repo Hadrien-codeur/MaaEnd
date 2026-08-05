@@ -364,19 +364,50 @@
         }
     },
     // ===== 试验园区部分 =====
-    "SeizeDeliveryJobsWalkToDepotNodeTestArea": {
-        "desc": "走到试验园区仓储节点",
+    "SeizeDeliveryJobsTestPickupTestAreaEntry": {
+        "desc": "试验园区取货段独立测试入口（仅调试用）：确保回大世界→传送→滑索路线→接货",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTeleportTestArea"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**试验园区取货段独立测试开始**"
+        }
+    },
+    "SeizeDeliveryJobsTeleportTestArea": {
+        "desc": "传送到试验园区综合科研区锚点",
         "pre_delay": 0,
         "action": "Custom",
-        "custom_action": "MapTrackerGoal",
+        "custom_action": "SubTask",
         "custom_action_param": {
-            "map_name": "map02_lv005",
-            "target": [
-                297.5,
-                413.3
+            "sub": [
+                "SceneEnterWorldWulingTestArea1"
             ]
         },
-        "post_delay": 2000, // 等待玩家止步
+        "post_delay": 0,
+        "timeout": 10000,
+        "next": [
+            "SeizeDeliveryJobsSuccessTeleportDone",
+            "SeizeDeliveryJobsWalkToDepotNodeTestArea"
+        ]
+    },
+    "SeizeDeliveryJobsWalkToDepotNodeTestArea": {
+        "desc": "走到试验园区仓储节点（滑索路线：步行→上索→滑行→下索→步行）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsTestAreaWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsTestAreaZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsTestAreaWalkFromZipline"
+            ]
+        },
+        "post_delay": 500, // 等待弹出接取货物按钮
         "next": [
             "SeizeDeliveryJobsSuccessWalkDone",
             "SeizeDeliveryJobsFetchGoods",
@@ -385,6 +416,102 @@
         ],
         "focus": {
             "Node.Recognition.Succeeded": "正在走到试验园区仓储节点"
+        }
+    },
+    "SeizeDeliveryJobsTestAreaWalkToZipline": {
+        "desc": "试验园区取货-滑索路线 步骤1：从传送落点步行到起点滑索架前【NAVMESH A*(base px) + HEADING 定朝向】",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map02_lv005",
+            "path": [
+                // 锚点落点（MapTracker [336.3,414.9] 换算）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1291.37,
+                        1752.52
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 滑索架前站位（MapTracker [335.8,408.9] 换算，距落点 6.02m）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1290.88,
+                        1746.61
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 正对起点滑索架（MapTracker [335.9,407.7] 换算，站位→滑索架 约 4.8°/1.20m）
+                // ⚠️ 距站位仅 1.20m，低于规范 §3.2 建议的 2m。已测通的材料研究所路线同为 1.0m 且稳定，
+                //    故先按现值跑。若上索失败/朝向乱摆，把 target 换成同方向更远处的点（≥2m）。
+                {
+                    "action": "HEADING",
+                    "target": [
+                        1290.97,
+                        1745.43
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "试验园区取货-步行到起点滑索[NAVMESH]"
+        }
+    },
+    "SeizeDeliveryJobsTestAreaZipline": {
+        "desc": "试验园区取货-滑索路线 步骤3：滑行到第二架滑索架（单段，跨度 38.11m）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {
+            "map_name": "map02_lv005",
+            "target": [
+                297.8,
+                406.9
+            ],
+            "timeout": 30000
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "试验园区取货-滑索滑行中"
+        }
+    },
+    "SeizeDeliveryJobsTestAreaWalkFromZipline": {
+        "desc": "试验园区取货-滑索路线 步骤5：从落点步行到取货点【NAVMESH A*(base px) + HEADING 正对仓储节点】",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map02_lv005",
+            "path": [
+                // 下索落点（MapTracker [298.2,408.2] 换算）
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1253.83,
+                        1745.92
+                    ],
+                    "zone_id": "Wuling_Base"
+                },
+                // 取货点站位（MapTracker [297.2,413.3] 换算，距下索点 5.20m）
+                // 与上游 MapTrackerGoal 走到的取货点现值 [297.5,413.3] 仅差 0.30m，故作为站位而非朝向目标。
+                // 与武陵城取货段一致，暂不加 HEADING（那条已测通且无 HEADING）。
+                // TODO(博士): 若接货按钮偶发不出，在此追加：
+                // { "action": "HEADING", "target": [仓储节点本体 base px x, y], "zone_id": "Wuling_Base" }
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        1252.84,
+                        1750.94
+                    ],
+                    "zone_id": "Wuling_Base"
+                }
+            ]
+        },
+        "focus": {
+            "Node.Recognition.Succeeded": "试验园区取货-步行到仓储节点[NAVMESH]"
         }
     },
     "SeizeDeliveryJobsWalkToDepotNodeTestAreaBackward": {

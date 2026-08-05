@@ -1,0 +1,17 @@
+{
+    "task": [
+        {
+            "name": "SeizeDeliveryJobsTestDeliverJingweiFieldArea",
+            "description": "$task.SeizeDeliveryJobsTestDeliverJingweiFieldArea.description",
+            "label": "$task.SeizeDeliveryJobsTestDeliverJingweiFieldArea.label",
+            "entry": "SeizeDeliveryJobsTestDeliverJingweiFieldAreaEntry",
+            "controller": [
+                "Win32-Front",
+                "Wlroots"
+            ],
+            "group": [
+                "regional_development"
+            ]
+        }
+    ]
+}
