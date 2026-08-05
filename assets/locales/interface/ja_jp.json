@@ -478,6 +478,9 @@
     "task.DeliveryJobs.description": "配達任務を受注・転送します。\n有効にする地域を選択してください：",
     "task.DeliveryJobs.PackCargoOnly.label": "貨物パッキングのみ",
     "task.DeliveryJobs.PackCargoOnly.description": "有効にすると、貨物の自動パッキングのみを行い、依頼の受注は行いません。",
+    "task.DeliveryJobs.AutoDeliver.label": "自動配達",
+    "task.DeliveryJobs.AutoDeliver.description": "有効にすると、依頼を他人に委託せず、事前に記録した固定ジップライン経路をたどって自分で配達・提出します。この機能は**テスト段階**です。いつでもタスクを停止できるよう、ソフトの設定で**グローバルホットキー**を有効にしてください。\n\n⚠️ **現在は武陵城のみ対応**：他の地域（四号谷地、実験区域）の依頼は**タスクを停止**して通知します。「武陵」→「武陵城内」のみを選択することをおすすめします。\n⚠️ 「依頼受注のみ」「貨物パッキングのみ」とは併用できません。",
+    "task.DeliveryJobs.AutoDeliver.unsupportedRegion": "<p style=\"color: #f44\">この地域はまだ自動配達に対応していないため、タスクを停止しました。現在は武陵城のみ対応しています。</p>",
     "task.ClaimSimulationRewards.label": "📦模擬空間報酬受取",
     "task.ClaimSimulationRewards.description": "模擬空間内の報酬を自動で受け取ります。",
     "task.ClaimSimulationRewards.error_not_found": "模擬空間が見つかりません。手動で切り替えてください。",
@@ -1332,4 +1335,3 @@
     "task.ProtocolSpace.focus.supply_plan.override_started.WEAPON_EXP": "武器経験 のプロトコル空間目標へ切り替え、周回を開始します",
     "task.ProtocolSpace.focus.supply_plan.reward_item_met.WEAPON_EXP": "武器経験 が目標達成のため、現在のプロトコル空間周回を終了します"
 }
-

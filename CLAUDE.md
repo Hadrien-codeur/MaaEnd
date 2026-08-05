@@ -452,216 +452,98 @@ python tools/build_and_install.py
 
 ## 18. 当前进度存档（接力时先读此节，确认后删除）
 
-### 18.-2 最新状态（2026-08-05 家里电脑，读这节就够）
+### 18.0 最新状态（2026-08-06 家里电脑）
 
-**本轮做完：合并上游 82 commit + 离线解算试验园区坐标换算 + 二进制更新到 beta.4。三项都已完成，剩下就是实机录路线。**
+**本轮做完两件，均已实测通过：转交委托「自动送货」开关 + `departure.go` 多地图改造。**
 
-已 push 到 `myfork/feature/zipline-fast`（`96d5f4d7`）。
+#### 18.0.1 ✅ 转交委托「自动送货」（新功能，已实测通过）
 
-#### 18.-2.1 ✅ 环境已就绪，可以直接开录
+「🚚转交委托」任务新增 `DeliveryJobsAutoDeliver` 开关（默认关）。开启后不把委托转交给他人，而是自己走已录好的固定滑索路线送达并提交。**仅支持武陵城**，其他地区停止任务并提示（博士明确选择，不是遗漏）。
 
-| 项                       | 状态                                                                                         |
-| ------------------------ | -------------------------------------------------------------------------------------------- |
-| 上游合并                 | ✅ `v2` 拉到 `ca33e2d4`（82 commit），merge `f5f16b57` **零冲突**，`pnpm check` 7 控制器全绿 |
-| `cpp-algo.exe`           | ✅ 官方 **v2.23.0-beta.4**，4362752 B，28 个文件逐字节核对一致                               |
-| maafw dll ×17 + WebView2 | ✅ 同 beta.4                                                                                 |
-| `go-service.exe`         | ✅ 2026-08-05 01:13 用合并后代码自编，17820160 B                                             |
-| 备份                     | `install/_backup_pre_v2.23_20260805/`（3 agent + 17 maafw）                                  |
-| 软链接                   | ✅ 9 个完好，`resource`/`tasks`/`locales`/`data` 未被触碰                                    |
+| 文件                                                                 | 改动                                                       |
+| -------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `assets/resource/pipeline/DeliveryJobs/AutoDeliver.json`（新建）     | 8 个接线节点，全默认关闭，**无新识别节点**                 |
+| `assets/tasks/DeliveryJobs.json`                                     | 新增 `DeliveryJobsAutoDeliver` switch，24 个 override 节点  |
+| `assets/locales/interface/*.json` ×5                                 | 各 3 个键（label / description / unsupportedRegion）       |
+| `docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md` | 新增 §10「复用到其他任务」，同步 §7 的 Go 表结构           |
 
-> **关键确认**：`v2.23.0-beta.4` 的 **C++ 源码与我们合并后的代码零 diff**（`git diff v2.23.0-beta.4 origin/v2 -- agent/cpp-algo/` 为空），含全部 Recast 新算法 + #4576 箭头修复。**所以二进制与源码已完全同步，NAVMESH 实机结论可信。**
->
-> ⚠️ `install/MaaEnd.exe` 有意**未**覆盖（仍是 6-30 版）。它是 GUI 外壳，与 NAVMESH/滑索算法无关，换它可能带来配置兼容问题。zip 里的新版是 28408832 B，需要时再换。
->
-> ⚠️ 下载 zip 时 GitHub 直连和两个镜像都只有 5~10KB/s，193MB 下不动，最后是博士手动下的（放在 `d:\Github project\`，仓库上一级）。以后换二进制预留时间。
+**关键实现思路**：`SeizeDeliveryJobsPostProcessingEntry` 本身就是自包含的「拿着单 → 取货 → 送货 → 提交」子流程，不依赖抢单；`CheckCarryingGoods` 已同时处理「已带货 / 未带货」两分支。所以本次**零新流程**，只做接线。
 
-#### 18.-2.2 ✅ 试验园区坐标换算已解算（无需实机标定）
+⚠️ **踩到的坑（已解决，写进文档 §10.2）**：**自己装箱产生的委托不会出现在「运送委托列表」里**，官方 `SeizeDeliveryJobsEnterDestinationMap` 走不通、流程卡死。改从「本地仓储节点 →「查看任务」→ 任务界面 → 点定位按钮」进地图，即 `DeliveryJobsAutoDeliverEnterDestinationMap` 那组 5 个节点。
+→ 该节点在整条链里**被调用三次**（传送前、取消蓝点前、送货前），所以覆写它的 `next` 一次性全改道；替代节点**不能加 `max_hit`**。
 
-`map02_lv005` 参数已写进 `maptracker_coordinate_transforms.json`（commit `b22d2ad0`）：
+✅ **全程走 `pipeline_override` 叠加，没改任何上游节点文件**——这正是长期路线图方案 B 的做法，冲突面比取货段现有的「整节点替换」小得多。
 
-```
-zone_id=Wuling_Base   offset=(960.0, 1344.0)   scale=(0.985337243402, 0.984615384615)
-```
+⚠️ 选项带 `"controller": ["Win32-Front", "Wlroots"]`：MapTracker/MapNavigator 只在这两个控制器可用，而 `DeliveryJobs` 任务本身支持 ADB/MacOS/PlayCover，故需选项级限制。
 
-原计划要博士实机站 3 个点读两套坐标，改用**离线图像匹配**算出来了。方法、验证过程、精确有理数依据全部写在清单 §2，以后加新图照抄。
+#### 18.0.2 ✅ `departure.go` 多地图改造（已完成，go-service 已重编）
 
-顺带定掉两件此前悬着的事：
+endpoints 从平铺切片改成 `map[地图名][]seizeDeliveryJobsEndpoint`；删掉写死的 `if mapName != "map02_lv002"` 守卫，改为按地图查表；`map02_lv005` 留空 slice 等坐标。武陵城 4 个点坐标与匹配半径 30 一字未动。
 
-- **`zone_id` = `Wuling_Base`**（和武陵城同 zone）
-- **base.nav 完整覆盖试验园区** —— 解压 `base.nav.gz` 查 zone 列表，有 `Wuling_L5_314/316/318/319/321/322/324/326`。原清单 §7「读不出位置可能要换方案」的风险**不存在**。
+`go-service.exe` 已重编（2026-08-06 00:03，17824768 B）。`cpp-algo.exe` 未动（仍 v2.23.0-beta.4）。9 个软链接完好。
 
-#### 18.-2.3 ⚠️ 两个已知坑（录制前必读，都已写进清单）
+#### 18.0.3 环境状态
 
-**坑 1：lv005 的 tier（高架层）换算算不出来。**
-我把 base 层那套离线方法套到 8 张 tier 图上，**不成立**——tier 映射目标是各自独立的小图而非 Base.png 裁剪。拿已知 lv002/lv003 tier 条目验证时，拟合虽自洽（残差 0.1px）但与真值差很远（`tier_298` 拟合 `scale_y=0.984` vs 真值 `1.072`，offset 差 40px），另有 2 个条目特征点不足直接失败。**没有硬凑数写进表**。
-→ 录制时博士**标一下哪些点在高架/桥面上**，届时人工确定 `parent_map_name` + `source_bbox`。已知 `SceneEnterWorldWulingTestArea2` 锚点 `[391.6, 362.5]` 就在 tier 322 上。**地面点不受影响，放心录。**
-
-**坑 2：`departure.go` 只认武陵城，不是「加 3 行坐标」就完事。**
-`nearestEndpoint` 首行 `if mapName != "map02_lv002" { return "" }`（[:228](agent/go-service/seizedeliveryjobs/departure.go#L228)），试验园区路线录好了**也匹配不上**。三处要改：单地图常量 `seizeDeliveryJobsWulingCityMap`（[:22](agent/go-service/seizedeliveryjobs/departure.go#L22)）、该守卫、平铺的 endpoints 表改成按地图分组。
-→ 好消息：`map_name_regex` 已是 `^(map02_lv002|map02_lv005)$`，**pipeline 侧不用动**。
-→ ⚠️ `runDeliverRoute` 用 `前缀+名字` 拼节点名，所以**试验园区 3 条路线的英文名不能和武陵城的 `Owl`/`MaterialResearchInstitute`/`Observatory`/`TechProductionOffice` 重复**，否则串线。
-
-#### 18.-2.4 本轮值得注意的上游改动
-
-| commit                                              | 内容                             | 对我们的影响                                                                                                                                                                               |
-| --------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [#4760](https://github.com/MaaEnd/MaaEnd/pull/4760) | 调整试验园区仓储节点寻路终点     | 取货点 `[297.5,414.3]` → **`[297.5,413.3]`**，正是我们要录的图，清单已更正                                                                                                                 |
-| [#4719](https://github.com/MaaEnd/MaaEnd/pull/4719) | 修大地图缩放后送货定位标点击错位 | 动了 `bigmap/find_image.go`（我们 Go 分流依赖），缩放后重新截图；另加了「自定义标记面板」恢复分支挂在 `SeizeDeliveryJobsClickTracking.next` 首位，**与我们的分流不冲突**（分流发生在其后） |
-
-#### 18.0 家里电脑更早一轮状态（2026-07-30，历史记录）
-
-**本轮做完：合并上游 25 个 commit + 定位取货步行段抖动根因 + 出试验园区录制清单。**
-
-#### 18.0.-2 ⚠️ 开工先做的三件（前两件已完成）
-
-1. ~~**更新 `cpp-algo.exe`**~~ ✅ 2026-08-05 已换 beta.4，见 18.-2.1。
-2. **完整重启 MaaEnd.exe**，跑完整「全自动送货」档位复测取货段（**不要**用取货段独立测试入口，见下）。← **仍待做**
-3. **实机确认试验园区地图**（博士说要再看一下），然后按清单录坐标。← **仍待做**
-
-#### 18.0.-1 取货步行段抖动：根因已定位（2026-07-30）
-
-博士反馈「下滑索到取货点的步行段左右甩视角、龟速、agent 卡死」。**已查明，不是我们路线坐标的问题。**
-
-**根因**：小地图上的**蓝色任务追踪光环把人物箭头盖住了**，导致 `MapLocator` 算出的朝向是白噪声。
-
-实测那两张 on_error 截图的小地图像素（ROI `49,51,118,120`，采样中心 `(59,60)`，半径 12px）：
-
-|                     | 22:05 截图 | 22:15 截图 |
-| ------------------- | ---------- | ---------- |
-| 12px 圈内白色像素   | 26         | 12         |
-| 最大白色连通块      | 20px       | 7px        |
-| 12px 圈内蓝青色像素 | **79**     | **74**     |
-| 最近蓝像素到正中心  | 2.2px      | **1.0px**  |
-| 正中心 5×5 内蓝像素 | 3/25       | **11/25**  |
-
-白色像素太少，凑不出完整箭头三角形 → `minEnclosingTriangle` 拿 7~20px 碎片拟合 → 角度随机。
-
-**传导链**（三个症状同一个因）：
-
-- 甩视角 → `heading_error` 每帧翻符号，`SendRelativeMoveNative` 交替发 `dx=±476` 满舵反打
-- 龟速 → 冲刺闸门 `heading_aligned_for_sprint` 要求误差 <25°，噪声下永远 false，全程只能走不能跑
-- 卡死 → `SteeringController` 对角速度 >60°/s 的帧直接丢（[steering_controller.cpp:31](agent/cpp-algo/source/MapNavigator/steering_controller.cpp#L31)），**27 帧丢 24 帧**，闭环瘫痪 → 撑满 `kDynamicRecoveryTotalTimeoutMs=30000` 后 `dynamic_recovery_timeout` 硬失败。失败那次 `WalkFromZipline` 跑了 **46 秒**（22:04:42→22:05:28），成功那次只要 **5.9 秒**。期间日志暴涨到 **113MB**（11.3 万行 AgentClient TRC），这就是「agent 过载」的来源。
-
-> 📌 我一开始误判成「好友玩家白点粘连」，博士看截图指出是蓝色任务标记——**博士判断正确**，像素统计证实了。
-
-**解法**：上游 #4572「取货前取消任务追踪蓝点」正好治这个，**已合入**，纯 pipeline JSON，重启即生效。#4576（箭头最尖顶点判据）是保险，治的是三角形变形，本场景帮助有限（我们连完整箭头都没有）。
-
-⚠️ **复测必须走完整「全自动送货」档位** —— `SeizeDeliveryJobsPrepareFetchGoods` 只在 `TeleWalkFetchDeliver` 档位下 `enabled: true`（[SeizeDeliveryJobs.json:307](assets/tasks/SeizeDeliveryJobs.json#L307)）。用取货段独立测试入口跑**不会**取消蓝点，测不出效果。
-
-**复测判据**：跑完看 `install/debug/cpp-algo/debug/maafw.log` 里 `glitch-suppressed` 占比。昨天 **24/27**，掉到个位数 = 治住了。若仍抖，下一步上「朝向多帧取中位数」滤波（噪声是单帧随机跳、真实转向是连续的，中位数对这种噪声几乎免费）。
-
-#### 18.0.0 上游合并（2026-07-30，commit `022f321e`）
-
-`v2` 已拉到 `0c7221a1`，合入本分支。**只冲突 1 处**：`components-guide.md`（上游接入 markdownlint 重排表格），已取上游格式 + 保留我们的文档行。`SeizeDeliveryJobsPost.json` 自动合并**语义正确**，两侧改动都在。`pnpm check` 通过。
-
-本轮关键上游改动：
-
-| commit                                              | 内容                                | 对我们的影响                                                                                       |
-| --------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------- |
-| [#4572](https://github.com/MaaEnd/MaaEnd/pull/4572) | 取货前取消任务追踪蓝点              | ✅ **治我们的抖动根因**，纯 JSON 即生效                                                            |
-| [#4576](https://github.com/MaaEnd/MaaEnd/pull/4576) | MapLocator 箭头尖端最小内角判据     | 源码已在树，**需新 exe 才生效**                                                                    |
-| [#4577](https://github.com/MaaEnd/MaaEnd/pull/4577) | 精细进近改为脉冲移动                | 重写 `MapTrackerMove` 终点收敛 + **调了走跑速度参数**，会影响我们的 Backward 重试节点和 NAVMESH 段 |
-| [#4565](https://github.com/MaaEnd/MaaEnd/pull/4565) | 补齐 tick 时延与转向残差埋点        | 复测时方便看残差                                                                                   |
-| [#4521](https://github.com/MaaEnd/MaaEnd/pull/4521) | 调 `map02_lv005` 的 MTNM（+72/−25） | 试验园区寻路网格在动，录制时留意                                                                   |
-
-**🎉 武陵城 4 条送货路线 + 取货路线全部实测通过，功能已合并进抢委托送货主流程。**
-
-本阶段目标（把送货段替换成固定滑索路线）**已达成**。技术细节已沉淀成正式文档，不再堆在这里：
-
-> **[docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md](docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md)**
-> ——录制规范全文（三明治结构、需要博士提供哪些坐标、HEADING 两条硬规矩、坐标换算、排查指南、术语对照）。
-> 新增其他地图路线时**先读它**，本节只留状态和待办。
-
-#### 18.0.1 UI 入口（2026-07-29 定稿）
-
-**抢单结束后的操作 → 全自动送货 → 「萧然Q滑索送货」**（switch，默认关）。
-
-- 就是原来那个「自定义送货」开关改名而来（选项 key 仍是 `SeizeDeliveryJobsCustomDelivery`，博士当时忘了自己开过这个功能，名字太含糊）。
-- **没有**在下拉框加第 5 项——博士明确要求替换旧开关，不新增下拉项。
-- 开启后 `custom_delivery: true` → Go 侧 `nearestEndpoint` 按 big-map 蓝标匹配预录路线；匹配不到**直接失败，不回退寻路**（[departure.go:151-167](agent/go-service/seizedeliveryjobs/departure.go#L151-L167)）。
-
-#### 18.0.2 已测通的路线一览
-
-| 路线                                      | 滑索段 target（MapTracker）               | chain_max_press | 状态 |
-| ----------------------------------------- | ----------------------------------------- | --------------- | ---- |
-| 取货（锚点→仓储节点）                     | `[682.9, 785.25]`                         | 0（单段）       | ✅   |
-| Owl（猫头鹰，右下）                       | 段A `[663.7,807.3]` + 段B `[241.3,653.8]` | 8 + 1           | ✅   |
-| MaterialResearchInstitute（材研所，左下） | `[663.7, 807.3]`                          | 9               | ✅   |
-| Observatory（观测站，右上）               | —                                         | —               | ✅   |
-| TechProductionOffice（技术办，左上）      | `[673.6, 732.4]`                          | 14              | ✅   |
-
-**Owl 最后是怎么修好的**（唯一一条卡过的）：原 HEADING target 距站位只有 **0.57m**，角度被 MapLocator 的 ~0.7m 单帧抖动完全主导（±51°），转向纯随机。重录 NPC 点拉到 **2.07m** 后即稳。索上转向 `MapTrackerToward` 由 90° 调成 **100°**。
-
-⚠️ **取货段是无条件走固定滑索路线的**（[SeizeDeliveryJobsPost.json:235-248](assets/resource/pipeline/SeizeDeliveryJobs/SeizeDeliveryJobsPost.json#L235-L248) 硬替换了上游的 `MapTrackerGoal`），不受选项控制。这是博士 2026-07-29 明确决定保留的现状，不是遗漏。
-
-#### 18.0.3 departure.go 终点坐标（当前值，无需改动）
-
-[departure.go:39-44](agent/go-service/seizedeliveryjobs/departure.go#L39-L44)，**MapTracker 游戏坐标**（与蓝标同系，不是 base px），匹配半径 30：
-
-Owl `{229.1, 604.6}`、MaterialResearchInstitute `{178.4, 666.5}`、Observatory `{617.1, 358.0}`、TechProductionOffice `{255.2, 197.4}`
-
-Owl 的 NAVMESH 末点 2026-07-29 挪了 1.3m，远在半径 30 内，故**未回填、未重编 go-service**。
+| 项               | 状态                                                     |
+| ---------------- | -------------------------------------------------------- |
+| `cpp-algo.exe`   | ✅ 官方 v2.23.0-beta.4（与合并后源码零 diff）            |
+| `go-service.exe` | ✅ 2026-08-06 00:03 自编，含本轮 departure.go 改动       |
+| 备份             | `install/_backup_pre_v2.23_20260805/`                    |
+| 静态检查         | ✅ `pnpm format` / `check`（7 控制器全绿）/ `test` 全通过 |
+| 取货段抖动       | ✅ 已复测通过（上游 #4572 + beta.4 的 #4576 治住了）     |
 
 ### 18.1 下一步
 
-> 📌 **博士 2026-08-05 定的：下次开工先录试验园区坐标**（下面第 1 项）。复测抖动排在其后。
-
-1. **【下次先做】录试验园区（`map02_lv005`）路线**——已知 **1 个取货点 + 3 条送货路线**。**先读清单**：
+1. **录试验园区（`map02_lv005`）路线** —— 1 个取货点 + 3 条送货路线。**先读清单**：
 
     > **[docs/zh_cn/developers/tasks/seize-delivery-jobs-testarea-recording-checklist.md](docs/zh_cn/developers/tasks/seize-delivery-jobs-testarea-recording-checklist.md)**
 
-    ✅ **坐标换算已解算完毕，不用实机标定**（见 18.-2.2）。**坐标全部用 MapTracker 读即可**，base px 我这边换。
-    ⚠️ 但要注意两个坑：**高架层点要标注**、**路线名不能和武陵城重复**（见 18.-2.3）。
+    ✅ 坐标换算已离线解算完毕，**不用实机标定**；坐标全部用 MapTracker 读即可，base px 由 Claude 换算。
+    ✅ `departure.go` 已支持多地图，坐标到手直接填 `seizeDeliveryJobsEndpoints["map02_lv005"]`。
+    ⚠️ **路线名用 `No1TypeCAnchorArea` / `No3TypeCAnchorArea` / `JingweiFieldArea`**（`SeizeDeliveryJobs.json` 已有这三个英文名 + zh_cn 文案），与武陵城 4 条不重名，规避 `runDeliverRoute` 前缀拼接串线。
+    ⚠️ **高架层（tier）点要标注**：lv005 的 tier 换算算不出来（tier 映射目标是独立小图而非 Base.png 裁剪），需人工确定 `parent_map_name` + `source_bbox`。已知 `SceneEnterWorldWulingTestArea2` 锚点 `[391.6,362.5]` 在 tier 322 上。**地面点不受影响。**
 
-    工具：MapTracker（`python tools/map_tracker/map_tracker_master.py` :8060）。**必须从仓库根目录启动。**
+    工具：`python tools/map_tracker/map_tracker_master.py` → http://127.0.0.1:8060/web/ （**必须从仓库根目录启动**）
+    试验园区锚点：`SceneEnterWorldWulingTestArea1`（MT `[336.3,420.1]`）、`...2`（MT `[391.6,362.5]`，⚠️ 高架层）。取货点上游现值 **`[297.5,413.3]`**。
 
-    试验园区现成传送锚点：`SceneEnterWorldWulingTestArea1`（综合科研区下，MT `[336.3,420.1]`）、`...2`（测试区，MT `[391.6,362.5]`，⚠️ 在 tier 322 高架层上）。取货点上游现值 **`[297.5,413.3]`**（#4760 改过）。
+2. **可选：把「自动送货」扩展到试验园区** —— 路线录好后，`assets/tasks/DeliveryJobs.json` 里把 `DeliveryJobsEnterTestAreaDeliveryJob` / `...Cargo` 的去向从 `Unsupported` 改成 `Entry`，并把 `map_name_regex` 放宽到 `^(map02_lv002|map02_lv005)$`。改动很小。
 
-    **要交的东西**（清单 §5 汇总）：约 22–27 个 MapTracker 坐标 + 4 个滑索架计数 + 3 个路线名 + 1 个锚点选择。清单里有空表格可以直接填。
+3. **长期：与上游的更新关系**（未定案）。取货段目前仍是**整节点替换**上游 `MapTrackerGoal`（`SeizeDeliveryJobsPost.json:235-248`），上游每次改那节点都会冲突。三种走法：
+    - **A. 保持私有分支定期合并**（现状）
+    - **B. 改成 `pipeline_override` 叠加**——本轮自动送货已验证这条路可行且更干净，建议照此重构现有 5 条路线接线
+    - **C. 向上游提 PR**——准入门槛是「取货段硬替换要先改成受选项控制」，即先做 B
+    - 💡 建议：**等试验园区路线录完、行为稳定后做 B**，否则边改路线边改架构两头乱。
 
-2. **复测取货段抖动**（二进制已就绪，见 18.-2.1）——跑完整「全自动送货」档位，验证上游 #4572 取消蓝点 + beta.4 的 #4576 箭头修复是否治住了抖动。顺便验证 Go 分流把 4 种蓝标都正确匹配到路线（端到端分流还没专门跑过）。
-    - **判据**：看 `install/debug/cpp-algo/debug/maafw.log` 里 `glitch-suppressed` 占比。7-29 是 **24/27**，掉到个位数 = 治住了。
-    - ⚠️ **必须走完整档位**，不能用取货段独立测试入口（后者不会取消蓝点，测不出效果）。
-    - 💡 这项和录坐标互不依赖，博士实机跑哪个都行。
-
-3. **可以不等博士的活：`departure.go` 多地图改造**（见 18.-2.3 坑 2）。三处改动不需要实机，等博士交坐标时正好填进去。**下次开会话可以让我先做这个，与博士录坐标并行。**
-
-4. **长期：与上游的更新关系**（2026-07-30 讨论，未定案）。现状硬伤：我们把上游 `MapTrackerGoal` **整节点替换**掉了，上游每次改那个节点都会冲突。三种走法：
-    - **A. 保持私有分支定期合并**（现状）——最省事，但路线越多人工判断成本越高
-    - **B. 改成 `pipeline_override` 叠加而非替换**——上游改动自动跟随，冲突面缩到近零，代价是重构现有 5 条路线接线
-    - **C. 向上游提 PR**——最彻底，但准入门槛是「取货段硬替换要先改成受选项控制」
-    - 💡 我的建议：**B 和 C 同方向，先做 B**（B 要做的重构正好是 C 的准入门槛）。但**等所有路线录完、行为稳定后再做**，否则边改路线边改架构两头乱。
-
-5. **本机不装 C++ 工具链**（2026-07-30 博士决定）。本机**完全没有 Visual Studio**，`CMakePresets.json` 在 Windows 上只有 MSVC 预设（[build_and_install.py:400](tools/build_and_install.py#L400)），要自编 C++ 需装 CMake(~100MB) + VS BuildTools(**~5-7GB**)。目前所有改动都在 pipeline JSON + Go，不需要 C++，靠官方 Release exe 即可。
-    - ⚠️ `python tools/build_and_install.py` **默认跳过 C++**，要加 `--cpp-algo`（加了本机也会因缺 CMake 失败，属预期）
+4. **本机不装 C++ 工具链**（2026-07-30 博士决定）。无 Visual Studio，自编 C++ 需 CMake + VS BuildTools(~5-7GB)。目前改动都在 pipeline JSON + Go，靠官方 Release exe 即可。`python tools/build_and_install.py` 默认跳过 C++。
 
 ### 18.2 ⚠️ 换电脑接力提醒（务必先确认二进制）
 
 二进制**不随 git 同步**（`.gitignore` 忽略整个 `install/`）。
 
-**家里电脑（`d:\Github project\Maaend`）当前状态：✅ 全部就绪**，见 18.-2.1 的表。
+**家里电脑（`d:\Github project\Maaend`）：✅ 全部就绪**，见 18.0.3。
 
 **换到公司电脑（`e:\TestBase2\MaaEnd`）时要做**：
 
-- ⚠️ 公司那台是 **v2.22.0** 的 `cpp-algo.exe`（8-04 换的），**落后于当前源码**（缺 Recast 大改 + #4576）。要换成 **v2.23.0-beta.4**，覆盖 `install/agent/cpp-algo.exe` + `install/agent/WebView2Loader.dll` + `install/maafw/*`（**不覆盖** resource/tasks/locales/data 软链接，也**不必**换 `MaaEnd.exe`）。
-- `go-service.exe` 含 departure.go 终点坐标，编好的 exe 不在 git，**必须自己 `python tools/build_and_install.py` 重编**。
-- 覆盖前**先关掉 MaaEnd.exe**（含 agent 子进程），否则 dll 被锁、覆盖会失败或只成功一半。用 `tasklist | grep -i "MaaEnd\|cpp-algo\|go-service"` 确认清空。
-- 覆盖后**逐字节核对**（拿 zip 里的文件算 sha256 比一遍），别只看时间戳。
-- ⚠️ 下 zip 时 GitHub 直连/镜像可能只有 5~10KB/s，193MB 基本下不动。**博士用浏览器手动下更快**。
-- 改完**完整重启 MaaEnd.exe**（pipeline JSON 改动不会热重载）。
+- ⚠️ 公司那台是 **v2.22.0** 的 `cpp-algo.exe`，**落后于当前源码**（缺 Recast 大改 + #4576）。要换成 **v2.23.0-beta.4**：覆盖 `install/agent/cpp-algo.exe` + `WebView2Loader.dll` + `install/maafw/*`（**不覆盖** resource/tasks/locales/data 软链接，也**不必**换 `MaaEnd.exe`）。
+- `go-service.exe` 不在 git，**必须自己 `python tools/build_and_install.py` 重编**。
+- 覆盖前**先关掉 MaaEnd.exe 及所有 agent 子进程**，否则 dll 被锁。用 `tasklist | grep -i "MaaEnd\|cpp-algo\|go-service"` 确认清空。
+    - ⚠️ MapTracker 工具（`map_tracker_master.py`）会 spawn `go-service.exe`，关浏览器页面**不够**，要在终端 Ctrl+C 结束 python 进程。
+- 覆盖后**逐字节核对** sha256，别只看时间戳。
+- ⚠️ 下 zip 时 GitHub 直连/镜像可能只有 5~10KB/s，193MB 基本下不动。**博士用浏览器手动下更快。**
+- 改完**完整重启 MaaEnd.exe**（pipeline JSON 不热重载）。
 
 ### 18.3 文件速查
 
 | 内容                     | 位置                                                                                                                                                                                                                    |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **录制规范（先读这个）** | [docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md](docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md)                                                                                |
+| **录制规范（先读这个）** | [docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md](docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md)（§10 讲跨任务复用）                                                             |
 | **试验园区录制清单**     | [docs/zh_cn/developers/tasks/seize-delivery-jobs-testarea-recording-checklist.md](docs/zh_cn/developers/tasks/seize-delivery-jobs-testarea-recording-checklist.md)                                                      |
-| MapNavigator 工具        | `python tools/MapNavigator/main.py` → http://127.0.0.1:8770/ （出 **base px**，`G` 复制坐标，**从仓库根目录启动**）                                                                                                     |
+| 转交委托-自动送货接线    | `assets/resource/pipeline/DeliveryJobs/AutoDeliver.json` + `assets/tasks/DeliveryJobs.json` 的 `DeliveryJobsAutoDeliver`                                                                                                |
 | 取货路线                 | `assets/resource/pipeline/SeizeDeliveryJobs/SeizeDeliveryJobsPost.json`（测试入口 `SeizeDeliveryJobsTestPickupEntry`）                                                                                                  |
 | 送货 4 条路线            | `assets/resource/pipeline/SeizeDeliveryJobs/SeizeDeliveryJobsDeliverRoutes.json`（测试入口 `SeizeDeliveryJobsTestDeliver{Observatory,Owl,MaterialResearchInstitute,TechProductionOffice}Entry`，UI 在「地区建设」分组） |
-| UI 选项                  | `assets/tasks/SeizeDeliveryJobs.json` 的 `SeizeDeliveryJobsCustomDelivery`                                                                                                                                              |
-| Go 分流                  | `agent/go-service/seizedeliveryjobs/departure.go`                                                                                                                                                                       |
-| 滑索实现                 | `agent/go-service/maptracker/default/zipline.go`（`chain_max_press` + 1s 发射延迟，博士的修复）                                                                                                                         |
+| 抢委托送货 UI 选项       | `assets/tasks/SeizeDeliveryJobs.json` 的 `SeizeDeliveryJobsCustomDelivery`（「萧然Q滑索送货」）                                                                                                                         |
+| Go 分流（按地图分组）    | `agent/go-service/seizedeliveryjobs/departure.go` 的 `seizeDeliveryJobsEndpoints`                                                                                                                                       |
+| 滑索实现                 | `agent/go-service/maptracker/default/zipline.go`（`chain_max_press` + 1s 发射延迟）                                                                                                                                     |
 | 索上转向                 | `agent/go-service/maptracker/default/toward.go`（⚠️ 会位移，见规范 §4.4）                                                                                                                                               |
 | 坐标换算参数             | `assets/resource/image/MapLocator/maptracker_coordinate_transforms.json`                                                                                                                                                |
 | MapTracker 工具          | `python tools/map_tracker/map_tracker_master.py` → http://127.0.0.1:8060/web/ （**从仓库根目录启动**）                                                                                                                  |

@@ -10,7 +10,8 @@
                 "Wuling",
                 "PackCargoSelectItem",
                 "DeliveryJobsAcceptJobOnly",
-                "DeliveryJobsPackCargoOnly"
+                "DeliveryJobsPackCargoOnly",
+                "DeliveryJobsAutoDeliver"
             ],
             "controller": [
                 "ADB",
@@ -464,6 +465,149 @@
                                 "パッキング",
                                 "화물 포장"
                             ]
+                        }
+                    }
+                },
+                {
+                    "name": "No"
+                }
+            ],
+            "default_case": "No"
+        },
+        "DeliveryJobsAutoDeliver": {
+            "type": "switch",
+            "label": "$task.DeliveryJobs.AutoDeliver.label",
+            "description": "$task.DeliveryJobs.AutoDeliver.description",
+            // 自动送货依赖 MapTracker / MapNavigator，仅这两个控制器可用
+            "controller": [
+                "Win32-Front",
+                "Wlroots"
+            ],
+            "cases": [
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        // 1) 打开本任务的自动送货接线节点
+                        "DeliveryJobsAutoDeliverEntry": {
+                            "enabled": true
+                        },
+                        "DeliveryJobsAutoDeliverDone": {
+                            "enabled": true
+                        },
+                        "DeliveryJobsAutoDeliverUnsupported": {
+                            "enabled": true
+                        },
+                        "DeliveryJobsAutoDeliverEnterDestinationMap": {
+                            "enabled": true
+                        },
+                        "DeliveryJobsAutoDeliverViewJob": {
+                            "enabled": true
+                        },
+                        "DeliveryJobsAutoDeliverViewDestinationMap": {
+                            "enabled": true
+                        },
+                        "DeliveryJobsAutoDeliverStartTrackingTask": {
+                            "enabled": true
+                        },
+                        "DeliveryJobsAutoDeliverInDestinationMap": {
+                            "enabled": true
+                        },
+                        // 1.5) 自己装箱产生的委托不会出现在「运送委托列表」中，改从本地仓储节点的
+                        //      「查看任务」进入。此处一并拦下该节点的全部三次调用
+                        //      （传送前、取消任务追踪前、送货前）。
+                        "SeizeDeliveryJobsEnterDestinationMap": {
+                            "next": [
+                                "DeliveryJobsAutoDeliverEnterDestinationMap"
+                            ]
+                        },
+                        // 2) 打开抢委托送货的整条后处理链路（取货 → 送货 → 提交）
+                        "SeizeDeliveryJobsPostProcessingEntry": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsPrepareFetchGoods": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsPostDepartureEntry": {
+                            "enabled": true
+                        },
+                        // 3) 送货段只走预录的固定滑索路线，不匹配即失败（不回退寻路）
+                        "SeizeDeliveryJobsRunDeparture": {
+                            "custom_action_param": {
+                                "map_name_regex": "^map02_lv002$", // 目前仅武陵城已录制固定路线
+                                "zipline_policy": "Lazy", // 命中固定路线时不使用此值；仅参数校验需要
+                                "is_retry": false,
+                                "custom_delivery": true
+                            }
+                        },
+                        // 4) 提交货物并关闭奖励框后，回到本任务收尾，而非跳去抢委托的抢单入口
+                        "SeizeDeliveryJobsCloseRewardDialog": {
+                            "next": [
+                                "DeliveryJobsAutoDeliverDone"
+                            ]
+                        },
+                        // 5) 装箱完回到大世界时，按地区 anchor 决定是自己送还是提示不支持
+                        "DeliveryJobsBackToDepot": {
+                            "next": [
+                                "[Anchor]DeliveryJobsAutoDeliverAfterPack",
+                                "[Anchor]DeliveryJobsGoToDepot"
+                            ]
+                        },
+                        // 6) 任务开始时手上已有单（仓储节点显示「查看任务」）：不转交，改为自己送
+                        "DeliveryJobsEnterWulingCityDeliveryJob": {
+                            "next": [
+                                "DeliveryJobsAutoDeliverEntry"
+                            ]
+                        },
+                        "DeliveryJobsEnterTestAreaDeliveryJob": {
+                            "next": [
+                                "DeliveryJobsAutoDeliverUnsupported"
+                            ]
+                        },
+                        "DeliveryJobsEnterOriginiumScienceParkDeliveryJob": {
+                            "next": [
+                                "DeliveryJobsAutoDeliverUnsupported"
+                            ]
+                        },
+                        "DeliveryJobsEnterOriginLodespringDeliveryJob": {
+                            "next": [
+                                "DeliveryJobsAutoDeliverUnsupported"
+                            ]
+                        },
+                        "DeliveryJobsEnterPowerPlateauDeliveryJob": {
+                            "next": [
+                                "DeliveryJobsAutoDeliverUnsupported"
+                            ]
+                        },
+                        // 7) 进入某地区装箱时，同时锚定装箱完成后的去向
+                        "DeliveryJobsEnterWulingCityCargo": {
+                            "anchor": {
+                                "DeliveryJobsSelectItemToFill": "DeliveryJobsSelectItemToFillWuling",
+                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverEntry"
+                            }
+                        },
+                        "DeliveryJobsEnterTestAreaCargo": {
+                            "anchor": {
+                                "DeliveryJobsSelectItemToFill": "DeliveryJobsSelectItemToFillWuling",
+                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverUnsupported"
+                            }
+                        },
+                        "DeliveryJobsEnterOriginiumScienceParkCargo": {
+                            "anchor": {
+                                "DeliveryJobsSelectItemToFill": "DeliveryJobsSelectItemToFillValleyIV",
+                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverUnsupported"
+                            }
+                        },
+                        "DeliveryJobsEnterOriginLodespringCargo": {
+                            "anchor": {
+                                "DeliveryJobsSelectItemToFill": "DeliveryJobsSelectItemToFillValleyIV",
+                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverUnsupported"
+                            }
+                        },
+                        "DeliveryJobsEnterPowerPlateauCargo": {
+                            "anchor": {
+                                "DeliveryJobsSelectItemToFill": "DeliveryJobsSelectItemToFillValleyIV",
+                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverUnsupported"
+                            }
                         }
                     }
                 },

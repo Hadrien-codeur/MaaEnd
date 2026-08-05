@@ -236,15 +236,22 @@ base_y = offset_y + mt_y × scale_y
 
 **接线约定**：`nearestEndpoint` 匹配到终点名 `X` → RunTask 节点 `SeizeDeliveryJobsDeliverRouteX`。名字必须严格一致，也要和 `SeizeDeliveryJobsEndpointFilter.json` 里的终点名一致。
 
-新增路线要在 [departure.go:39-44](../../../../agent/go-service/seizedeliveryjobs/departure.go#L39-L44) 追加一行：
+新增路线要在 [departure.go](../../../../agent/go-service/seizedeliveryjobs/departure.go) 的 `seizeDeliveryJobsEndpoints` 表里追加一行。该表**按地图名分组**：
 
 ```go
-var seizeDeliveryJobsWulingEndpoints = []seizeDeliveryJobsWulingEndpoint{
-    {Name: "Owl", Target: [2]float64{229.1, 604.6}},  // 猫头鹰（右下）
-    // ...
+var seizeDeliveryJobsEndpoints = map[string][]seizeDeliveryJobsEndpoint{
+    // 武陵城
+    "map02_lv002": {
+        {Name: "Owl", Target: [2]float64{229.1, 604.6}},  // 猫头鹰（右下）
+        // ...
+    },
+    // 试验园区：路线待录制
+    "map02_lv005": {},
 }
 ```
 
+- ⚠️ **终点名必须全局唯一，跨地图也不能重复**。`runDeliverRoute` 用 `前缀 + 名字` 拼节点名，重名会跑到另一张地图的路线上。试验园区已定名 `No1TypeCAnchorArea` / `No3TypeCAnchorArea` / `JingweiFieldArea`（沿用 `SeizeDeliveryJobsEndpointFilter.json` 里的终点名）。
+- 新增地图时**只需在表里加一个键**，`nearestEndpoint` 会自动按地图查表；地图不在表里或表为空则返回空串，调用方回退 NavMesh 寻路。
 - `Target` 用 **MapTracker 游戏坐标**（跟蓝标同系），不是 base px
 - 取值 = 该路线 WalkToNpc 段**最后一个 NAVMESH 走位点**的 MapTracker 坐标
 - 匹配半径 `seizeDeliveryJobsEndpointMatchRadius` = 30，所以微调走位点（几米内）**不需要**回填、不需要重编 go-service
@@ -279,7 +286,7 @@ python tools/build_and_install.py
     python tools/build_and_install.py   # 只在改了 Go 时
     ```
 9. **完整重启 MaaEnd.exe** — 改 pipeline JSON 后进程内存不会自动重载
-10. **实机测试**，按 §10 排查
+10. **实机测试**，按 §11 排查
 
 ---
 
@@ -297,7 +304,67 @@ python tools/build_and_install.py
 
 ---
 
-## 10. 排查指南
+## 10. 复用到其他任务：以「转交委托-自动送货」为例
+
+`DeliveryJobs`（转交委托）的「自动送货」选项复用了同一套路线，**没有新写任何流程节点**。这一节记录复用方式，以后其他任务要接送货能力时照抄。
+
+### 10.1 可以整段复用的入口
+
+`SeizeDeliveryJobsPostProcessingEntry` 是一个**自包含的「拿着单 → 取货 → 送货 → 提交」子流程，不依赖抢单**：
+
+```
+SeizeDeliveryJobsPostProcessingEntry
+  → SeizeDeliveryJobsEnterDestinationMap          // 打开目的地地图
+  → QuickTeleportSelect / QuickTeleport           // 传送到仓储节点附近
+  → TargetDepotNodeIsWulingCity / IsTestArea      // MapTrackerAssertLocation 判地区，赋 anchor
+  → SeizeDeliveryJobsCheckCarryingGoods
+      ├ IsCarryingGoods    → 已带货，直接送
+      └ PrepareFetchGoods  → 未带货，取消任务追踪蓝点 → 滑索取货路线 → 接货
+  → SeizeDeliveryJobsPostDepartureEntry → RunDeparture (Go 按蓝标分流到固定路线)
+  → SeizeDeliveryJobsSubmitEntry → CloseRewardDialog
+```
+
+`CheckCarryingGoods` 已经同时处理「已带货」「未带货」两条分支，所以外部任务**不必自己判断玩家手上有没有货**，两种情况都能走通。
+
+外部任务只需要：
+
+1. 建一个入口节点，`next` 指向 `SeizeDeliveryJobsPostProcessingEntry`
+2. 用 `pipeline_override` 打开 `SeizeDeliveryJobsPostProcessingEntry` / `PrepareFetchGoods` / `PostDepartureEntry`（三者默认关闭）
+3. 覆写 `SeizeDeliveryJobsCloseRewardDialog.next` 接回自己的收尾节点，否则会跳去抢单入口 `SeizeDeliveryJobsMain`
+4. 需要「只走固定路线、不回退寻路」时，给 `SeizeDeliveryJobsRunDeparture` 覆写 `custom_action_param.custom_delivery = true`
+
+### 10.2 ⚠️ 坑：自己装箱产生的委托不在「运送委托列表」里
+
+`SeizeDeliveryJobsEnterDestinationMap` 打开地图的路径是「武陵仓储管理 → 运送委托列表 → 查看当前任务 → 点定位」。这条路**只适用于抢来的委托**。
+
+实测（2026-08-06）：**自己装箱产生的委托不会出现在运送委托列表中**，`__SeizeDeliveryJobsRecoViewCurrentJob`（找 `JobViewButton.png`）识别不到，流程直接卡死。
+
+正确路径是走**本地仓储节点页签的「查看任务」**：
+
+```
+本地仓储节点 → 点武陵城区「查看任务」 → 任务界面 → 点定位按钮 → 大地图
+```
+
+`DeliveryJobs/AutoDeliver.json` 里的 `DeliveryJobsAutoDeliverEnterDestinationMap` 一组 5 个节点就是干这个的，复用了官方识别：
+
+| 节点                      | 复用的识别                                                        |
+| ------------------------- | ----------------------------------------------------------------- |
+| `...ViewJob`              | `DeliveryJobsCheckLocalDepotNodeWulingCityText` + `...DeliveryJob` |
+| `...ViewDestinationMap`   | `TrackedMissionMapButton`（任务界面右下角定位按钮）                |
+| `...StartTrackingTask`    | `WhiteConfirmButtonType1`（未追踪时显示「开始追踪」）              |
+| `...InDestinationMap`     | `SeizeDeliveryJobs/TrackTaskSuccess.png`                          |
+
+> ⚠️ **`SeizeDeliveryJobsEnterDestinationMap` 在整条链里会被调用三次**（传送前、取消任务追踪前、送货前）。所以要覆写它的 `next` 一次性全部改道，而不是只改第一处；替代节点也**不能加 `max_hit`**，否则第二次进不去。
+
+### 10.3 接线全走 `pipeline_override`，不改上游节点文件
+
+上面所有改动都写在 `assets/tasks/DeliveryJobs.json` 的选项 `pipeline_override` 里，`assets/resource/pipeline/` 下只**新增**了 `DeliveryJobs/AutoDeliver.json`，没有改动任何上游节点。这样上游更新这些节点时不会冲突，比「整节点替换」的做法（取货段目前还是那么做的）健壮得多。
+
+> ⚠️ 依赖 MapTracker / MapNavigator 的选项必须声明 `"controller": ["Win32-Front", "Wlroots"]` —— 只有这两个控制器支持。`SeizeDeliveryJobs` 整个任务只声明这两个，而 `DeliveryJobs` 任务本身支持 ADB / MacOS / PlayCover，所以要在**选项级**加限制。
+
+---
+
+## 11. 排查指南
 
 出问题时按现象定位：
 
@@ -321,7 +388,7 @@ python tools/build_and_install.py
 
 ---
 
-## 11. 术语对照：容易混的几组
+## 12. 术语对照：容易混的几组
 
 | 别混                                                    | 区别                                                                                               |
 | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |

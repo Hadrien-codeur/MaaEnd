@@ -1,0 +1,155 @@
+{
+    // 转交委托-自动送货：开启后不把委托转交给他人，而是自己走预录的固定滑索路线送到目的地。
+    // 本文件只做接线，不新增任何识别；整条「拿着单 → 取货 → 送货 → 提交」链路复用
+    // SeizeDeliveryJobsPostProcessingEntry（见 SeizeDeliveryJobs/SeizeDeliveryJobsPost.json）。
+    // 所有节点默认关闭，由 assets/tasks/DeliveryJobs.json 的 DeliveryJobsAutoDeliver 选项开启。
+    "DeliveryJobsAutoDeliverEntry": {
+        "desc": "自动送货入口：转入抢委托送货的后处理链路（拿着单去取货并送达）（此节点默认关闭）",
+        "enabled": false,
+        "pre_delay": 0,
+        "post_delay": 0,
+        "rate_limit": 0,
+        "next": [
+            "SeizeDeliveryJobsPostProcessingEntry"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**转交委托：进入自动送货流程**"
+        }
+    },
+    // ===== 打开目的地地图 =====
+    // 抢来的委托可以从「运送委托列表」查看当前任务，但**自己装箱产生的委托不会出现在该列表中**
+    // （实测：SeizeDeliveryJobs 的 JobViewButton 识别不到，流程卡死）。
+    // 故本任务改从「本地仓储节点」页签点「查看任务」进入详情页，再点定位按钮打开大地图。
+    // 下面这组节点整体替换 SeizeDeliveryJobsEnterDestinationMap 的作用；该节点在整条送货链中会被
+    // 调用三次（传送前、取消任务追踪前、送货前），故必须可重复进入，不能加 max_hit。
+    "DeliveryJobsAutoDeliverEnterDestinationMap": {
+        "desc": "从任意位置打开当前送货任务的目的地地图（此节点默认关闭）",
+        "enabled": false,
+        "pre_delay": 0,
+        "post_delay": 0,
+        "rate_limit": 0,
+        "next": [
+            // 已打开大地图则直接交回后续流程
+            "DeliveryJobsAutoDeliverInDestinationMap",
+            // 已在任务界面（刚点过「查看任务」）则点定位；未追踪时改点开始追踪
+            "DeliveryJobsAutoDeliverViewDestinationMap",
+            "DeliveryJobsAutoDeliverStartTrackingTask",
+            // 在本地仓储节点则先点「查看任务」
+            "DeliveryJobsAutoDeliverViewJob",
+            // 都不在（例如刚从大世界回来）则先回到本地仓储节点
+            "[JumpBack]SceneEnterMenuRegionalDevelopmentWulingDepotNode"
+        ]
+    },
+    "DeliveryJobsAutoDeliverViewJob": {
+        "desc": "在本地仓储节点，点击武陵城区的「查看任务」进入送货任务详情（此节点默认关闭）",
+        "enabled": false,
+        "recognition": "And",
+        "all_of": [
+            "DeliveryJobsCheckLocalDepotNodeWulingCityText",
+            "DeliveryJobsCheckWulingCityDeliveryJob"
+        ],
+        "box_index": 1,
+        "pre_delay": 0,
+        "action": "Click",
+        "post_wait_freezes": 500, // 等待任务详情界面弹出
+        "post_delay": 0,
+        "rate_limit": 500,
+        "next": [
+            "DeliveryJobsAutoDeliverViewDestinationMap",
+            "DeliveryJobsAutoDeliverStartTrackingTask"
+        ],
+        "focus": {
+            "Node.Action.Starting": "打开当前送货任务详情"
+        }
+    },
+    "DeliveryJobsAutoDeliverViewDestinationMap": {
+        "desc": "在送货任务详情页，点击定位按钮打开大地图（此节点默认关闭）",
+        "enabled": false,
+        "recognition": "And",
+        "all_of": [
+            "TrackedMissionMapButton"
+        ],
+        "pre_delay": 0,
+        "action": "Click",
+        "post_delay": 0,
+        "rate_limit": 500, // 加速等待大地图弹出
+        "next": [
+            "DeliveryJobsAutoDeliverInDestinationMap"
+        ],
+        "focus": {
+            "Node.Action.Starting": "点击查看任务位置"
+        }
+    },
+    "DeliveryJobsAutoDeliverStartTrackingTask": {
+        "desc": "在任务界面，若尚未追踪该任务（无定位按钮），则点击开始追踪按钮（此节点默认关闭）",
+        "enabled": false,
+        "recognition": "TemplateMatch",
+        "roi": [
+            1070,
+            570,
+            200,
+            140
+        ],
+        "template": "Common/Button/WhiteConfirmButtonType1.png",
+        "order_by": "Score",
+        "pre_delay": 0,
+        "action": "Click",
+        "post_delay": 0,
+        "rate_limit": 500, // 加速等待大地图弹出
+        "next": [
+            // 自游戏 1.4 版本开始，追踪任务按钮会直接打开大地图查看目的地
+            "DeliveryJobsAutoDeliverInDestinationMap"
+        ],
+        "focus": {
+            "Node.Action.Starting": "点击开始追踪任务"
+        }
+    },
+    "DeliveryJobsAutoDeliverInDestinationMap": {
+        "desc": "确认已打开目的地地图，交回抢委托送货的后续流程（此节点默认关闭）",
+        "enabled": false,
+        "recognition": "TemplateMatch",
+        "roi": [
+            900,
+            10,
+            130,
+            140
+        ],
+        "template": "SeizeDeliveryJobs/TrackTaskSuccess.png",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "rate_limit": 0,
+        "next": [
+            // 由调用方（传送 / 取消追踪 / 送货）通过此锚点决定下一步
+            "[Anchor]SeizeDeliveryJobsAfterEnterDestinationMap"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "正在查看任务位置"
+        }
+    },
+    "DeliveryJobsAutoDeliverDone": {
+        "desc": "自动送货完成，回到本地仓储界面，由主循环继续处理下一个仓储节点（此节点默认关闭）",
+        "enabled": false,
+        "pre_delay": 0,
+        "post_delay": 0,
+        "rate_limit": 0,
+        "next": [
+            // 与官方 DeliveryJobsBackToDepot 同一种回流方式：走 anchor 回到本地仓储界面，
+            // 随后由 DeliveryJobsWulingLoop 的 JumpBack 机制回到主循环处理下一个地区。
+            "[Anchor]DeliveryJobsGoToDepot"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**自动送货完成，继续下一个仓储节点**"
+        }
+    },
+    "DeliveryJobsAutoDeliverUnsupported": {
+        "desc": "当前地区尚未录制固定滑索路线，无法自动送货，停止任务（此节点默认关闭）",
+        "enabled": false,
+        "pre_delay": 0,
+        "action": "StopTask",
+        "post_delay": 0,
+        "rate_limit": 0,
+        "focus": {
+            "Node.Recognition.Succeeded": "$task.DeliveryJobs.AutoDeliver.unsupportedRegion"
+        }
+    }
+}

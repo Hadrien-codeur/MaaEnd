@@ -482,6 +482,9 @@
     "task.DeliveryJobs.description": "接取并转交委托。\n请选择需要启用的地区：",
     "task.DeliveryJobs.PackCargoOnly.label": "仅装箱货物",
     "task.DeliveryJobs.PackCargoOnly.description": "开启后仅会自动装箱货物，不会接取任务。",
+    "task.DeliveryJobs.AutoDeliver.label": "自动送货",
+    "task.DeliveryJobs.AutoDeliver.description": "开启后不再把委托转交给他人，而是自己走预录的固定滑索路线送达并提交。该功能处于**测试阶段**，请务必在软件设置中开启**全局快捷键**以便随时停止任务。\n\n⚠️ **目前仅支持武陵城**：其他地区（四号谷地、试验园区）的委托会**停止任务**并提示，建议只勾选「武陵」→「武陵城区」。\n⚠️ 与「仅接取任务」「仅装箱货物」互斥，请勿同时开启。",
+    "task.DeliveryJobs.AutoDeliver.unsupportedRegion": "<p style=\"color: #f44\">当前地区尚未支持自动送货，任务已停止。目前仅支持武陵城。</p>",
     "task.ClaimSimulationRewards.label": "📦领取模拟空间奖励",
     "task.ClaimSimulationRewards.description": "自动领取模拟空间内的奖励",
     "task.ClaimSimulationRewards.error_not_found": "未检测到[模拟空间]界面，请手动切换",
@@ -1332,4 +1335,3 @@
     "task.ProtocolSpace.focus.supply_plan.override_started.WEAPON_EXP": "武器经验 协议空间目标已切换，开始刷取",
     "task.ProtocolSpace.focus.supply_plan.reward_item_met.WEAPON_EXP": "武器经验 目标已达标，结束当前协议空间刷取"
 }
-

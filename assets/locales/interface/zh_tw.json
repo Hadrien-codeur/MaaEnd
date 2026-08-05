@@ -482,6 +482,9 @@
     "task.DeliveryJobs.description": "接取並轉交委託。\n請選擇需要啟用的地區：",
     "task.DeliveryJobs.PackCargoOnly.label": "僅裝箱貨物",
     "task.DeliveryJobs.PackCargoOnly.description": "啟用後僅會自動裝箱貨物，不會接取任務。",
+    "task.DeliveryJobs.AutoDeliver.label": "自動送貨",
+    "task.DeliveryJobs.AutoDeliver.description": "啟用後不再將委託轉交給他人，而是自己走預錄的固定滑索路線送達並提交。此功能處於**測試階段**，請務必在軟體設定中啟用**全域快速鍵**以便隨時停止任務。\n\n⚠️ **目前僅支援武陵城**：其他地區（四號谷地、實驗園區）的委託會**停止任務**並提示，建議只勾選「武陵」→「武陵城區」。\n⚠️ 與「僅接取任務」「僅裝箱貨物」互斥，請勿同時啟用。",
+    "task.DeliveryJobs.AutoDeliver.unsupportedRegion": "<p style=\"color: #f44\">目前地區尚未支援自動送貨，任務已停止。目前僅支援武陵城。</p>",
     "task.ClaimSimulationRewards.label": "📦領取模擬空間獎勵",
     "task.ClaimSimulationRewards.description": "自動領取模擬空間內的獎勵",
     "task.ClaimSimulationRewards.error_not_found": "未檢測到[模擬空間]介面，請手動切換",
@@ -1332,4 +1335,3 @@
     "task.ProtocolSpace.focus.supply_plan.override_started.WEAPON_EXP": "武器經驗 協議空間目標已切換，開始刷取",
     "task.ProtocolSpace.focus.supply_plan.reward_item_met.WEAPON_EXP": "武器經驗 目標已達標，結束當前協議空間刷取"
 }
-
