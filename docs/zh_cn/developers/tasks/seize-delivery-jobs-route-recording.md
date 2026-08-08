@@ -155,10 +155,42 @@ C++ 侧接受容差是 `kHeadingAcceptToleranceDeg = 40.0`（[navi_config.h:72](
 ```
 
 - **`target`** = 发射时要瞄准的**下一架滑索架**（MapTracker 游戏坐标）。Go 会先转镜头对准它，等 1s 让游戏出「已锁定」提示，再点击发射。
-- **`chain_max_press`** = 途中按 E 的次数 = **连滑架数 − 1**。最后一架的提示故意不按，人物就落在那里。
-    - 例：经过 9 架滑索架 → `chain_max_press: 8`
-    - 数错会落错架子，是最常见的错误来源
-- **`timeout`** 连滑段给足，武陵城最长的技术生产办公室（15 架）用 60000。
+- **`chain_max_press`** = 途中按 E 的次数 = **跳数 − 1**。最后一跳的提示故意不按，人物就落在终点架。
+- **`timeout`** 连滑段给足，武陵城最长的技术生产办公室用 60000。
+
+#### ⚠️ 数架子先说清「含不含起点架」
+
+`chain_max_press` 数错是最常见的失败来源，而**根源往往是「架数」这个词有歧义**。2026-08-08 试验园区三条路线就因此全部多按了一次 E（见 §11.1）。
+
+**只认「跳数」，不认「架数」**：
+
+```
+起点架 ──跳1──> 架2 ──跳2──> 架3 ──跳3──> 终点架
+（脚下）                                    （落这里）
+
+含起点架 4 架  =  3 跳  →  chain_max_press = 3 − 1 = 2
+```
+
+| 表述 | 公式 |
+| --- | --- |
+| 跳数（推荐） | `chain_max_press = 跳数 − 1` |
+| 含起点架的架数 | `chain_max_press = 架数 − 2` |
+| 不含起点架的架数 | `chain_max_press = 架数 − 1` |
+
+> **写注释时必须标明基准**，例如「共 6 架（含起点）= 5 跳」。武陵城旧注释列的序列**不含**起点架，试验园区新注释**含**起点架，两边套同一个「架数 − 1」就会差 1。
+
+#### 自检：`target` 距站位应 ≥ 15 m
+
+`target` 只用来算**方位角**（[zipline.go:246](../../../../agent/go-service/maptracker/default/zipline.go#L246) `result.Loc.AngleTo(target)`），所以必须是**远处的下一架**。
+
+**别把起点段 `HEADING` 的坐标抄过来**——那是脚下这架（正对它才好上索），两者是不同的点：
+
+| 参数 | 指向 | 距站位 |
+| --- | --- | --- |
+| 起点段 `HEADING.target` | 脚下这架（正对以便上索） | 1~2 m |
+| `MapTrackerZipline.target` | **第一跳飞向的下一架** | 通常 30~80 m |
+
+已测通路线的实际值：武陵城 31~54 m，试验园区取货段 38 m。**若算出 < 5 m，基本就是抄错了。**
 
 **拆成多段的时机**：中途落地了再重新发射，就要拆成 ChainA / ChainB 两个节点（如 Owl：段A 8 次 E 落地 → 段B 再 1 次 E 到终点架）。同一次连滑不用拆。
 
@@ -371,8 +403,8 @@ SeizeDeliveryJobsPostProcessingEntry
 | 现象                    | 先查什么                                                                                      |
 | ----------------------- | --------------------------------------------------------------------------------------------- |
 | 上索失败 / 没上去       | 起点步行段的 HEADING 是否正对滑索架；`GetOnZipline` 的模板匹配 ROI                            |
-| 滑索没发射              | `MapTrackerZipline.target` 是否是**下一架**滑索架；日志搜 `Zipline fast travel did not start` |
-| 落错滑索架              | `chain_max_press` 数错（= 架数 − 1）                                                          |
+| 滑索没发射              | `MapTrackerZipline.target` 是否是**下一架**滑索架、距站位是否 ≥ 15m（§4.2）；日志搜 `Zipline fast travel did not start`。**典型案例见 §11.1** |
+| 落错滑索架              | `chain_max_press` 数错（= **跳数 − 1**，先确认架数含不含起点架，§4.2）                        |
 | 下索落点偏              | 是否用了 `MapTrackerToward`（§4.4，会推偏数米）                                               |
 | 走到 NPC 但交互按钮不出 | HEADING target 距站位是否 ≥ 2m（§3.2）；是否从 NPC 背后绕行                                   |
 | Go 分流匹配不到路线     | `departure.go` 终点坐标是否用了 MapTracker 系；是否在半径 30 内                               |
@@ -385,6 +417,30 @@ SeizeDeliveryJobsPostProcessingEntry
 | `install/debug/go-service.log`           | 滑索、`MapTrackerToward`（搜 `Adjusting orientation`、`Zipline chain relay`）                  |
 
 排查 HEADING 时，`Heading-only node completed` 那行会打出 `target_heading` / `start_heading` / `achieved_heading`，配合前后的 `position.x=` 就能看出人物到底转到哪、被推到哪。
+
+### 11.1 案例：滑索不发射（`target` 抄成了起点架）
+
+2026-08-08 试验园区三条送货路线全部卡在上索后不发射。**留个记录，因为这个坑很隐蔽：Go 分流、坐标换算、路线接线全都是对的，只有一个参数填错。**
+
+**现象**：上索成功，然后 `MapTrackerZipline` 约 1.8 秒就返回 false（`timeout` 是 60s，所以**不是超时**）。
+
+```
+current={298.5,407.8}  target={298.9,407.4}  distance=0.57
+Rotating toward zipline: curRot=42 targetRot=45 deltaRot=3
+WARN  Zipline fast travel did not start   similarity=0.9999917
+```
+
+**读法**：`similarity≈1.0` = 点击前后小地图一模一样，人根本没动。`distance=0.57` 是关键——**瞄准目标就在脚下**。
+
+**根因**：`target` 填成了起点段 `HEADING` 用的**起点架本体**坐标。`target` 只用来算方位角，填脚下这架 → 方位角是噪声（只转了 3°）→ 没锁到索 → 按 E 空点。
+
+**同时暴露的第二个错**：注释里的架序列**含**起点架，却仍套武陵城「架数 − 1」（武陵城序列**不含**起点架），三条路线 `chain_max_press` 都多了 1。所以才有了 §4.2 那套「只认跳数」的写法。
+
+**教训**：
+
+- `distance` 那行日志是最快的判据，**< 5 m 就是抄错了**
+- 「架数」必须说清含不含起点架，否则跨路线复制注释必然差 1
+- Go 侧日志 `recorded delivery job destination` 打出了 `endpoint=JingweiFieldArea`，说明分流正常——**别一看送货失败就先去怀疑终点识别和路线匹配**，先看滑索节点自己报了什么
 
 ---
 
