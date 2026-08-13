@@ -50,6 +50,14 @@ var seizeDeliveryJobsEndpoints = map[string][]seizeDeliveryJobsEndpoint{
 		{Name: "No3TypeCAnchorArea", Target: [2]float64{415.9, 193.8}}, // 三号丙型辅桩区（右上）
 		{Name: "JingweiFieldArea", Target: [2]float64{429.7, 294.7}},   // 经纬田区（右）
 	},
+	// 源石研究园（四号谷地）
+	"map01_lv006": {
+		{Name: "HighwayFive", Target: [2]float64{172.2, 307.6}},
+		{Name: "CommandCenter", Target: [2]float64{104.3, 242.3}},
+		{Name: "RefiningCompoundFactory", Target: [2]float64{349.2, 389.8}},
+		{Name: "ResearchInstitute", Target: [2]float64{404.1, 300.0}},
+		{Name: "ResearchInstituteLower", Target: [2]float64{364.8, 303.6}},
+	},
 }
 
 // SeizeDeliveryJobsDepartureAction navigates from the tracked task marker back in the open world.

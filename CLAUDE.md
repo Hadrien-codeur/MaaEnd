@@ -502,130 +502,87 @@ python tools/build_and_install.py
 2. **中期：盯 #4784 结局**。若上游 navmesh 最终稳定（学生态农场加中转点绕河）→ 我们滑索优势消失，直接跟随迁移最省事；若一直修不好 → 拿我们武陵城成功率数据去上游争取「保留滑索子集」（方案①）。
 3. **长期兜底：真到删包那天**，方案③下沉重构是唯一自主可控路，但是几百行重构（纯 Go 本机能编），单独立项，别边录路线边改架构。
 
-### 18.0 最新状态（2026-08-08 家里电脑）
+### 18.0 最新状态（2026-08-14 家里电脑）
 
-**✅ 试验园区四条路线已全部实机测通并存档。武陵城（4 条）+ 试验园区（3 条）共 7 条送货路线 + 2 条取货路线，全部可用。**
+**✅ 源石研究园（map01_lv006）取货 + 5 条送货路线 Pipeline 已全部写入；Go endpoint 分流和 3 处 map_name_regex 已接通。6 个调试任务文件已创建并注册到 interface.json。但未重编 go-service.exe、未实机测试；转交委托在人处于武陵地区时会因接取界面判定跳不到四号谷地（已知 Bug，待修）。**
 
-#### 18.0.1 ✅ 试验园区四条路线（实机通过，本轮修掉一个滑索参数 Bug）
+#### 18.0.1 ✅ 源石研究园路线 Pipeline 已写入（2026-08-14）
 
-2026-08-07 夜首测：取货段一次通过；**三条送货路线全部卡在上索后不发射**。2026-08-08 定位并修复，复测全通过。
+坐标来源：博士在桌面 `送货路线.txt` 录制；计划在全局计划文件 `floofy-leaping-bee.md`；换算参数 `map01_lv006` offset `(720, 0)` scale `12/13`，zone `ValleyIV_Base`。
 
-**根因：`MapTrackerZipline.target` 填成了起点架（脚下那架）**，三条路线都填了 `[298.9,407.4]`——那是起点步行段 `HEADING` 的目标坐标，被我直接抄了过来。
+**取货路线**：锚点 `SceneEnterWorldValleyIVOriginiumSciencePark3`（五号公路，MT `[246.3,259.0]`，落点 `[169.2,314.7]`）→ 步行到架 → 上索 → 连滑 3 架（含起点，chain 1）→ 下索 → 步行到仓储节点 NPC。
 
-`target` 只用来算**发射方位角**（[zipline.go:246](agent/go-service/maptracker/default/zipline.go#L246) `result.Loc.AngleTo(target)`），必须是**第一跳飞向的下一架**。填脚下这架 → 距离 0.57 m → 方位角被定位噪声主导（只转了 3°）→ 没锁到索 → 按 E 空点 → 1.8 秒返回 false（`timeout` 60s，所以不是超时）。
+**5 条送货路线**：
 
-日志特征（`install/debug/go-service.log`）：
+| 路线 | 英文名 | 滑索结构 | `chain_max_press` | departure.go 终点 |
+| --- | --- | --- | --- | --- |
+| 五号公路 | `HighwayFive` | 3 架含起点，中途不按 E，拆 ChainA+ChainB | A: 0, B: 0 | `{172.2, 307.6}` |
+| 总控中心 | `CommandCenter` | 3 架含起点，中途不按 E，拆 ChainA+ChainB | A: 0, B: 0 | `{104.3, 242.3}` |
+| 醇化合物工厂 | `RefiningCompoundFactory` | 6 架含起点，前 4 架连续 + 2 次中继转向发射 | A: 2 | `{349.2, 389.8}` |
+| 研究所 | `ResearchInstitute` | 4 架含起点，连续不落地 | 2 | `{404.1, 300.0}` |
+| 研究所下层 | `ResearchInstituteLower` | 4 架含起点，同研究所路线，下索后追加 7 个 NAVMESH 途经点进入地下层 | 2 | `{364.8, 303.6}` |
 
+> ⚠️ 五号公路和总控中心的"中途不用按 E，按朝向发射"：`MapTrackerZipline` 自身会根据下一个 `target` 转向后发射，所以无需额外 `MapTrackerToward` 节点，直接拆成两个连续 Zipline 节点即可（与观测站 ChainA/ChainB 模式一致）。
+
+#### 18.0.2 ✅ Go endpoint 分流
+
+`departure.go` 的 `seizeDeliveryJobsEndpoints` 新增 `"map01_lv006"` 条目，5 个终点名与现有 7 条不重复：
 ```
-current={298.5,407.8}  target={298.9,407.4}  distance=0.57
-WARN  Zipline fast travel did not start   similarity=0.9999917
-```
-
-`similarity≈1.0` = 点击前后小地图一模一样，人根本没动。
-
-**连带发现第二个错**：注释里的架序列**含**起点架，却仍套武陵城「架数 − 1」（武陵城序列**不含**起点架），三条 `chain_max_press` 都多按 1 次 E。统一公式：**`chain_max_press = 跳数 − 1 = 含起点架的架数 − 2`**（拿武陵城 Owl ChainA 反验：含起点 10 架 → 9 跳 → chain 8 ✅ 与现值一致）。
-
-修复后的三条（`SeizeDeliveryJobsDeliverRoutes.json`）：
-
-| 路线 | target（旧 → 新） | chain（旧 → 新） | target 距站位 |
-| --- | --- | --- | --- |
-| `No1TypeCAnchorArea` 一号辅桩 | `[298.9,407.4]` → `[250.1,348.7]` | 5 → 4 | 76.5 m |
-| `No3TypeCAnchorArea` 三号辅桩 | `[298.9,407.4]` → `[335.9,407.9]` | 5 → 4 | 37.7 m |
-| `JingweiFieldArea` 经纬田 | `[298.9,407.4]` → `[335.9,407.9]` | 3 → 2 | 37.7 m |
-
-> 自检下限：**target 距站位应 ≥ 15 m**（已测通路线实际 31~80 m）。算出 < 5 m 就是抄错了。
-
-**另外三处原先标注的风险，实机证明都不是问题**：三个 HEADING 距站位仅 1.0~1.2 m（低于规范建议的 2 m）**实测稳定**；三号辅桩 + 经纬田**没有 HEADING 也能正常交互**；三号辅桩链第 4→5 架仅 15.26 m **没有落错架**。
-
-**路线结构存档**：
-
-| 路线 | 滑索 | `chain_max_press` | departure.go 终点 |
-| --- | --- | --- | --- |
-| 取货（锚点→仓储节点） | 单段，跨度 38.11 m | — | — |
-| 一号辅桩 | 6 架（含起点）= 5 跳 | 4 | `{126.7, 114.2}` |
-| 三号辅桩 | 6 架（含起点）= 5 跳 | 4 | `{415.9, 193.8}` |
-| 经纬田 | 4 架（含起点）= 3 跳 | 2 | `{429.7, 294.7}` |
-
-- 取货段已**整节点替换**上游 `MapTrackerGoal`（`SeizeDeliveryJobsWalkToDepotNodeTestArea` 为 SubTask 五段结构）
-- 传送锚点 `SceneEnterWorldWulingTestArea1`（综合科研区，MT `[336.3,420.1]`）
-- 三条送货路线**共用起点段** `SeizeDeliveryJobsDeliverTestAreaWalkToZipline`，该起点架与取货段下索点是同一架
-- 经纬田是三号辅桩链的**前 4 架前缀**，在第 4 架提前下索
-- 三个终点相互距离 102 / 300 / 353 m，远超误匹配半径 30 ✅
-- 4 个独立测试入口保留（UI 在「地区建设」分组）
-
-**文档已补**（防止再踩）：
-
-- 规范 §4.2 新增「数架子先说清含不含起点架」（只认跳数 + 三种表述换算表）与「target 距站位 ≥ 15 m」自检
-- 规范 §11.1 新增完整案例（日志原文、读法、根因、教训）
-- 规范 §11 排查表两行补细
-- 试验园区清单新增「规矩 3」，P5/P6、D1/D2 四行改为「含起点架」表述
-
-#### 18.0.2 ✅ Go 分流已端到端验证
-
-首测那轮虽然滑索失败，但日志证明 **Go 分流完全正常**——正确把 `map02_lv005` 的蓝标 `[430.6,294.4]` 匹配到了 `JingweiFieldArea` 并调起对应路线节点：
-
-```
-map=map02_lv005  target=[430.6,294.4]  endpoint=JingweiFieldArea
+HighwayFive / CommandCenter / RefiningCompoundFactory / ResearchInstitute / ResearchInstituteLower
 ```
 
-> 教训：**别一看送货失败就先怀疑终点识别 / 路线匹配**，先看滑索节点自己报了什么。
+#### 18.0.3 ✅ map_name_regex 已扩展
 
-#### 18.0.3 ✅ 转交委托「自动送货」（已实测通过，武陵城 + 试验园区）
+三处正则均已从 `^(map02_lv002|map02_lv005)$` 扩为 `^(map02_lv002|map02_lv005|map01_lv006)$`：
+- `assets/tasks/SeizeDeliveryJobs.json`（两处：PreferZipline + CustomDelivery）
+- `assets/resource/pipeline/SeizeDeliveryJobs/SeizeDeliveryJobsPostDeparture.json`
 
-「🚚转交委托」任务的 `DeliveryJobsAutoDeliver` 开关（默认关）。开启后不转交，自己走固定滑索路线送达并提交。四号谷地会停止任务并提示。
+#### 18.0.4 ✅ 转交委托自动送货已接通源石研究园
 
-| 文件 | 改动 |
-| --- | --- |
-| `assets/resource/pipeline/DeliveryJobs/AutoDeliver.json` | 9 个接线节点，全默认关闭，**无新识别节点** |
-| `assets/tasks/DeliveryJobs.json` | `DeliveryJobsAutoDeliver` switch |
-| `assets/locales/interface/*.json` ×5 | 各 3 个键 |
+`assets/tasks/DeliveryJobs.json` 中：
+- `DeliveryJobsEnterOriginiumScienceParkDeliveryJob` → 改接 `DeliveryJobsAutoDeliverEntry`（原为 Unsupported）
+- `DeliveryJobsEnterOriginiumScienceParkCargo` → 装箱完成后改为 `DeliveryJobsAutoDeliverEntry`（原为 Unsupported）
+- `map_name_regex` → 已扩展
 
-**关键思路**：`SeizeDeliveryJobsPostProcessingEntry` 本身就是自包含的「拿着单 → 取货 → 送货 → 提交」子流程，不依赖抢单，所以**零新流程**，只做接线。
+#### 18.0.5 ✅ 取货目的地识别节点
 
-⚠️ **已解决的坑**（文档 §10.2）：**自己装箱产生的委托不出现在「运送委托列表」里**，官方 `SeizeDeliveryJobsEnterDestinationMap` 走不通。改从「本地仓储节点 →『查看任务』→ 任务界面 → 点定位按钮」进地图。该节点在链里**被调用三次**，覆写 `next` 一次性全改道；替代节点**不能加 `max_hit`**。
+`SeizeDeliveryJobsPost.json` 新增 `SeizeDeliveryJobsTargetDepotNodeIsOriginiumSciencePark`：
+- `MapTrackerAssertLocation` 断言 `map01_lv006` `[160, 306, 30, 25]`
+- Anchor 设为 `SeizeDeliveryJobsWalkToDepotNodeOriginiumSciencePark`
 
-✅ 全程走 `pipeline_override` 叠加，**没改任何上游节点文件**（即长期路线图的方案 B）。
+#### 18.0.6 ⚠️ 未完成项（下次开工时先做）
 
-⚠️ 选项带 `"controller": ["Win32-Front", "Wlroots"]`：MapTracker/MapNavigator 只在这两个控制器可用。
+| 项 | 状态 | 说明 |
+| --- | --- | --- |
+| 五语言文案 | ❌ 未写 | 6 个调试任务的 i18n 键未补 |
+| 转交委托"不支持地区"提示 | ❌ 未更新 | `DeliveryJobsAutoDeliver.unsupportedRegion` 仍说"仅支持武陵地区" |
+| `go-service.exe` 重编 | ❌ 未执行 | `python tools/build_and_install.py` |
+| 实机测试 | ❌ 未做 | 取货→5 条送货→自动送货提交 |
+| **接取任务在武陵地区时卡住** | ❌ 已知 Bug | 见 §18.1 下一步第 5 点 |
 
-#### 18.0.4 ✅ `departure.go` 多地图改造
-
-endpoints 从平铺切片改成 `map[地图名][]seizeDeliveryJobsEndpoint`；删掉写死的 `if mapName != "map02_lv002"` 守卫，改为按地图查表。武陵城 4 个点坐标与匹配半径 30 一字未动。
-
-#### 18.0.5 环境状态
+#### 18.0.7 环境状态
 
 | 项 | 状态 |
 | --- | --- |
 | `cpp-algo.exe` | ✅ 官方 v2.23.0-beta.4 |
-| `go-service.exe` | ✅ 2026-08-06 01:29 自编，17826816 B，含 lv005 三个终点坐标 |
-| 备份 | `install/_backup_pre_v2.23_20260805/` |
-| 静态检查 | ✅ `prettier --check`（JSON）/ `maa-tools check`（7 控制器全绿）/ `maa-tools test`（654 用例通过） |
-| ⚠️ `markdownlint-cli` | 本机 **未安装**（在 devDependencies 但 node_modules 里没有），`pnpm format:md` 跑不了。md 不归 prettier 管（`pnpm format` 只含 json/jsonc/yml/yaml），**别用裸 prettier 检查 md**，会误报 |
+| `go-service.exe` | ⚠️ 仍是 2026-08-06 版本，**不含 map01_lv006 终点**，需重编 |
+| 静态检查 | ✅ `prettier --check`（修改的文件已格式化并通过 parser） |
 
 ### 18.1 下一步
 
-1. **【下次主线】录四号谷地 3 张图的送货路线**。四号谷地目前是「停止任务并提示不支持」，要把它做成和武陵城/试验园区一样的固定滑索路线。
+1. **补五语言文案**。为 6 个新调试任务写 i18n 键（取货测试 1 + 送货测试 5），同步 `zh_cn/zh_tw/en_us/ja_jp/ko_kr`。更新 `DeliveryJobsAutoDeliver.unsupportedRegion` 提示文案包含源石研究园。
 
-    照搬试验园区的流程走：
+2. **重编 `go-service.exe`**：`python tools/build_and_install.py`（⚠️ 改了 `departure.go`，必须重编）。
 
-    | 步骤 | 做什么 |
-    | --- | --- |
-    | 1 | 确认 3 张图的 `map_name`（lv 编号），查 `maptracker_coordinate_transforms.json` 有没有对应 offset/scale，没有要先离线解算 |
-    | 2 | 博士按[录制清单](docs/zh_cn/developers/tasks/seize-delivery-jobs-testarea-recording-checklist.md)录坐标（清单是通用模板，⚠️ **务必先读 §0 三条硬规矩**，规矩 3 就是这次踩的坑） |
-    | 3 | 我换算 base px + 写 pipeline 节点 + 建测试入口 |
-    | 4 | `departure.go` 的 `seizeDeliveryJobsEndpoints` 加 3 张图的终点（⚠️ 路线英文名**不能**与现有 7 条重复，否则 `runDeliverRoute` 拼节点名会串） |
-    | 5 | `map_name_regex` 要加上四号谷地的 map_name（现为 `^(map02_lv002\|map02_lv005)$`） |
-    | 6 | i18n 5 语言 + 测试入口注册 + 重编 `go-service.exe` |
-    | 7 | 实机测 |
+3. **实机测试**。先逐条跑调试入口验证路线，再开「转交委托-自动送货」端到端跑一单。
 
-    > ⚠️ 改了 `departure.go` 必须 `python tools/build_and_install.py` 重编；改了 pipeline JSON 必须**完整重启 MaaEnd.exe**。
+4. **修 Bug：接取任务在武陵地区时卡在接取界面，无法跳转四号谷地**。
+   - **根因**：`SeizeDeliveryJobsQuickTeleportDone` 用 `MapTrackerAssertLocation` 按当前位置判断目的地。人在武陵地区 → 命中 WulingCity 断言 → 走武陵路线 → 发现不是武陵任务 → 报错。它**不会**走到 ValleyIV 的断言。
+   - **可能修法**：在传送前先检查目标地图名（蓝标所在的 map_name，由 Go 侧 `findAndCacheTarget` 已经知道了），或者让 `SeizeDeliveryJobsQuickTeleportDone` 也尝试命中 ValleyIV 断言（需要人在 ValleyIV 落点附近才行，但传送锚点就在那，所以应该可以）。具体方案下次会话时设计。
 
-2. **可选：把取货段的整节点替换改成 `pipeline_override` 叠加**（长期路线图方案 B）。取货段目前仍**整节点替换**上游 `MapTrackerGoal`（武陵城和试验园区都是），上游每次改那节点都会冲突。自动送货那轮已验证 `pipeline_override` 这条路可行且更干净。
-    - 💡 建议：**四号谷地录完再做**，否则边录路线边改架构两头乱。
+5. **可选：把取货段的整节点替换改成 `pipeline_override` 叠加**（长期路线图方案 B）。
 
-3. **上游动向盯梢**（详见 §18.-2）：#4793 要删整个 maptracker 包，对口 PR #4784 自评成功率仅 41%。**博士已定调：步行段继续 navmesh，滑索段暂时继续依赖 maptracker，等上游出迁移版本再适配。** maptracker 包因 #4792 回滚仍保留，无时间压力。
-
-4. **本机不装 C++ 工具链**（2026-07-30 决定）。改动都在 pipeline JSON + Go，靠官方 Release exe 即可。`python tools/build_and_install.py` 默认跳过 C++。
+6. **上游动向盯梢**（详见 §18.-2）：maptracker 包因 #4792 回滚仍保留，无时间压力。
 
 ### 18.2 ⚠️ 换电脑接力提醒（务必先确认二进制）
 

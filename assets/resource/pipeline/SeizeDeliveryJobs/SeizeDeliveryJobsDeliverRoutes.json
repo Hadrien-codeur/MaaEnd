@@ -1079,5 +1079,411 @@
         "focus": {
             "Node.Recognition.Succeeded": "送货-经纬田区 步行到 NPC[NAVMESH]"
         }
+    },
+    "SeizeDeliveryJobsDeliverValleyIVWalkToZipline": {
+        "desc": "送货-源石研究园步行到起点滑索架【NAVMESH + HEADING】",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map01_lv006",
+            "path": [
+                {"action": "NAVMESH", "target": [
+                        953.35,
+                        259.75
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "NAVMESH", "target": [
+                        951.05,
+                        259.02
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "HEADING", "target": [
+                        950.31,
+                        258.55
+                    ], "zone_id": "ValleyIV_Base"}
+            ]
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteHighwayFive": {
+        "desc": "送货路线-五号公路（源石研究园）",
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": [
+                "SeizeDeliveryJobsDeliverValleyIVWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteHighwayFiveZiplineA",
+                "SeizeDeliveryJobsDeliverRouteHighwayFiveZiplineB",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteHighwayFiveWalkToNpc"
+            ]}
+    },
+    "SeizeDeliveryJobsDeliverRouteHighwayFiveZiplineA": {
+        "desc": "五号公路连滑段A（发射朝 [198.7,324.3]，3架含起点，按1次E）",
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {"map_name": "map01_lv006", "target": [
+                198.7,
+                324.3
+            ], "timeout": 30000}
+    },
+    "SeizeDeliveryJobsDeliverRouteHighwayFiveZiplineB": {
+        "desc": "五号公路索上转向后发射朝 [172.1,314.1]",
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {"map_name": "map01_lv006", "target": [
+                172.1,
+                314.1
+            ], "timeout": 30000}
+    },
+    "SeizeDeliveryJobsDeliverRouteHighwayFiveWalkToNpc": {
+        "desc": "五号公路下索后步行到送货 NPC",
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map01_lv006",
+            "path": [
+                {"action": "NAVMESH", "target": [
+                        877.94,
+                        288.83
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "HEADING", "target": [
+                        878.95,
+                        283.94
+                    ], "zone_id": "ValleyIV_Base"}
+            ]
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteCommandCenter": {
+        "desc": "送货路线-总控中心（源石研究园）",
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": [
+                "SeizeDeliveryJobsDeliverValleyIVWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteCommandCenterZiplineA",
+                "SeizeDeliveryJobsDeliverRouteCommandCenterZiplineB",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteCommandCenterWalkToNpc"
+            ]}
+    },
+    "SeizeDeliveryJobsDeliverRouteCommandCenterZiplineA": {
+        "desc": "总控中心连滑段A（3架含起点，按1次E）",
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {"map_name": "map01_lv006", "target": [
+                186.1,
+                247.4
+            ], "timeout": 30000}
+    },
+    "SeizeDeliveryJobsDeliverRouteCommandCenterZiplineB": {
+        "desc": "总控中心索上转向后发射朝 [106.8,239.6]",
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {"map_name": "map01_lv006", "target": [
+                106.8,
+                239.6
+            ], "timeout": 30000}
+    },
+    "SeizeDeliveryJobsDeliverRouteCommandCenterWalkToNpc": {
+        "desc": "总控中心下索后步行到送货 NPC",
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map01_lv006",
+            "path": [
+                {"action": "NAVMESH", "target": [
+                        818.12,
+                        222.55
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "NAVMESH", "target": [
+                        817.29,
+                        224.12
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "HEADING", "target": [
+                        816.28,
+                        223.66
+                    ], "zone_id": "ValleyIV_Base"}
+            ]
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteResearchInstitute": {
+        "desc": "送货路线-研究所（源石研究园）",
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": [
+                "SeizeDeliveryJobsDeliverValleyIVWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteResearchInstituteZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteResearchInstituteWalkToNpc"
+            ]}
+    },
+    "SeizeDeliveryJobsDeliverRouteResearchInstituteZipline": {
+        "desc": "研究所连滑（4架含起点，按2次E）",
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {"map_name": "map01_lv006", "target": [
+                287.8,
+                239.3
+            ], "chain_max_press": 2, "timeout": 40000}
+    },
+    "SeizeDeliveryJobsDeliverRouteResearchInstituteWalkToNpc": {
+        "desc": "研究所下索后步行到送货 NPC",
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map01_lv006",
+            "path": [
+                {"action": "NAVMESH", "target": [
+                        1086.37,
+                        278.31
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "HEADING", "target": [
+                        1093.02,
+                        276.92
+                    ], "zone_id": "ValleyIV_Base"}
+            ]
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteResearchInstituteLower": {
+        "desc": "送货路线-研究所下层（源石研究园）",
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": [
+                "SeizeDeliveryJobsDeliverValleyIVWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteResearchInstituteLowerZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteResearchInstituteLowerWalkToNpc"
+            ]}
+    },
+    "SeizeDeliveryJobsDeliverRouteResearchInstituteLowerZipline": {
+        "desc": "研究所下层连滑（4架含起点，按2次E）",
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {"map_name": "map01_lv006", "target": [
+                287.8,
+                239.3
+            ], "chain_max_press": 2, "timeout": 40000}
+    },
+    "SeizeDeliveryJobsDeliverRouteResearchInstituteLowerWalkToNpc": {
+        "desc": "研究所下层下索后步行到送货 NPC",
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map01_lv006",
+            "path": [
+                {"action": "NAVMESH", "target": [
+                        1086.37,
+                        278.31
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "NAVMESH", "target": [
+                        1072.15,
+                        260.58
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "NAVMESH", "target": [
+                        1066.06,
+                        259.2
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "NAVMESH", "target": [
+                        1063.02,
+                        259.48
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "NAVMESH", "target": [
+                        1055.54,
+                        264.46
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "NAVMESH", "target": [
+                        1054.98,
+                        266.31
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "NAVMESH", "target": [
+                        1057.75,
+                        268.25
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "NAVMESH", "target": [
+                        1055.45,
+                        276.65
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "HEADING", "target": [
+                        1056.74,
+                        280.25
+                    ], "zone_id": "ValleyIV_Base"}
+            ]
+        }
+    },
+    "SeizeDeliveryJobsDeliverRouteRefiningCompoundFactory": {
+        "desc": "送货路线-醇化合物工厂（源石研究园）",
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": [
+                "SeizeDeliveryJobsDeliverValleyIVWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsDeliverRouteRefiningCompoundFactoryZiplineA",
+                "SeizeDeliveryJobsDeliverRouteRefiningCompoundFactoryZiplineB",
+                "SeizeDeliveryJobsDeliverRouteRefiningCompoundFactoryZiplineC",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsDeliverRouteRefiningCompoundFactoryWalkToNpc"
+            ]}
+    },
+    "SeizeDeliveryJobsDeliverRouteRefiningCompoundFactoryZiplineA": {
+        "desc": "醇化合物工厂连滑段A（6架含起点，按4次E）",
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {"map_name": "map01_lv006", "target": [
+                287.8,
+                239.3
+            ], "chain_max_press": 2, "timeout": 60000}
+    },
+    "SeizeDeliveryJobsDeliverRouteRefiningCompoundFactoryZiplineB": {
+        "desc": "醇化合物工厂索上转向后发射朝 [415,300.6]",
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {"map_name": "map01_lv006", "target": [
+                415,
+                300.6
+            ], "timeout": 30000}
+    },
+    "SeizeDeliveryJobsDeliverRouteRefiningCompoundFactoryZiplineC": {
+        "desc": "醇化合物工厂索上转向后发射朝 [369.1,360.3]",
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {"map_name": "map01_lv006", "target": [
+                369.1,
+                360.3
+            ], "timeout": 30000}
+    },
+    "SeizeDeliveryJobsDeliverRouteRefiningCompoundFactoryWalkToNpc": {
+        "desc": "醇化合物工厂下索后步行到送货 NPC",
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map01_lv006",
+            "path": [
+                {"action": "NAVMESH", "target": [
+                        1060.52,
+                        332.22
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "HEADING", "target": [
+                        1042.34,
+                        359.82
+                    ], "zone_id": "ValleyIV_Base"}
+            ]
+        }
+    },
+    "SeizeDeliveryJobsTestDeliverHighwayFiveEntry": {"desc": "源石研究园五号公路送货路线测试入口", "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverValleyIVHighwayFiveTeleport"
+        ]},
+    "SeizeDeliveryJobsTestDeliverCommandCenterEntry": {"desc": "源石研究园总控中心送货路线测试入口", "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverValleyIVCommandCenterTeleport"
+        ]},
+    "SeizeDeliveryJobsTestDeliverRefiningCompoundFactoryEntry": {
+        "desc": "源石研究园醇化合物工厂送货路线测试入口",
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverValleyIVRefiningCompoundFactoryTeleport"
+        ]
+    },
+    "SeizeDeliveryJobsTestDeliverResearchInstituteEntry": {"desc": "源石研究园研究所送货路线测试入口", "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverValleyIVResearchInstituteTeleport"
+        ]},
+    "SeizeDeliveryJobsTestDeliverResearchInstituteLowerEntry": {
+        "desc": "源石研究园研究所下层送货路线测试入口",
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTestDeliverValleyIVResearchInstituteLowerTeleport"
+        ]
+    },
+    "SeizeDeliveryJobsTestDeliverValleyIVHighwayFiveTeleport": {
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": ["SceneEnterWorldValleyIVOriginiumSciencePark3"]},
+        "next": ["SeizeDeliveryJobsTestDeliverValleyIVHighwayFiveRun"]
+    },
+    "SeizeDeliveryJobsTestDeliverValleyIVCommandCenterTeleport": {
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": ["SceneEnterWorldValleyIVOriginiumSciencePark3"]},
+        "next": ["SeizeDeliveryJobsTestDeliverValleyIVCommandCenterRun"]
+    },
+    "SeizeDeliveryJobsTestDeliverValleyIVRefiningCompoundFactoryTeleport": {
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": ["SceneEnterWorldValleyIVOriginiumSciencePark3"]},
+        "next": ["SeizeDeliveryJobsTestDeliverValleyIVRefiningCompoundFactoryRun"]
+    },
+    "SeizeDeliveryJobsTestDeliverValleyIVResearchInstituteTeleport": {
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": ["SceneEnterWorldValleyIVOriginiumSciencePark3"]},
+        "next": ["SeizeDeliveryJobsTestDeliverValleyIVResearchInstituteRun"]
+    },
+    "SeizeDeliveryJobsTestDeliverValleyIVResearchInstituteLowerTeleport": {
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": ["SceneEnterWorldValleyIVOriginiumSciencePark3"]},
+        "next": ["SeizeDeliveryJobsTestDeliverValleyIVResearchInstituteLowerRun"]
+    },
+    "SeizeDeliveryJobsTestDeliverValleyIVHighwayFiveRun": {
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": [
+                "SeizeDeliveryJobsOriginiumScienceParkWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteHighwayFive"
+            ]}
+    },
+    "SeizeDeliveryJobsTestDeliverValleyIVCommandCenterRun": {
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": [
+                "SeizeDeliveryJobsOriginiumScienceParkWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteCommandCenter"
+            ]}
+    },
+    "SeizeDeliveryJobsTestDeliverValleyIVRefiningCompoundFactoryRun": {
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": [
+                "SeizeDeliveryJobsOriginiumScienceParkWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteRefiningCompoundFactory"
+            ]}
+    },
+    "SeizeDeliveryJobsTestDeliverValleyIVResearchInstituteRun": {
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": [
+                "SeizeDeliveryJobsOriginiumScienceParkWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteResearchInstitute"
+            ]}
+    },
+    "SeizeDeliveryJobsTestDeliverValleyIVResearchInstituteLowerRun": {
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {"sub": [
+                "SeizeDeliveryJobsOriginiumScienceParkWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkWalkFromZipline",
+                "SeizeDeliveryJobsDeliverRouteResearchInstituteLower"
+            ]}
     }
 }

@@ -1,0 +1,12 @@
+{
+    "task": [
+        {
+            "name": "SeizeDeliveryJobsTestDeliverHighwayFive",
+            "description": "$task.SeizeDeliveryJobsTestDeliverHighwayFive.description",
+            "label": "$task.SeizeDeliveryJobsTestDeliverHighwayFive.label",
+            "entry": "SeizeDeliveryJobsTestDeliverHighwayFiveEntry",
+            "controller": ["Win32-Front", "Wlroots"],
+            "group": ["regional_development"]
+        }
+    ]
+}

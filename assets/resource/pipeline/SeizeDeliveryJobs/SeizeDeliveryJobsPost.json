@@ -72,7 +72,8 @@
         "next": [
             "SeizeDeliveryJobsSuccessTeleportDone",
             "SeizeDeliveryJobsTargetDepotNodeIsWulingCity",
-            "SeizeDeliveryJobsTargetDepotNodeIsTestArea"
+            "SeizeDeliveryJobsTargetDepotNodeIsTestArea",
+            "SeizeDeliveryJobsTargetDepotNodeIsOriginiumSciencePark"
         ],
         "on_error": [
             "SeizeDeliveryJobsFatalCannotDetermineDestination"
@@ -134,6 +135,35 @@
         ],
         "focus": {
             "Node.Recognition.Succeeded": "判断任务地点是试验园区"
+        }
+    },
+    "SeizeDeliveryJobsTargetDepotNodeIsOriginiumSciencePark": {
+        "desc": "判断当前是源石研究园的送货任务",
+        "recognition": "Custom",
+        "custom_recognition": "MapTrackerAssertLocation",
+        "custom_recognition_param": {
+            "expected": [
+                {
+                    "map_name": "map01_lv006",
+                    "target": [
+                        160.0,
+                        306.0,
+                        30.0,
+                        25.0
+                    ]
+                }
+            ]
+        },
+        "pre_delay": 0,
+        "anchor": {
+            "SeizeDeliveryJobsWalkToDepotNode": "SeizeDeliveryJobsWalkToDepotNodeOriginiumSciencePark"
+        },
+        "post_delay": 0,
+        "next": [
+            "SeizeDeliveryJobsCheckCarryingGoods"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "判断任务地点是源石研究园"
         }
     },
     "SeizeDeliveryJobsCheckCarryingGoods": {
@@ -658,5 +688,116 @@
         "focus": {
             "Node.Recognition.Succeeded": "<p style=\"color: #f44\">无法识别接取货物按钮，请手动送货</p>"
         }
+    },
+    "SeizeDeliveryJobsTestPickupOriginiumScienceParkEntry": {
+        "desc": "源石研究园取货段独立测试入口（仅调试用）",
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "[JumpBack]__SeizeDeliveryJobsEnsureInWorld",
+            "SeizeDeliveryJobsTeleportOriginiumSciencePark"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "**源石研究园取货段独立测试开始**"
+        }
+    },
+    "SeizeDeliveryJobsTeleportOriginiumSciencePark": {
+        "desc": "传送到源石研究园五号公路锚点",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SceneEnterWorldValleyIVOriginiumSciencePark3"
+            ]
+        },
+        "post_delay": 0,
+        "timeout": 10000,
+        "next": [
+            "SeizeDeliveryJobsWalkToDepotNodeOriginiumSciencePark"
+        ]
+    },
+    "SeizeDeliveryJobsWalkToDepotNodeOriginiumSciencePark": {
+        "desc": "走到源石研究园仓储节点（滑索路线）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "SeizeDeliveryJobsOriginiumScienceParkWalkToZipline",
+                "MapTrackerOpenWorld_GetOnZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkZipline",
+                "MapTrackerOpenWorld_GetOffZipline",
+                "SeizeDeliveryJobsOriginiumScienceParkWalkFromZipline"
+            ]
+        },
+        "post_delay": 500,
+        "next": [
+            "SeizeDeliveryJobsSuccessWalkDone",
+            "SeizeDeliveryJobsFetchGoods",
+            "SeizeDeliveryJobsFatalCannotFetchGoods"
+        ],
+        "focus": {
+            "Node.Recognition.Succeeded": "正在走到源石研究园仓储节点"
+        }
+    },
+    "SeizeDeliveryJobsOriginiumScienceParkWalkToZipline": {
+        "desc": "取货-源石研究园步行到起点滑索架【NAVMESH + HEADING】",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map01_lv006",
+            "path": [
+                {"action": "NAVMESH", "target": [
+                        876.18,
+                        290.49
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "NAVMESH", "target": [
+                        877.75,
+                        290.31
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "HEADING", "target": [
+                        878.49,
+                        290.4
+                    ], "zone_id": "ValleyIV_Base"}
+            ]
+        },
+        "focus": {"Node.Recognition.Succeeded": "源石研究园取货-步行到起点滑索"}
+    },
+    "SeizeDeliveryJobsOriginiumScienceParkZipline": {
+        "desc": "取货-源石研究园滑索（发射朝 [198.9,324.9]，3架含起点，按1次E）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapTrackerZipline",
+        "custom_action_param": {
+            "map_name": "map01_lv006",
+            "target": [
+                198.9,
+                324.9
+            ],
+            "chain_max_press": 1,
+            "timeout": 30000
+        }
+    },
+    "SeizeDeliveryJobsOriginiumScienceParkWalkFromZipline": {
+        "desc": "取货-源石研究园下索后步行到仓储节点【NAVMESH + HEADING】",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "map_name": "map01_lv006",
+            "path": [
+                {"action": "NAVMESH", "target": [
+                        951.78,
+                        258.55
+                    ], "zone_id": "ValleyIV_Base"},
+                {"action": "HEADING", "target": [
+                        951.51,
+                        259.94
+                    ], "zone_id": "ValleyIV_Base"}
+            ]
+        },
+        "focus": {"Node.Recognition.Succeeded": "源石研究园取货-步行到仓储节点"}
     }
 }

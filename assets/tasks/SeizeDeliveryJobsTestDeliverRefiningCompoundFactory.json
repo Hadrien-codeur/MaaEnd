@@ -1,0 +1,12 @@
+{
+    "task": [
+        {
+            "name": "SeizeDeliveryJobsTestDeliverRefiningCompoundFactory",
+            "description": "$task.SeizeDeliveryJobsTestDeliverRefiningCompoundFactory.description",
+            "label": "$task.SeizeDeliveryJobsTestDeliverRefiningCompoundFactory.label",
+            "entry": "SeizeDeliveryJobsTestDeliverRefiningCompoundFactoryEntry",
+            "controller": ["Win32-Front", "Wlroots"],
+            "group": ["regional_development"]
+        }
+    ]
+}
