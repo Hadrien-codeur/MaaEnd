@@ -5,7 +5,10 @@
             "description": "$task.SeizeDeliveryJobsTestPickupOriginiumSciencePark.description",
             "label": "$task.SeizeDeliveryJobsTestPickupOriginiumSciencePark.label",
             "entry": "SeizeDeliveryJobsTestPickupOriginiumScienceParkEntry",
-            "controller": ["Win32-Front", "Wlroots"],
+            "controller": [
+                "Win32-Front",
+                "Wlroots"
+            ],
             "group": ["regional_development"],
             "pipeline_override": {
                 "SeizeDeliveryJobsSuccessWalkDone": {"enabled": true}

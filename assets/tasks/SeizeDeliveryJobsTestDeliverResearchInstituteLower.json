@@ -5,7 +5,10 @@
             "description": "$task.SeizeDeliveryJobsTestDeliverResearchInstituteLower.description",
             "label": "$task.SeizeDeliveryJobsTestDeliverResearchInstituteLower.label",
             "entry": "SeizeDeliveryJobsTestDeliverResearchInstituteLowerEntry",
-            "controller": ["Win32-Front", "Wlroots"],
+            "controller": [
+                "Win32-Front",
+                "Wlroots"
+            ],
             "group": ["regional_development"]
         }
     ]
