@@ -144,7 +144,7 @@
         "custom_recognition_param": {
             "expected": [
                 {
-                    "map_name": "map01_lv006",
+                    "map_name": "map01_lv005",
                     "target": [
                         160.0,
                         306.0,
@@ -747,7 +747,7 @@
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
-            "map_name": "map01_lv006",
+            "map_name": "map01_lv005",
             "path": [
                 {"action": "NAVMESH", "target": [
                         876.18,
@@ -771,7 +771,7 @@
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
         "custom_action_param": {
-            "map_name": "map01_lv006",
+            "map_name": "map01_lv005",
             "target": [
                 198.9,
                 324.9
@@ -786,7 +786,7 @@
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
-            "map_name": "map01_lv006",
+            "map_name": "map01_lv005",
             "path": [
                 {"action": "NAVMESH", "target": [
                         951.78,

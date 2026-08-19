@@ -34,11 +34,18 @@
             // 已在任务界面（刚点过「查看任务」）则点定位；未追踪时改点开始追踪
             "DeliveryJobsAutoDeliverViewDestinationMap",
             "DeliveryJobsAutoDeliverStartTrackingTask",
-            // 在本地仓储节点则先点「查看任务」（武陵城区 / 试验园区同页两张卡，命中哪张走哪张）
+            // 在本地仓储节点则先点「查看任务」（同页多张卡，命中哪张走哪张）
+            // 武陵：武陵城区 / 试验园区
             "DeliveryJobsAutoDeliverViewJob",
             "DeliveryJobsAutoDeliverViewJobTestArea",
-            // 都不在（例如刚从大世界回来）则先回到本地仓储节点
-            "[JumpBack]SceneEnterMenuRegionalDevelopmentWulingDepotNode"
+            // 四号谷地：源石研究园 / 矿脉源区 / 供能高地
+            "DeliveryJobsAutoDeliverViewJobOriginiumSciencePark",
+            "DeliveryJobsAutoDeliverViewJobOriginLodespring",
+            "DeliveryJobsAutoDeliverViewJobPowerPlateau",
+            // 都不在（例如刚从大世界回来）则先回到本地仓储节点；
+            // 两个地区都挂上，命中哪个地区的仓储界面就从哪个继续
+            "[JumpBack]SceneEnterMenuRegionalDevelopmentWulingDepotNode",
+            "[JumpBack]SceneEnterMenuRegionalDevelopmentValleyIVDepotNode"
         ]
     },
     "DeliveryJobsAutoDeliverViewJob": {
@@ -83,6 +90,72 @@
         ],
         "focus": {
             "Node.Action.Starting": "打开当前送货任务详情（试验园区）"
+        }
+    },
+    "DeliveryJobsAutoDeliverViewJobOriginiumSciencePark": {
+        "desc": "在本地仓储节点，点击源石研究园的「查看任务」进入送货任务详情（此节点默认关闭）",
+        "enabled": false,
+        "recognition": "And",
+        "all_of": [
+            "DeliveryJobsCheckLocalDepotNodeOriginiumScienceParkText",
+            "DeliveryJobsCheckOriginiumScienceParkDeliveryJob"
+        ],
+        "box_index": 1,
+        "pre_delay": 0,
+        "action": "Click",
+        "post_wait_freezes": 500,
+        "post_delay": 0,
+        "rate_limit": 500,
+        "next": [
+            "DeliveryJobsAutoDeliverViewDestinationMap",
+            "DeliveryJobsAutoDeliverStartTrackingTask"
+        ],
+        "focus": {
+            "Node.Action.Starting": "打开当前送货任务详情（源石研究园）"
+        }
+    },
+    "DeliveryJobsAutoDeliverViewJobOriginLodespring": {
+        "desc": "在本地仓储节点，点击矿脉源区的「查看任务」进入送货任务详情（此节点默认关闭）",
+        "enabled": false,
+        "recognition": "And",
+        "all_of": [
+            "DeliveryJobsCheckLocalDepotNodeOriginLodespringText",
+            "DeliveryJobsCheckOriginLodespringDeliveryJob"
+        ],
+        "box_index": 1,
+        "pre_delay": 0,
+        "action": "Click",
+        "post_wait_freezes": 500,
+        "post_delay": 0,
+        "rate_limit": 500,
+        "next": [
+            "DeliveryJobsAutoDeliverViewDestinationMap",
+            "DeliveryJobsAutoDeliverStartTrackingTask"
+        ],
+        "focus": {
+            "Node.Action.Starting": "打开当前送货任务详情（矿脉源区）"
+        }
+    },
+    "DeliveryJobsAutoDeliverViewJobPowerPlateau": {
+        "desc": "在本地仓储节点，点击供能高地的「查看任务」进入送货任务详情（此节点默认关闭）",
+        "enabled": false,
+        "recognition": "And",
+        "all_of": [
+            "DeliveryJobsCheckLocalDepotNodePowerPlateauText",
+            "DeliveryJobsCheckPowerPlateauDeliveryJob"
+        ],
+        "box_index": 1,
+        "pre_delay": 0,
+        "action": "Click",
+        "post_wait_freezes": 500,
+        "post_delay": 0,
+        "rate_limit": 500,
+        "next": [
+            "DeliveryJobsAutoDeliverViewDestinationMap",
+            "DeliveryJobsAutoDeliverStartTrackingTask"
+        ],
+        "focus": {
+            "Node.Action.Starting": "打开当前送货任务详情（供能高地）"
         }
     },
     "DeliveryJobsAutoDeliverViewDestinationMap": {

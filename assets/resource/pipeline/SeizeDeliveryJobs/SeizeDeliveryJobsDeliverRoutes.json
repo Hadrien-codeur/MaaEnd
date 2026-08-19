@@ -1086,7 +1086,7 @@
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
-            "map_name": "map01_lv006",
+            "map_name": "map01_lv005",
             "path": [
                 {"action": "NAVMESH", "target": [
                         953.35,
@@ -1120,7 +1120,7 @@
         "desc": "五号公路连滑段A（发射朝 [198.7,324.3]，3架含起点，按1次E）",
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
-        "custom_action_param": {"map_name": "map01_lv006", "target": [
+        "custom_action_param": {"map_name": "map01_lv005", "target": [
                 198.7,
                 324.3
             ], "timeout": 30000}
@@ -1129,7 +1129,7 @@
         "desc": "五号公路索上转向后发射朝 [172.1,314.1]",
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
-        "custom_action_param": {"map_name": "map01_lv006", "target": [
+        "custom_action_param": {"map_name": "map01_lv005", "target": [
                 172.1,
                 314.1
             ], "timeout": 30000}
@@ -1139,7 +1139,7 @@
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
-            "map_name": "map01_lv006",
+            "map_name": "map01_lv005",
             "path": [
                 {"action": "NAVMESH", "target": [
                         877.94,
@@ -1169,7 +1169,7 @@
         "desc": "总控中心连滑段A（3架含起点，按1次E）",
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
-        "custom_action_param": {"map_name": "map01_lv006", "target": [
+        "custom_action_param": {"map_name": "map01_lv005", "target": [
                 186.1,
                 247.4
             ], "timeout": 30000}
@@ -1178,7 +1178,7 @@
         "desc": "总控中心索上转向后发射朝 [106.8,239.6]",
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
-        "custom_action_param": {"map_name": "map01_lv006", "target": [
+        "custom_action_param": {"map_name": "map01_lv005", "target": [
                 106.8,
                 239.6
             ], "timeout": 30000}
@@ -1188,7 +1188,7 @@
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
-            "map_name": "map01_lv006",
+            "map_name": "map01_lv005",
             "path": [
                 {"action": "NAVMESH", "target": [
                         818.12,
@@ -1221,7 +1221,7 @@
         "desc": "研究所连滑（4架含起点，按2次E）",
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
-        "custom_action_param": {"map_name": "map01_lv006", "target": [
+        "custom_action_param": {"map_name": "map01_lv005", "target": [
                 287.8,
                 239.3
             ], "chain_max_press": 2, "timeout": 40000}
@@ -1231,7 +1231,7 @@
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
-            "map_name": "map01_lv006",
+            "map_name": "map01_lv005",
             "path": [
                 {"action": "NAVMESH", "target": [
                         1086.37,
@@ -1260,7 +1260,7 @@
         "desc": "研究所下层连滑（4架含起点，按2次E）",
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
-        "custom_action_param": {"map_name": "map01_lv006", "target": [
+        "custom_action_param": {"map_name": "map01_lv005", "target": [
                 287.8,
                 239.3
             ], "chain_max_press": 2, "timeout": 40000}
@@ -1270,7 +1270,7 @@
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
-            "map_name": "map01_lv006",
+            "map_name": "map01_lv005",
             "path": [
                 {"action": "NAVMESH", "target": [
                         1086.37,
@@ -1329,7 +1329,7 @@
         "desc": "醇化合物工厂连滑段A（6架含起点，按4次E）",
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
-        "custom_action_param": {"map_name": "map01_lv006", "target": [
+        "custom_action_param": {"map_name": "map01_lv005", "target": [
                 287.8,
                 239.3
             ], "chain_max_press": 2, "timeout": 60000}
@@ -1338,7 +1338,7 @@
         "desc": "醇化合物工厂索上转向后发射朝 [415,300.6]",
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
-        "custom_action_param": {"map_name": "map01_lv006", "target": [
+        "custom_action_param": {"map_name": "map01_lv005", "target": [
                 415,
                 300.6
             ], "timeout": 30000}
@@ -1347,7 +1347,7 @@
         "desc": "醇化合物工厂索上转向后发射朝 [369.1,360.3]",
         "action": "Custom",
         "custom_action": "MapTrackerZipline",
-        "custom_action_param": {"map_name": "map01_lv006", "target": [
+        "custom_action_param": {"map_name": "map01_lv005", "target": [
                 369.1,
                 360.3
             ], "timeout": 30000}
@@ -1357,7 +1357,7 @@
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
-            "map_name": "map01_lv006",
+            "map_name": "map01_lv005",
             "path": [
                 {"action": "NAVMESH", "target": [
                         1060.52,

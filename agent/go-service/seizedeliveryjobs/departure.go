@@ -51,7 +51,7 @@ var seizeDeliveryJobsEndpoints = map[string][]seizeDeliveryJobsEndpoint{
 		{Name: "JingweiFieldArea", Target: [2]float64{429.7, 294.7}},   // 经纬田区（右）
 	},
 	// 源石研究园（四号谷地）
-	"map01_lv006": {
+	"map01_lv005": {
 		{Name: "HighwayFive", Target: [2]float64{172.2, 307.6}},
 		{Name: "CommandCenter", Target: [2]float64{104.3, 242.3}},
 		{Name: "RefiningCompoundFactory", Target: [2]float64{349.2, 389.8}},

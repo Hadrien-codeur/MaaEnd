@@ -506,6 +506,15 @@
                         "DeliveryJobsAutoDeliverViewJobTestArea": {
                             "enabled": true
                         },
+                        "DeliveryJobsAutoDeliverViewJobOriginiumSciencePark": {
+                            "enabled": true
+                        },
+                        "DeliveryJobsAutoDeliverViewJobOriginLodespring": {
+                            "enabled": true
+                        },
+                        "DeliveryJobsAutoDeliverViewJobPowerPlateau": {
+                            "enabled": true
+                        },
                         "DeliveryJobsAutoDeliverViewDestinationMap": {
                             "enabled": true
                         },
@@ -536,7 +545,7 @@
                         // 3) 送货段只走预录的固定滑索路线，不匹配即失败（不回退寻路）
                         "SeizeDeliveryJobsRunDeparture": {
                             "custom_action_param": {
-                                "map_name_regex": "^(map02_lv002|map02_lv005|map01_lv006)$", // 已录制固定路线的地图：武陵城、试验园区、源石研究园
+                                "map_name_regex": "^(map02_lv002|map02_lv005|map01_lv005)$", // 已录制固定路线的地图：武陵城、试验园区、源石研究园
                                 "zipline_policy": "Lazy", // 命中固定路线时不使用此值；仅参数校验需要
                                 "is_retry": false,
                                 "custom_delivery": true
