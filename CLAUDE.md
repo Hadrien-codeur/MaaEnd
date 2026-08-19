@@ -502,28 +502,40 @@ python tools/build_and_install.py
 2. **中期：盯 #4784 结局**。若上游 navmesh 最终稳定（学生态农场加中转点绕河）→ 我们滑索优势消失，直接跟随迁移最省事；若一直修不好 → 拿我们武陵城成功率数据去上游争取「保留滑索子集」（方案①）。
 3. **长期兜底：真到删包那天**，方案③下沉重构是唯一自主可控路，但是几百行重构（纯 Go 本机能编），单独立项，别边录路线边改架构。
 
-### 18.0 当前进度存档（2026-08-18）
+### 18.0 当前进度存档（2026-08-20）
 
 **已完成**：
 
-- 源石研究园（`map01_lv006`）取货路线与 5 条固定滑索送货路线已写入 Pipeline。
+- 源石研究园（**`map01_lv005`**，注意不是 `lv006`）取货路线与 5 条固定滑索送货路线已写入 Pipeline。
 - `departure.go` 已加入源石研究园 5 个 endpoint，并完成多地图分流。
 - `DeliveryJobs` 自动送货已接通源石研究园的已有委托与装箱后入口。
 - 五语言界面文案已补齐：6 个源石研究园调试任务各含 `label` / `description`，自动送货说明已更新支持范围。
-- 已运行 `pnpm format`、`pnpm check`、`pnpm format:go`，均通过。
-- 已运行 `python tools/build_and_install.py`，`install/agent/go-service.exe` 已重编并包含 `map01_lv006` endpoint。
+- 已运行 `pnpm format`，通过。
+- 已运行 `python tools/build_and_install.py`，`install/agent/go-service.exe` 已重编并包含 `map01_lv005` endpoint。
 - MapTracker 已启动并保留运行，地址：`http://127.0.0.1:8060/web/`。
+
+**已修复 Bug（commit `900a0e03`，待 push 到 myfork，凭据过期需手动推）**：
+
+1. **自动送货四号谷地 ViewJob + JumpBack 路径缺失**：
+   - `DeliveryJobsAutoDeliverEnterDestinationMap` 的 next 列表只写了武陵（武陵城区 / 试验园区），没有四号谷地任何仓储节点 → 装箱后 JumpBack 进武陵找源石研究园卡片 → 死循环 20s 超时。
+   - 修复：AutoDeliver.json 新增 3 个四号谷地 ViewJob（源石研究园 / 矿脉源区 / 供能高地）+ `SceneEnterMenuRegionalDevelopmentValleyIVDepotNode` JumpBack；DeliveryJobs.json pipeline_override 启用新节点。
+2. **源石研究园地图名写错（`map01_lv006` → `map01_lv005`）**：
+   - `map_external_data.json` 中 `map01_lv005` = 源石研究园、`map01_lv006` = 矿脉源区，我们录路线时搞混了。
+   - 修复：5 个文件共 20 处全部改回 `map01_lv005`（SeizeDeliveryJobsPost.json × 4、DeliverRoutes.json × 14、PostDeparture.json × 1、DeliveryJobs.json × 1、departure.go × 1）。
+   - 注意：官方 AutoCollectRoute13（源石研究园采集路线）里写的也是 `map01_lv006`，**那也是错的**，但我们不动官方文件。
 
 **当前未完成**：
 
 - 源石研究园 6 个独立调试入口尚未实机验证。
-- 从武陵地区接取源石研究园委托的跨区流程尚未实机验证，暂不预判是传送落点还是地区断言问题。
+- 修复后（地图名 + ViewJob）**尚未实机测试**：需重启 MaaEnd.exe，从武陵接一单源石研究园委托 → 装箱 → 观察自动送货是否命中 `SeizeDeliveryJobsTargetDepotNodeIsOriginiumSciencePark` 断言 → 走送货流程。
+- 矿脉源区 / 供能高地尚未录制送货路线，目前走 `Unsupported` 停止。
+- `git push myfork` 推送失败（GitHub 凭据过期），本地 commit 已保存，需博士手动更新凭据或用 SSH 重新推送。
 
-**明日测试顺序**：
+**下次测试顺序**：
 
-1. 完整重启 `MaaEnd.exe`，逐条运行源石研究园取货测试和 5 条送货测试。
-2. 重点观察上索、首跳方向、`chain_max_press`、下索后 NAVMESH/HEADING 与交互按钮。
-3. 从武陵地区执行一单源石研究园「转交委托-自动送货」，记录 `install/debug/go-service.log` 中的 `recorded delivery job destination`、地图名和传送后地区断言结果。
-4. 若传送已到 `map01_lv006` 但断言未命中，用 MapTracker 读取实际坐标后调整断言范围；若传送未跨区，再设计传送前按目标地图选择锚点的修复。
+1. 更新 GitHub 凭据，`git push myfork feature/zipline-fast` 推送 commit `900a0e03`。
+2. 完整重启 `MaaEnd.exe`，从武陵地区接一单源石研究园「转交委托-自动送货」。
+3. 重点观察：装箱后是否正确进四号谷地仓储节点 → 找到源石研究园「查看任务」→ 打开目的地地图 → 传送 → 断言命中 `map01_lv005`。
+4. 若断言仍未命中，用 MapTracker 读取传送后的实际坐标与地图名。
 
 > 上游 MapTracker → MapNavigator 迁移调研保留在 §18.-2；本节仅记录当前开发进度与实测待办。
