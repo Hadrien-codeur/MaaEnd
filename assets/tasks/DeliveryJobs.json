@@ -498,7 +498,20 @@
                             "enabled": true
                         },
                         "DeliveryJobsAutoDeliverEnterDestinationMap": {
-                            "enabled": true
+                            "enabled": true,
+                            // 补上兜底：都不在时回本地仓储节点，回哪个地区由装箱时锚定
+                            // （直接在 pipeline 里并列挂两个地区的跳转指令会永远跳错，见 AutoDeliver.json 注释）
+                            "next": [
+                                "DeliveryJobsAutoDeliverInDestinationMap",
+                                "DeliveryJobsAutoDeliverViewDestinationMap",
+                                "DeliveryJobsAutoDeliverStartTrackingTask",
+                                "DeliveryJobsAutoDeliverViewJob",
+                                "DeliveryJobsAutoDeliverViewJobTestArea",
+                                "DeliveryJobsAutoDeliverViewJobOriginiumSciencePark",
+                                "DeliveryJobsAutoDeliverViewJobOriginLodespring",
+                                "DeliveryJobsAutoDeliverViewJobPowerPlateau",
+                                "[Anchor]DeliveryJobsAutoDeliverBackToDepot"
+                            ]
                         },
                         "DeliveryJobsAutoDeliverViewJob": {
                             "enabled": true
@@ -594,31 +607,37 @@
                         "DeliveryJobsEnterWulingCityCargo": {
                             "anchor": {
                                 "DeliveryJobsSelectItemToFill": "DeliveryJobsSelectItemToFillWuling",
-                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverEntry"
+                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverEntry",
+                                // 装箱完成回仓储节点时，回武陵地区（避免跳错地区死循环）
+                                "DeliveryJobsAutoDeliverBackToDepot": "SceneEnterMenuRegionalDevelopmentWulingDepotNode"
                             }
                         },
                         "DeliveryJobsEnterTestAreaCargo": {
                             "anchor": {
                                 "DeliveryJobsSelectItemToFill": "DeliveryJobsSelectItemToFillWuling",
-                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverEntry"
+                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverEntry",
+                                "DeliveryJobsAutoDeliverBackToDepot": "SceneEnterMenuRegionalDevelopmentWulingDepotNode"
                             }
                         },
                         "DeliveryJobsEnterOriginiumScienceParkCargo": {
                             "anchor": {
                                 "DeliveryJobsSelectItemToFill": "DeliveryJobsSelectItemToFillValleyIV",
-                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverEntry"
+                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverEntry",
+                                "DeliveryJobsAutoDeliverBackToDepot": "SceneEnterMenuRegionalDevelopmentValleyIVDepotNode"
                             }
                         },
                         "DeliveryJobsEnterOriginLodespringCargo": {
                             "anchor": {
                                 "DeliveryJobsSelectItemToFill": "DeliveryJobsSelectItemToFillValleyIV",
-                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverUnsupported"
+                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverUnsupported",
+                                "DeliveryJobsAutoDeliverBackToDepot": "SceneEnterMenuRegionalDevelopmentValleyIVDepotNode"
                             }
                         },
                         "DeliveryJobsEnterPowerPlateauCargo": {
                             "anchor": {
                                 "DeliveryJobsSelectItemToFill": "DeliveryJobsSelectItemToFillValleyIV",
-                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverUnsupported"
+                                "DeliveryJobsAutoDeliverAfterPack": "DeliveryJobsAutoDeliverUnsupported",
+                                "DeliveryJobsAutoDeliverBackToDepot": "SceneEnterMenuRegionalDevelopmentValleyIVDepotNode"
                             }
                         }
                     }

@@ -3,6 +3,12 @@
     // 本文件只做接线，不新增任何识别；整条「拿着单 → 取货 → 送货 → 提交」链路复用
     // SeizeDeliveryJobsPostProcessingEntry（见 SeizeDeliveryJobs/SeizeDeliveryJobsPost.json）。
     // 所有节点默认关闭，由 assets/tasks/DeliveryJobs.json 的 DeliveryJobsAutoDeliver 选项开启。
+    //
+    // 地区锚定：装箱进入时（DeliveryJobsEnterXXXCargo）通过 anchor 同时锚定两个占位符：
+    //   - DeliveryJobsAutoDeliverAfterPack → 装箱完成后是否进自动送货
+    //   - DeliveryJobsAutoDeliverBackToDepot → 兜底回仓储节点时回哪个地区（武陵 / 四号谷地）
+    // 注意：不要把 SceneEnterMenuRegionalDevelopmentWuling/ValleyIVDepotNode 并列挂在 next 里，
+    // 它们是「无条件跳转指令」而非地区识别，并列会导致永远跳错地区形成死循环（曾踩坑）。
     "DeliveryJobsAutoDeliverEntry": {
         "desc": "自动送货入口：转入抢委托送货的后处理链路（拿着单去取货并送达）（此节点默认关闭）",
         "enabled": false,
@@ -41,11 +47,12 @@
             // 四号谷地：源石研究园 / 矿脉源区 / 供能高地
             "DeliveryJobsAutoDeliverViewJobOriginiumSciencePark",
             "DeliveryJobsAutoDeliverViewJobOriginLodespring",
-            "DeliveryJobsAutoDeliverViewJobPowerPlateau",
-            // 都不在（例如刚从大世界回来）则先回到本地仓储节点；
-            // 两个地区都挂上，命中哪个地区的仓储界面就从哪个继续
-            "[JumpBack]SceneEnterMenuRegionalDevelopmentWulingDepotNode",
-            "[JumpBack]SceneEnterMenuRegionalDevelopmentValleyIVDepotNode"
+            "DeliveryJobsAutoDeliverViewJobPowerPlateau"
+            // 都不在（例如刚从大世界回来）则先回到本地仓储节点：
+            // 该兜底由 tasks/DeliveryJobs.json 的 override 追加 [Anchor]DeliveryJobsAutoDeliverBackToDepot，
+            // 并在各 DeliveryJobsEnterXXXCargo 的 anchor 里按地区赋值（武陵 / 四号谷地）。
+            // 注意：不要把 SceneEnterMenuRegionalDevelopmentWuling/ValleyIVDepotNode 直接并列挂在这里，
+            // 它们是「无条件跳转指令」而非地区识别，并列会导致永远跳错地区形成死循环（曾踩坑）。
         ]
     },
     "DeliveryJobsAutoDeliverViewJob": {

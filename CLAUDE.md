@@ -450,92 +450,49 @@ python tools/build_and_install.py
 
 ---
 
+> 本文档的当前进度存档（原第 18 节）已于 2026-08-21 接力确认后删除；最新状态请见会话上下文或 Git 记录。
+
+---
+
 ## 18. 当前进度存档（接力时先读此节，确认后删除）
 
-### 18.-2 上游 #4793「寻路统一迁 MapNavigator」调研（2026-08-06，公司电脑，纯调研未改代码）
+### 18.0 最新状态（2026-08-21 凌晨，家里电脑）
 
-> ⚠️ **这是关系到本方案存亡的上游动向，接力优先读。** 本轮只做调研，未改任何 pipeline/Go 代码，下面是结论。
+**分支**：`feature/zipline-fast`，工作区已改 3 个文件未提交（CLAUDE.md + 2 个修复文件）。
 
-**#4793 是什么**：上游要把 pipeline 里所有寻路（241 处 `custom_action`）从 **MapTracker 全量迁到 MapNavigator**，7 个任务分 7 个子 PR。**全部合并后会删除整个 `agent/go-service/maptracker` 包**（`MapTrackerMove/Goal/Toward/AssertLocation` 届时无调用点）。
+**已完成：自动送货死循环修复（地区错跳）**
 
-**对我们的直接冲击**：我们的滑索送货方案重度依赖 maptracker。对口子 PR 是 **#4784（抢委托送货，DRAFT，分支 `refactor/pathfinding-split-seizedeliveryjobs`，只改 `SeizeDeliveryJobsPost.json`）**，方案与我们**根本不同**：
+- **根因**：commit `900a0e03`（08-20）补四号谷地 ViewJob 时，在 `DeliveryJobsAutoDeliverEnterDestinationMap` 的兜底 next 里并列挂了 `SceneEnterMenuRegionalDevelopmentWulingDepotNode` + `ValleyIVDepotNode` 两个**无条件跳转指令**（无 recognition），导致无论当前在哪个地区都强切武陵 → 武陵仓储界面找不到源石研究园"查看任务" → 死循环。
+- **修复**（2 个文件）：
+  1. `assets/resource/pipeline/DeliveryJobs/AutoDeliver.json`：删掉两个并列跳转，兜底改为由 tasks 侧 override 追加 `[Anchor]DeliveryJobsAutoDeliverBackToDepot`；补充注释禁止再并列挂跳转指令。
+  2. `assets/tasks/DeliveryJobs.json`：`DeliveryJobsAutoDeliverEnterDestinationMap` override 补 `next`（8 个识别节点 + `[Anchor]DeliveryJobsAutoDeliverBackToDepot`）；5 个 `DeliveryJobsEnterXXXCargo` 的 anchor 里按地区锚定 `DeliveryJobsAutoDeliverBackToDepot`（武陵城区/试验园区→武陵，源石研究园/矿脉源区/供能高地→四号谷地）。
+- **校验**：`pnpm check` ✅、`pnpm test` 654/654 ✅。
 
-- **完全放弃滑索**，改纯 navmesh；武陵城仓储节点跳河问题（#3851，我们用滑索解决的）它改用「**写死桥面两点走桥**」（网格铺到南北桥头，桥面挖空处写死裸坐标 `[964,1813]` 直走）。
-- 位置断言 `MapTrackerAssertLocation` → `MapLocateAssertLocation`（坐标系换成 `Wuling_Base` base px，900~1800 量级）。
-- 作者自评：泡测 4 轮**成功率 41%，七条分支最差，武陵城两段每轮都挂**，自己写「**建议先修再合**」。
+**✅ 修复已验证生效**（实机，01:41 那轮）：
 
-**上游官方节奏（collaborator zmdyy0318 在 #4793 明确）**：周五正式版前除农场外寻路**先不合**，先给所有寻路节点开成功率上报（#4797）拿基线，beta 后分批合，**成功率差的优先修复或回退**。且 maptracker 包因 **#4792 回滚了 #4787**（有人提前删包出事故）**仍然保留**——短期不会真删，**我们没有时间压力**。
+- 装箱 → 点"请尽快送达" → 回**四号谷地**仓储节点（不再跳武陵）✅
+- 查看任务 → 打开目的地地图 → 快速传送到源石研究园仓储节点（`map01_lv005` (169.3, 314.7)，断言命中）✅
 
-#### 18.-2.1 兼容方案调研：地面能迁，滑索无现成替代
+**❌ 新卡点（下一步要排查，日志已备份）**：
 
-**问题**：地面段迁 navmesh、滑索段找 MapNavigator 原生实现，可行吗？
+- 现象：传送完成后，`SeizeDeliveryJobsPrepareFetchGoods` → `SeizeDeliveryJobsEnterDestinationMap` 想**再次打开地图取消任务追踪**，但我们的 override 把它改道到 `DeliveryJobsAutoDeliverEnterDestinationMap`（从仓储节点点查看任务），此时角色**已在大世界**（不是仓储界面），8 个 next 全 miss，空转约 20 秒后任务失败退出。
+- 本质：`SeizeDeliveryJobsEnterDestinationMap` 在整条链被调用 **3 次**（传送前/取消追踪前/送货前），我们之前把它全量改道成"从仓储节点查看任务"，但**传送完成后的调用点**（`PrepareFetchGoods`）角色在大世界，改道逻辑不适用。
+- **日志备份**：`install/debug_exports/_saved_0821_stuck_fetchgoods/`（maafw.log / go-service.log / 2026-08-21-2.log）
+- 关键日志时间线（01:41 那轮）：
+  - `01:41:27` ViewJobOriginiumSciencePark 成功 → ViewDestinationMap 成功 → InDestinationMap 成功
+  - `01:41:29` QuickTeleportSelect → QuickTeleport → 传送
+  - `01:41:38` TargetDepotNodeIsOriginiumSciencePark 成功（地区正确）→ CheckCarryingGoods → PrepareFetchGoods → EnterDestinationMap → **8 个 next 全失败，空转到 01:41:58 任务失败**
 
-- **地面段**：✅ 我们的 `WalkToZipline/WalkFromZipline/WalkToNpc` **早已是 `MapNavigateAction`+NAVMESH**，本就合规。残留可迁的只有：试验园区 `MapTrackerGoal`、两个 `MapTrackerMove` 回退节点、三个 `MapTrackerAssertLocation`（#4784 已给出确切迁法）。
-- **滑索段**：❌ **MapNavigator 完全没有滑索能力**。它是 C++（`agent/cpp-algo/source/MapNavigator/`），12 种 action（RUN/SPRINT/JUMP/FIGHT/INTERACT/TRANSFER/PORTAL/HEADING/NAVMESH/ZONE/COLLECT/DIG）无一是滑索，全仓库 "zipline/滑索" 零命中于 MapNavigator。两个"像"的：`TRANSFER`=到点停下被动等机关弹走（不主动交互）、`PORTAL`=向前盲走等换区——都做不了滑索的锁定/发射/空中按 E 接力。
+**下次排查方向（建议）**：
 
-**我们对 maptracker 的硬依赖集中在**：`MapTrackerZipline`（乘索+连滑 ×7 节点）、`MapTrackerToward`（索上转向，利用"转向即净后退位移"微调落点，×1）、底层 `MapTrackerInfer`（小地图视觉定位，是前两者+地面段共同的定位核心）。
+1. `SeizeDeliveryJobsPrepareFetchGoods` 的调用点（SeizeDeliveryJobsPost.json:573）——它 `next` 进 `SeizeDeliveryJobsEnterDestinationMap` 的目的是**取消追踪**（anchor `SeizeDeliveryJobsCancelTrackingBeforeFetch`）。我们的 override 把 `SeizeDeliveryJobsEnterDestinationMap` 全量改道到仓储节点查看任务，破坏了这个调用点。
+2. 修复思路：改道应**只针对前两次调用**（传送前/送货前从仓储节点查看任务），`PrepareFetchGoods` 这次应保留原语义（打开地图→取消追踪）。可能需要拆分：给 `SeizeDeliveryJobsEnterDestinationMap` 的 next 改道加条件，或新增专用节点替代 `PrepareFetchGoods` 里的那次调用。
+3. 注意官方原链路 `SeizeDeliveryJobsCancelTrackingBeforeFetch`：SubTask 跑 `SeizeDeliveryJobsCancelTracking`（取消追踪）→ `SceneAnyEnterWorld`（回大世界）→ 前往仓储节点接货。
 
-#### 18.-2.2 方案③（滑索抽独立 Go 包）成本：深度耦合，非干净可拆
+### 18.1 待办清单
 
-滑索三件套与地面段全挤在扁平的 `maptrackerdefault` 包，靠**未导出私有函数/常量/全局状态**白盒互调。两处致命耦合：
+- [ ] 排查并修复 `PrepareFetchGoods` 卡点（取消追踪环节）
+- [ ] 修复后实机回归：源石研究园完整送货（取货→滑索→送达→提交）
+- [ ] 武陵城区/试验园区回归测试
+- [ ] 修复全部通过后，`git add` 3 个文件 + commit + push myfork
 
-1. **`MapTrackerInfer`（定位核心，596 行 + 全局状态 `globalInferState` 138 行）被所有段共享**，拆不开。`toward.go` 直接 `&MapTrackerInfer{}` 调其私有方法。搬滑索必带走它，但地面段也要用 → 只能复制（全局时序状态变两份会失效）或下沉成公共包（=重构整个包结构）。
-2. **`goal.go`（地面导航）反向调用滑索**（`goal.go:419-438` `(&MapTrackerZipline{}).Run(...)`，内嵌 `ziplinePolicy`/`connectRuntimeZiplines` 300+ 行）。搬走滑索后 default→import zipline，zipline→import default 的 `doInfer` = **循环依赖**。
-
-**三方案成本**：
-
-| 方案 | 真实工作量 | 障碍 |
-| --- | --- | --- |
-| ① 保留 maptracker 滑索子集 | 最小（改 3 处注册） | 违背 #4793 删整包；上游删包时会连底座一起删，仍崩 |
-| ② 移植进 C++ MapNavigator | 重 | **本机无 C++ 工具链**（§18.1 第 4 点），编不了 |
-| ③ 抽独立 Go 包 | 名义 500 行，实际连带 **1500~2000 行**（Infer+internal+move helper） | 循环依赖 + 共享定位核心，前置下沉重构才是真成本 |
-
-**坐标换算补充**：Go 侧 maptracker 内部定位/寻路用纯代码 `internal.LinearTransform`（`algo.go`）+ `data/MapTracker/map_bbox_data.json` 各地图 offset。而给 NAVMESH/MapNavigateAction 写 base px 时，仍查 `assets/resource/image/MapLocator/maptracker_coordinate_transforms.json`（该文件**存在**，#4314 引入，武陵 `map02_lv002` offset=(288,1056)、scale≈0.985，见 memory `maptracker-navmesh-coord-transform`）。（本轮一个调研 agent 误报此文件不存在，已亲自 `ls` 核实存在，勿信误报。）
-
-#### 18.-2.3 判断与下一步（未定案，等博士拍板）
-
-滑索与 maptracker 深度焊死，**没有低成本兼容方案**。更根本的信号：**上游铁了心删整个 maptracker，连自家滑索能力也一并放弃**，说明官方认为纯 navmesh+走桥这套够用、不再维护滑索视觉定位。逆势单独维护滑索，长期成本递增。
-
-倾向排序：
-
-1. **短期：什么都不改，继续私有分支观望**。maptracker 因 #4792 还在，#4784 的 41% 大概率被回退，无时间压力。
-2. **中期：盯 #4784 结局**。若上游 navmesh 最终稳定（学生态农场加中转点绕河）→ 我们滑索优势消失，直接跟随迁移最省事；若一直修不好 → 拿我们武陵城成功率数据去上游争取「保留滑索子集」（方案①）。
-3. **长期兜底：真到删包那天**，方案③下沉重构是唯一自主可控路，但是几百行重构（纯 Go 本机能编），单独立项，别边录路线边改架构。
-
-### 18.0 当前进度存档（2026-08-20）
-
-**已完成**：
-
-- 源石研究园（**`map01_lv005`**，注意不是 `lv006`）取货路线与 5 条固定滑索送货路线已写入 Pipeline。
-- `departure.go` 已加入源石研究园 5 个 endpoint，并完成多地图分流。
-- `DeliveryJobs` 自动送货已接通源石研究园的已有委托与装箱后入口。
-- 五语言界面文案已补齐：6 个源石研究园调试任务各含 `label` / `description`，自动送货说明已更新支持范围。
-- 已运行 `pnpm format`，通过。
-- 已运行 `python tools/build_and_install.py`，`install/agent/go-service.exe` 已重编并包含 `map01_lv005` endpoint。
-- MapTracker 已启动并保留运行，地址：`http://127.0.0.1:8060/web/`。
-
-**已修复 Bug（commit `900a0e03`，待 push 到 myfork，凭据过期需手动推）**：
-
-1. **自动送货四号谷地 ViewJob + JumpBack 路径缺失**：
-   - `DeliveryJobsAutoDeliverEnterDestinationMap` 的 next 列表只写了武陵（武陵城区 / 试验园区），没有四号谷地任何仓储节点 → 装箱后 JumpBack 进武陵找源石研究园卡片 → 死循环 20s 超时。
-   - 修复：AutoDeliver.json 新增 3 个四号谷地 ViewJob（源石研究园 / 矿脉源区 / 供能高地）+ `SceneEnterMenuRegionalDevelopmentValleyIVDepotNode` JumpBack；DeliveryJobs.json pipeline_override 启用新节点。
-2. **源石研究园地图名写错（`map01_lv006` → `map01_lv005`）**：
-   - `map_external_data.json` 中 `map01_lv005` = 源石研究园、`map01_lv006` = 矿脉源区，我们录路线时搞混了。
-   - 修复：5 个文件共 20 处全部改回 `map01_lv005`（SeizeDeliveryJobsPost.json × 4、DeliverRoutes.json × 14、PostDeparture.json × 1、DeliveryJobs.json × 1、departure.go × 1）。
-   - 注意：官方 AutoCollectRoute13（源石研究园采集路线）里写的也是 `map01_lv006`，**那也是错的**，但我们不动官方文件。
-
-**当前未完成**：
-
-- 源石研究园 6 个独立调试入口尚未实机验证。
-- 修复后（地图名 + ViewJob）**尚未实机测试**：需重启 MaaEnd.exe，从武陵接一单源石研究园委托 → 装箱 → 观察自动送货是否命中 `SeizeDeliveryJobsTargetDepotNodeIsOriginiumSciencePark` 断言 → 走送货流程。
-- 矿脉源区 / 供能高地尚未录制送货路线，目前走 `Unsupported` 停止。
-- `git push myfork` 推送失败（GitHub 凭据过期），本地 commit 已保存，需博士手动更新凭据或用 SSH 重新推送。
-
-**下次测试顺序**：
-
-1. 更新 GitHub 凭据，`git push myfork feature/zipline-fast` 推送 commit `900a0e03`。
-2. 完整重启 `MaaEnd.exe`，从武陵地区接一单源石研究园「转交委托-自动送货」。
-3. 重点观察：装箱后是否正确进四号谷地仓储节点 → 找到源石研究园「查看任务」→ 打开目的地地图 → 传送 → 断言命中 `map01_lv005`。
-4. 若断言仍未命中，用 MapTracker 读取传送后的实际坐标与地图名。
-
-> 上游 MapTracker → MapNavigator 迁移调研保留在 §18.-2；本节仅记录当前开发进度与实测待办。
