@@ -499,8 +499,9 @@
                         },
                         "DeliveryJobsAutoDeliverEnterDestinationMap": {
                             "enabled": true,
-                            // 补上兜底：都不在时回本地仓储节点，回哪个地区由装箱时锚定
-                            // （直接在 pipeline 里并列挂两个地区的跳转指令会永远跳错，见 AutoDeliver.json 注释）
+                            // 兜底：都不在（例如取货段刚传送完在大世界）则回本地仓储节点页签，
+                            // 回哪个地区由锚点决定（装箱路径 EnterXXXCargo / 已有单路径 EnterXXXDeliveryJob 都会赋值）。
+                            // [JumpBack] 保证进入仓储页签后跳回本节点重新评估 next（继续点「查看任务」→ 开地图）。
                             "next": [
                                 "DeliveryJobsAutoDeliverInDestinationMap",
                                 "DeliveryJobsAutoDeliverViewDestinationMap",
@@ -510,7 +511,7 @@
                                 "DeliveryJobsAutoDeliverViewJobOriginiumSciencePark",
                                 "DeliveryJobsAutoDeliverViewJobOriginLodespring",
                                 "DeliveryJobsAutoDeliverViewJobPowerPlateau",
-                                "[Anchor]DeliveryJobsAutoDeliverBackToDepot"
+                                "[JumpBack][Anchor]DeliveryJobsAutoDeliverBackToDepot"
                             ]
                         },
                         "DeliveryJobsAutoDeliverViewJob": {
@@ -577,18 +578,29 @@
                                 "[Anchor]DeliveryJobsGoToDepot"
                             ]
                         },
-                        // 6) 任务开始时手上已有单（仓储节点显示「查看任务」）：不转交，改为自己送
+                        // 6) 任务开始时手上已有单（仓储节点显示「查看任务」）：不转交，改为自己送。
+                        //    同时锚定兜底回仓储节点（与装箱路径一致），供取货段在大世界时回仓储页签
+                        //    （DeliveryJobsAutoDeliverEnterDestinationMap 的兜底锚点）。
                         "DeliveryJobsEnterWulingCityDeliveryJob": {
+                            "anchor": {
+                                "DeliveryJobsAutoDeliverBackToDepot": "SceneEnterMenuRegionalDevelopmentWulingDepotNode"
+                            },
                             "next": [
                                 "DeliveryJobsAutoDeliverEntry"
                             ]
                         },
                         "DeliveryJobsEnterTestAreaDeliveryJob": {
+                            "anchor": {
+                                "DeliveryJobsAutoDeliverBackToDepot": "SceneEnterMenuRegionalDevelopmentWulingDepotNode"
+                            },
                             "next": [
                                 "DeliveryJobsAutoDeliverEntry"
                             ]
                         },
                         "DeliveryJobsEnterOriginiumScienceParkDeliveryJob": {
+                            "anchor": {
+                                "DeliveryJobsAutoDeliverBackToDepot": "SceneEnterMenuRegionalDevelopmentValleyIVDepotNode"
+                            },
                             "next": [
                                 "DeliveryJobsAutoDeliverEntry"
                             ]

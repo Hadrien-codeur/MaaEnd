@@ -456,43 +456,44 @@ python tools/build_and_install.py
 
 ## 18. 当前进度存档（接力时先读此节，确认后删除）
 
-### 18.0 最新状态（2026-08-21 凌晨，家里电脑）
+### 18.0 最新状态（2026-08-23 凌晨，家里电脑）
 
-**分支**：`feature/zipline-fast`，工作区已改 3 个文件未提交（CLAUDE.md + 2 个修复文件）。
+**分支**：`feature/zipline-fast`，工作区已改 2 个文件未提交（AutoDeliver.json + DeliveryJobs.json），另有 `_backup_dev_0823/`（今日测试前备份 4 文件）与 `plans/`（两份方案草稿）未跟踪。
 
-**已完成：自动送货死循环修复（地区错跳）**
+**已完成：取货段「取消追踪」卡点修复（锚点缺失）**
 
-- **根因**：commit `900a0e03`（08-20）补四号谷地 ViewJob 时，在 `DeliveryJobsAutoDeliverEnterDestinationMap` 的兜底 next 里并列挂了 `SceneEnterMenuRegionalDevelopmentWulingDepotNode` + `ValleyIVDepotNode` 两个**无条件跳转指令**（无 recognition），导致无论当前在哪个地区都强切武陵 → 武陵仓储界面找不到源石研究园"查看任务" → 死循环。
-- **修复**（2 个文件）：
-  1. `assets/resource/pipeline/DeliveryJobs/AutoDeliver.json`：删掉两个并列跳转，兜底改为由 tasks 侧 override 追加 `[Anchor]DeliveryJobsAutoDeliverBackToDepot`；补充注释禁止再并列挂跳转指令。
-  2. `assets/tasks/DeliveryJobs.json`：`DeliveryJobsAutoDeliverEnterDestinationMap` override 补 `next`（8 个识别节点 + `[Anchor]DeliveryJobsAutoDeliverBackToDepot`）；5 个 `DeliveryJobsEnterXXXCargo` 的 anchor 里按地区锚定 `DeliveryJobsAutoDeliverBackToDepot`（武陵城区/试验园区→武陵，源石研究园/矿脉源区/供能高地→四号谷地）。
-- **校验**：`pnpm check` ✅、`pnpm test` 654/654 ✅。
+- **根因（日志实锤，08-23 三份日志）**：`SeizeDeliveryJobsEnterDestinationMap` 在整条送货链被调用 3 次（传送前 / `PrepareFetchGoods` 取消追踪前 / 送货前），我们的 override 把它的 next 全量改道到 `DeliveryJobsAutoDeliverEnterDestinationMap`（从仓储节点「查看任务」→ 打开地图）。该改道只在**仓储界面**有效；**取消追踪这次调用角色在大世界**，8 个识别全 miss，且兜底锚点 `DeliveryJobsAutoDeliverBackToDepot` 在「已有单」路径下**从未被赋值**（锚点只在装箱路径 `EnterXXXCargo` 的 anchor 里），报 `get_pipeline_data failed, node not exist` → 空转 20 秒卡死。
+- **对比武陵为何正常**：武陵测试走装箱路径（锚点有值）+ 官方 `PrepareFetchGoods` 配套的 `EnterDestinationMap`（运单列表查看任务）在武陵抢单场景可工作；源石研究园「已有单」路径锚点为空 + 改道破坏地图能力。
+- **修复（2 个文件，已通过 format/check）**：
+  1. `assets/tasks/DeliveryJobs.json`：①给「已有单」路径 3 个节点 `DeliveryJobsEnter{WulingCity,TestArea,OriginiumSciencePark}DeliveryJob` 补 `anchor.DeliveryJobsAutoDeliverBackToDepot`（武陵→`SceneEnterMenuRegionalDevelopmentWulingDepotNode`，源石研究园→`ValleyIVDepotNode`），与装箱路径一致；②`DeliveryJobsAutoDeliverEnterDestinationMap` override 的兜底 next 从 `[Anchor]` 改为 `[JumpBack][Anchor]DeliveryJobsAutoDeliverBackToDepot`（进仓储页签后 JumpBack 回本节点重新评估 next）。
+  2. `assets/resource/pipeline/DeliveryJobs/AutoDeliver.json`：注释同步（说明锚点由两条入口路径赋值 + JumpBack 语义）。
 
-**✅ 修复已验证生效**（实机，01:41 那轮）：
+**✅ 修复已验证生效**（实机 02:21 那轮，日志 `MaaEnd-logs-v0.1.0-20260823-022239`）：
 
-- 装箱 → 点"请尽快送达" → 回**四号谷地**仓储节点（不再跳武陵）✅
-- 查看任务 → 打开目的地地图 → 快速传送到源石研究园仓储节点（`map01_lv005` (169.3, 314.7)，断言命中）✅
+- `DeliveryJobsAutoDeliverBackToDepot` 锚点已赋值（`→ ValleyIVDepotNode`）✅
+- 取货段走通：回仓储页签 → 查看任务 → 开地图 → `InDestinationMap` → **`CancelTrackingBeforeFetch` 执行（取消任务追踪）** ✅
+- `SeizeDeliveryJobsWalkToDepotNodeOriginiumSciencePark` 的 SubTask 已启动（`SeizeDeliveryJobsOriginiumScienceParkWalkToZipline` 进入执行）✅
 
-**❌ 新卡点（下一步要排查，日志已备份）**：
+**❌ 新卡点（下一步要排查）**：
 
-- 现象：传送完成后，`SeizeDeliveryJobsPrepareFetchGoods` → `SeizeDeliveryJobsEnterDestinationMap` 想**再次打开地图取消任务追踪**，但我们的 override 把它改道到 `DeliveryJobsAutoDeliverEnterDestinationMap`（从仓储节点点查看任务），此时角色**已在大世界**（不是仓储界面），8 个 next 全 miss，空转约 20 秒后任务失败退出。
-- 本质：`SeizeDeliveryJobsEnterDestinationMap` 在整条链被调用 **3 次**（传送前/取消追踪前/送货前），我们之前把它全量改道成"从仓储节点查看任务"，但**传送完成后的调用点**（`PrepareFetchGoods`）角色在大世界，改道逻辑不适用。
-- **日志备份**：`install/debug_exports/_saved_0821_stuck_fetchgoods/`（maafw.log / go-service.log / 2026-08-21-2.log）
-- 关键日志时间线（01:41 那轮）：
-  - `01:41:27` ViewJobOriginiumSciencePark 成功 → ViewDestinationMap 成功 → InDestinationMap 成功
-  - `01:41:29` QuickTeleportSelect → QuickTeleport → 传送
-  - `01:41:38` TargetDepotNodeIsOriginiumSciencePark 成功（地区正确）→ CheckCarryingGoods → PrepareFetchGoods → EnterDestinationMap → **8 个 next 全失败，空转到 01:41:58 任务失败**
+- 现象：取消追踪已通，但卡在 `SeizeDeliveryJobsOriginiumScienceParkWalkToZipline`（「源石研究园取货-步行到起点滑索」，task_id=200000013，02:21:52.840 后无进展）。这是**取货段滑索路线的导航节点**（SubTask 内第一段），属于路线/导航问题，不再是「取消追踪/锚点」问题。
+- **日志备份**：`install/debug_exports/MaaEnd-logs-v0.1.0-20260823-022239/`（已解压 extracted/）；另有 01:07 与 02:01 两份日志（`-010708` / `-020154`）记录修复前状态。
 
-**下次排查方向（建议）**：
+**踩坑记录（本次教训）**：
 
-1. `SeizeDeliveryJobsPrepareFetchGoods` 的调用点（SeizeDeliveryJobsPost.json:573）——它 `next` 进 `SeizeDeliveryJobsEnterDestinationMap` 的目的是**取消追踪**（anchor `SeizeDeliveryJobsCancelTrackingBeforeFetch`）。我们的 override 把 `SeizeDeliveryJobsEnterDestinationMap` 全量改道到仓储节点查看任务，破坏了这个调用点。
-2. 修复思路：改道应**只针对前两次调用**（传送前/送货前从仓储节点查看任务），`PrepareFetchGoods` 这次应保留原语义（打开地图→取消追踪）。可能需要拆分：给 `SeizeDeliveryJobsEnterDestinationMap` 的 next 改道加条件，或新增专用节点替代 `PrepareFetchGoods` 里的那次调用。
-3. 注意官方原链路 `SeizeDeliveryJobsCancelTrackingBeforeFetch`：SubTask 跑 `SeizeDeliveryJobsCancelTracking`（取消追踪）→ `SceneAnyEnterWorld`（回大世界）→ 前往仓储节点接货。
+1. **曾尝试**给 `DeliveryJobsAutoDeliverEnterDestinationMap` 补 `SceneEnterMapAny`（官方大世界打开地图），实测**失败**：该节点打开地图后 next 无 JumpBack 回调用者，控制权漂移到主循环，取消追踪接不上。**已回退**。教训：SceneEnterMapAny 是「打开地图并结束」的独立节点，不能作为「打开地图后继续流程」的中间步骤。
+2. **锚点赋值必须覆盖两条入口路径**（装箱 `EnterXXXCargo` + 已有单 `EnterXXXDeliveryJob`），只补一条会导致另一条路径兜底锚点为空报错。
+
+**下一步建议**：
+
+1. 排查 `SeizeDeliveryJobsOriginiumScienceParkWalkToZipline` 节点（SeizeDeliveryJobsPost.json 或 DeliverRoutes.json）——它应该用 MapTracker/MapNavigator 步行到滑索起点，卡住原因可能是：坐标/路径未录、导航识别失败、或 SubTask 内首节点自循环无出口。对照武陵 `SeizeDeliveryJobsWulingCityWalkToZipline`（已验证可用）找差异。
+2. 修好后实机回归：源石研究园完整送货（取货→滑索→送达→提交）。
 
 ### 18.1 待办清单
 
-- [ ] 排查并修复 `PrepareFetchGoods` 卡点（取消追踪环节）
+- [ ] 排查并修复 `SeizeDeliveryJobsOriginiumScienceParkWalkToZipline` 卡点（取货滑索路线导航）
 - [ ] 修复后实机回归：源石研究园完整送货（取货→滑索→送达→提交）
 - [ ] 武陵城区/试验园区回归测试
-- [ ] 修复全部通过后，`git add` 3 个文件 + commit + push myfork
+- [ ] 修复全部通过后，`git add`（CLAUDE.md + AutoDeliver.json + DeliveryJobs.json）+ commit + push myfork
+
 
