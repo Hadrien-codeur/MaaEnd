@@ -363,6 +363,9 @@ python tools/build_and_install.py
 
 **录送货滑索路线**（本分支的核心工作）请先读专门文档：[docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md](docs/zh_cn/developers/tasks/seize-delivery-jobs-route-recording.md)
 
+> ⚠️ **2026-09-01：本方案已归档冻结**，不再继续开发。移植到新方案前请先读
+> [docs/zh_cn/developers/tasks/seize-delivery-jobs-zipline-archive.md](docs/zh_cn/developers/tasks/seize-delivery-jobs-zipline-archive.md)（实现思路 + 避坑指南 + 遗留缺陷）。
+
 ---
 
 ## 14. 节点测试规范
@@ -456,7 +459,31 @@ python tools/build_and_install.py
 
 ## 18. 当前进度存档（接力时先读此节，确认后删除）
 
-### 18.0 最新状态（2026-08-23 凌晨，家里电脑）
+### 18.0 最新状态（2026-09-01：本方案已归档，停止开发）
+
+**决定**：本套「固定滑索送货」方案**冻结为兜底**，不再继续开发。
+上游已完成 NavMesh 迁移并做了大量优化，后续**新建项目**、在上游最新进度基础上重新移植我们的需求。
+
+**已完成的收尾工作**：
+
+1. 📄 新增归档文档 **[docs/zh_cn/developers/tasks/seize-delivery-jobs-zipline-archive.md](docs/zh_cn/developers/tasks/seize-delivery-jobs-zipline-archive.md)**
+   —— 包含实现思路、完整避坑指南（12 条）、移植建议、遗留缺陷。**新方案开工前必读。**
+2. 🚫 **放弃四号谷地（源石研究园 `map01_lv005`）送货开发**，流程不成熟。
+   按博士决定：**代码一律不动**（pipeline 节点、5 个测试入口、`departure.go` 终点表全部保留原样）。
+
+**⚠️ 遗留缺陷（保留代码但已知有问题，见归档文档 §7）**：
+
+- 🔴 **ValleyIV 全部步行点 base px 换算错误**：当初用了 offset `(720, 0)`，正确值是 `(810, 540)`，
+  修复 = 现有值 `+ (90, 540)`。**这极可能就是下面 08-23 那个未解卡点的真正根因**
+  （`...WalkToZipline` 首点 `[876.18, 290.49]` 的 `y=290 < 540`，落在 NavMesh 可行域外 → A\* 无解 → 无限等待），
+  与「取消追踪/锚点」无关。⚠️ 该结论由仓库数据反推得出（三点交叉验证与终点表吻合到 1 单位内），**未经实机验证**。
+- 🟡 `chain_max_press` 与注释不符（HighwayFive / CommandCenter 缺失，RefiningCompoundFactory 注释 4 实际 2）
+- 🟡 4 个节点注释写了「索上转向」但 SubTask 里没有对应的 `MapTrackerToward` 节点 → 说明这几条路线从未跑通
+
+> 因此：**兜底方案只在武陵城 `map02_lv002` 与试验园区 `map02_lv005` 上可用**；
+> 四号谷地的委托仍会被 `departure.go` 匹配并跑我们的（有问题的）路线。要用先修上面三条。
+
+### 18.0-old 历史记录（2026-08-23 凌晨，家里电脑）
 
 **分支**：`feature/zipline-fast`，工作区已改 2 个文件未提交（AutoDeliver.json + DeliveryJobs.json），另有 `_backup_dev_0823/`（今日测试前备份 4 文件）与 `plans/`（两份方案草稿）未跟踪。
 
@@ -491,9 +518,17 @@ python tools/build_and_install.py
 
 ### 18.1 待办清单
 
-- [ ] 排查并修复 `SeizeDeliveryJobsOriginiumScienceParkWalkToZipline` 卡点（取货滑索路线导航）
-- [ ] 修复后实机回归：源石研究园完整送货（取货→滑索→送达→提交）
-- [ ] 武陵城区/试验园区回归测试
-- [ ] 修复全部通过后，`git add`（CLAUDE.md + AutoDeliver.json + DeliveryJobs.json）+ commit + push myfork
+**本方案（`feature/zipline-fast`）—— 已归档，仅剩收尾**：
+
+- [x] 总结开发经验，写归档 + 避坑指南文档
+- [x] 放弃四号谷地送货开发（代码保留不动）
+- [ ] 提交并推送到 `myfork`
+
+**新方案（后续新建项目）**：
+
+- [ ] 拉取上游最新 v2，评估官方 NavMesh 送货的实际成功率（**先测基线，再决定要不要加滑索**）
+- [ ] 确认上游 MapNavigator 是否已具备滑索能力（截至 2026-08 调研：12 种 action 中**无**滑索）
+- [ ] 重新测量坐标换算参数（不要直接复制旧文档的表，地图更新会变）
+- [ ] 按归档文档 §6.2 决定保留/丢弃项，逐条对照 §5 的 12 条避坑指南
 
 
