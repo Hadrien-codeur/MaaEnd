@@ -11,6 +11,7 @@ $env:TEMP = Join-Path $fixedDeliveryCache 'tmp'
 $env:TMP = $env:TEMP
 $env:PYTHONUTF8 = '1'
 $env:PYTHONIOENCODING = 'utf-8'
+$env:PYTHONUNBUFFERED = '1'
 New-Item -ItemType Directory -Force -Path $env:TEMP | Out-Null
 
 $fixedDeliveryToolPaths = @(
