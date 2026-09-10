@@ -1,0 +1,116 @@
+{
+    "WulingSuBaiyiCandidate": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "path": [
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        961.5,
+                        1830.75
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        948.75,
+                        1776.75
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        946.5,
+                        1699.5
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        960.75,
+                        1635
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        912.75,
+                        1584
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        853.5,
+                        1528.5
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        813.75,
+                        1517.25
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        822.75,
+                        1472.25
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        792.75,
+                        1446
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        738.75,
+                        1446
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        664.5,
+                        1443
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        592.5,
+                        1436.25
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        555.75,
+                        1398.75
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        544.5,
+                        1350
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        537,
+                        1270.5
+                    ]
+                }
+            ]
+        }
+    }
+}
