@@ -57,7 +57,11 @@ std::vector<std::array<double, 3>> LoadFixedRouteWorldPoints(const std::string& 
             continue;
         }
         std::vector<std::array<double, 3>> points;
-        for (const auto& node : route_value.as_object().get("nodes", json::array {}).as_array()) {
+        const auto& route_object = route_value.as_object();
+        if (!route_object.contains("nodes") || !route_object.at("nodes").is_array()) {
+            return points;
+        }
+        for (const auto& node : route_object.at("nodes").as_array()) {
             if (!node.is_object()) {
                 continue;
             }
@@ -509,12 +513,11 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
             return no_zipline("fixed zipline route has no nodes", &g_zipline_no_data);
         }
         const auto matches_fixed_point = [&](const zipline::ZiplineNode& node) {
-            constexpr double kMatchDistance = 0.01;
             return std::any_of(fixed_points.begin(), fixed_points.end(), [&](const auto& point) {
                 const double dx = node.world_x - point[0];
                 const double dy = node.world_y - point[1];
                 const double dz = node.world_z - point[2];
-                return std::sqrt(dx * dx + dy * dy + dz * dz) <= kMatchDistance;
+                return std::sqrt(dx * dx + dy * dy + dz * dz) <= 0.01;
             });
         };
         const auto before = nodes.size();
