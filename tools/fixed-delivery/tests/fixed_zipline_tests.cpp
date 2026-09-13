@@ -4,6 +4,8 @@
 
 #include "Common/JsoncFile.h"
 #include "MapNavigator/fixed_zipline_route.h"
+#include "MapNavigator/navigation_runtime_state.h"
+#include "MapNavigator/zipline_relay_state.h"
 
 namespace
 {
@@ -25,6 +27,9 @@ int main(int argc, char** argv)
         const auto route = mapnavigator::ParseFixedZiplineRoute(*source, "wuling_city_subaiyi", error);
         require(route.has_value(), "parse confirmed route");
         require(route->nodes.size() == 16, "confirmed route must have 16 towers");
+        require(
+            route->continuous_segments.size() == 1 && route->continuous_segments[0].first == 0 && route->continuous_segments[0].last == 15,
+            "confirmed route is one full continuous segment");
         std::vector<zipline::ZiplineNode> nodes;
         for (const auto& point : route->nodes) {
             nodes.push_back({
@@ -81,6 +86,55 @@ int main(int argc, char** argv)
         malformed = *source;
         malformed["routes"] = json::array { (*source)["routes"][0], (*source)["routes"][0] };
         require(!mapnavigator::ParseFixedZiplineRoute(malformed, route->id, error), "duplicate route id must fail");
+        malformed = *source;
+        malformed["routes"][0]["continuous_segments"] = json::array {};
+        require(
+            mapnavigator::ParseFixedZiplineRoute(malformed, route->id, error)->continuous_segments.empty(),
+            "empty segments preserve single-hop mode");
+        for (const auto& segments : {
+                 json::array { json::object { { "first", 0 }, { "last", 16 } } },
+                 json::array { json::object { { "first", 3 }, { "last", 3 } } },
+                 json::array { json::object { { "first", 5 }, { "last", 2 } } },
+                 json::array { json::object { { "first", 0 }, { "last", 4 } }, json::object { { "first", 3 }, { "last", 8 } } },
+             }) {
+            malformed = *source;
+            malformed["routes"][0]["continuous_segments"] = segments;
+            require(!mapnavigator::ParseFixedZiplineRoute(malformed, route->id, error), "invalid or overlapping segment must fail");
+        }
+        malformed = *source;
+        malformed["routes"][0]["continuous_segments"] =
+            json::array { json::object { { "first", 0 }, { "last", 3 } }, json::object { { "first", 3 }, { "last", 15 } } };
+        const auto split_route = mapnavigator::ParseFixedZiplineRoute(malformed, route->id, error);
+        require(
+            split_route && split_route->continuous_segments[0].last - split_route->continuous_segments[0].first == 3,
+            "four towers require three E presses after launch");
+        for (const size_t presses : { 3, 15 }) {
+            mapnavigator::ZiplineRelayCounter counter { .required = presses };
+            require(!counter.readyForLanding(), "left mouse launch does not consume E budget");
+            for (size_t index = 0; index < presses; ++index) {
+                require(counter.canPress() && counter.commitPress(), "each new prompt permits one E press");
+                for (int frame = 0; frame < 20; ++frame) {
+                    counter.observe(true);
+                    require(!counter.canPress() && !counter.commitPress(), "persistent prompt must not repeat E");
+                }
+                require(!counter.readyForLanding(), "last prompt must disappear before endpoint verification");
+                counter.observe(false);
+                require(counter.pressed == index + 1, "only successful press consumes budget");
+            }
+            require(counter.readyForLanding() && !counter.canPress(), "budget exhaustion disallows extra prompts");
+            counter.observe(true);
+            require(!counter.commitPress(), "terminal prompt must never issue another E");
+        }
+        mapnavigator::NavigationRuntimeState runtime;
+        runtime.semantic.zipline_relay = { .required = 15, .pressed = 7, .awaiting_clear = true };
+        runtime.semantic.zipline_relay_end_index = 19;
+        runtime.semantic.zipline_mounted = true;
+        runtime.BeginNavigation(std::chrono::steady_clock::now());
+        require(
+            runtime.semantic.zipline_relay.required == 0 && runtime.semantic.zipline_relay.pressed == 0
+                && !runtime.semantic.zipline_relay.awaiting_clear && runtime.semantic.zipline_relay_end_index == 0
+                && !runtime.semantic.zipline_mounted,
+            "new navigation must not inherit a cancelled relay");
         std::cout << "Fixed route parsing and matching checks passed\n";
         return 0;
     }

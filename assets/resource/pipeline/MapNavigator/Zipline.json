@@ -1,4 +1,51 @@
 {
+    "MapNavigatorZiplineRelayObserveStart": {
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "MapNavigatorZiplineRelayObserve",
+            "MapNavigatorZiplineRelayEnd"
+        ]
+    },
+    "MapNavigatorZiplineRelayObserve": {
+        "desc": "连滑：复用已有 E 提示识别，只观察提示是否消失",
+        "recognition": "And",
+        "all_of": [
+            "RealTimeAutoZipline"
+        ],
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "MapNavigatorZiplineRelayEnd"
+        ]
+    },
+    "MapNavigatorZiplineRelayPressStart": {
+        "pre_delay": 0,
+        "post_delay": 0,
+        "next": [
+            "MapNavigatorZiplineRelayPress",
+            "MapNavigatorZiplineRelayEnd"
+        ]
+    },
+    "MapNavigatorZiplineRelayPress": {
+        "desc": "连滑：当前截图重新识别 E 提示后只按一次，次数由导航段管理",
+        "recognition": "And",
+        "all_of": [
+            "RealTimeAutoZipline"
+        ],
+        "pre_delay": 0,
+        "action": "ClickKey",
+        "key": 69,
+        "post_delay": 0,
+        "next": [
+            "MapNavigatorZiplineRelayEnd"
+        ]
+    },
+    "MapNavigatorZiplineRelayEnd": {
+        "recognition": "DirectHit",
+        "pre_delay": 0,
+        "post_delay": 0
+    },
     "MapNavigatorZiplineMountStart": {
         "pre_delay": 0,
         "post_delay": 0,

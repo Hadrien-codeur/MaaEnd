@@ -823,6 +823,14 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
             best->diagnostics.push_back((*departure)->diagnostic);
         }
     }
+    if (fixed_route) {
+        best->relay_hops.resize(best->towers.size() - 1, 0);
+        for (const auto& segment : fixed_route->continuous_segments) {
+            best->relay_hops[segment.first] = segment.last - segment.first;
+            LogInfo << "ZiplineRoute: continuous segment; E presses exclude the initial mouse launch." << VAR(segment.first)
+                    << VAR(segment.last) << VAR(best->relay_hops[segment.first]);
+        }
+    }
     // 只有链首那一根要按提示上索, 中途都是从索上落到下一根架子上的
     best->mount_restand = MountStandPoint(param, locator_zone, best->towers.front(), supply_points);
 

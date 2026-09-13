@@ -19,7 +19,7 @@ Result StartZiplineHop(
     double actual_distance,
     const std::optional<size_t>& arrived_absolute_node_idx);
 
-// 滑行中的每一拍。只判「进没进落点圈」；落在中继架子上就接着瞄下一根，落在链尾才下索。
+// 连滑段途中只识别 E 提示，预算完成后确认段末；普通单跳仍逐架确认后重新瞄准。
 Result TickZiplineRide(const Context& ctx);
 
 // 滑索走不成时的退路：还站在架子上就先下来，再丢掉这条链剩下的每一跳。状态机随后等待稳定

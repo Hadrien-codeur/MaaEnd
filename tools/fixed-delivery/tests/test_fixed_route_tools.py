@@ -23,6 +23,16 @@ spec.loader.exec_module(validator_module)
 
 
 class FixedRouteToolsTest(unittest.TestCase):
+    def test_continuous_route_schema(self):
+        schema = json.loads((ROOT / "tools/schema/components/fixed_zipline.schema.json").read_text(encoding="utf-8"))
+        validator = Draft202012Validator(schema | {"$ref": "#/$defs/RouteFile"})
+        data = json.loads((ROOT / "assets/data/MapNavigator/fixed_zipline_routes.json").read_text(encoding="utf-8"))
+        validator.validate(data)
+        self.assertEqual(data["routes"][0]["continuous_segments"], [{"first": 0, "last": 15}])
+        for segment in [{"first": -1, "last": 15}, {"first": 0, "last": "15"}, {"first": 0}]:
+            invalid = copy.deepcopy(data)
+            invalid["routes"][0]["continuous_segments"] = [segment]
+            self.assertFalse(validator.is_valid(invalid))
     def test_schema_boundary(self):
         schema = json.loads((ROOT / "tools/schema/components/fixed_zipline.schema.json").read_text(encoding="utf-8"))
         validator = Draft202012Validator(schema["$defs"]["NavigateParam"])
@@ -73,6 +83,11 @@ class FixedRouteToolsTest(unittest.TestCase):
             for invalid in [[], marks[:1], marks + [copy.deepcopy(marks[0])]]:
                 with self.assertRaises(SystemExit):
                     run(invalid)
+            for segments in [[{"first": 0, "last": 2}], [{"first": 1, "last": 0}], [{"first": 0, "last": 1}] * 2]:
+                invalid_route = route | {"continuous_segments": segments}
+                config.write_text(json.dumps({"version": 1, "routes": [invalid_route]}), encoding="utf-8")
+                with self.assertRaises(SystemExit):
+                    run(marks)
 
 
 if __name__ == "__main__":

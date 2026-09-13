@@ -33,7 +33,17 @@ struct FixedZiplineRoute
     std::string template_id;
     std::vector<FixedZiplinePoint> nodes;
 
-    MEO_JSONIZATION(id, map_id, level_id, template_id, nodes)
+    struct ContinuousSegment
+    {
+        size_t first = 0;
+        size_t last = 0;
+
+        MEO_JSONIZATION(first, last)
+    };
+
+    std::vector<ContinuousSegment> continuous_segments;
+
+    MEO_JSONIZATION(id, map_id, level_id, template_id, nodes, MEO_OPT continuous_segments)
 };
 
 inline std::optional<FixedZiplineRoute> ParseFixedZiplineRoute(const json::value& value, const std::string& id, std::string& error)
@@ -69,6 +79,14 @@ inline std::optional<FixedZiplineRoute> ParseFixedZiplineRoute(const json::value
                     return std::nullopt;
                 }
             }
+        }
+        size_t previous_end = 0;
+        for (const auto& segment : route.continuous_segments) {
+            if (segment.first < previous_end || segment.first >= segment.last || segment.last >= route.nodes.size()) {
+                error = "continuous segments must be ordered, nonoverlapping tower intervals";
+                return std::nullopt;
+            }
+            previous_end = segment.last;
         }
         selected = std::move(route);
     }

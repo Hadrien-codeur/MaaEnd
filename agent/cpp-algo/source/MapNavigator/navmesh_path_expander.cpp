@@ -877,6 +877,9 @@ bool TryAppendZiplineLeg(
         out_path.emplace_back(hop == 0 ? mount.x : from.x, hop == 0 ? mount.y : from.y, ActionType::ZIPLINE);
         out_path.back().strict_arrival = true;
         out_path.back().target_deck_y = from.height;
+        if (hop < route->relay_hops.size()) {
+            out_path.back().zipline_relay_hops = route->relay_hops[hop];
+        }
         // 备用站位只挂在链首: 后面那些跳是从索上落下来的, 不再按上索提示
         if (hop == 0 && route->mount_restand) {
             out_path.back().mount_restand = ZiplineRestand { .x = route->mount_restand->x, .y = route->mount_restand->y };

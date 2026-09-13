@@ -552,12 +552,7 @@ json::object BuildRoutePreview(const QueryParam& query)
     mapnavigator::ResetZiplineOutcome();
     std::vector<mapnavigator::Waypoint> expanded;
     std::vector<mapnavigator::NavmeshRouteDiagnostic> diagnostics;
-    if (!mapnavigator::ExpandNavmeshWaypoints(
-            param,
-            position,
-            [] { return false; },
-            expanded,
-            &diagnostics)) {
+    if (!mapnavigator::ExpandNavmeshWaypoints(param, position, [] { return false; }, expanded, &diagnostics)) {
         const mapnavigator::NavmeshExpansionFailure failure = mapnavigator::CurrentNavmeshExpansionFailure();
         json::object result = Fail(failure.message.empty() ? "路线展开失败" : failure.message);
         json::object detail {
@@ -637,6 +632,9 @@ json::object BuildRoutePreview(const QueryParam& query)
             { "elevation_deg", target.elevation_deg },
             { "authored_group_begin", waypoint.authored_group_begin },
         };
+        if (waypoint.zipline_relay_hops > 0) {
+            segment.emplace("relay_presses_after_launch", waypoint.zipline_relay_hops);
+        }
         if (waypoint.mount_restand) {
             segment.emplace("mount_restand", json::array { waypoint.mount_restand->x, waypoint.mount_restand->y });
         }

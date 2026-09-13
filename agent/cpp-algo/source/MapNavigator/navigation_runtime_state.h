@@ -6,6 +6,7 @@
 #include <string>
 
 #include "navi_domain_types.h"
+#include "zipline_relay_state.h"
 
 namespace mapnavigator
 {
@@ -73,6 +74,8 @@ struct SemanticState
     // 按下起滑那一刻人站在哪儿。滑一趟必然离开这里, 所以它是「到底滑没滑起来」的唯一凭据
     NaviPosition zipline_mount_pos {};
     ZiplineTarget zipline_landing {};
+    ZiplineRelayCounter zipline_relay;
+    size_t zipline_relay_end_index = 0;
     int zipline_landing_hits = 0;
     // 起滑按了几次。按下去没滑走多半是俯仰没对上, 抬头角是开环发的, 只能换一档再按; 试满就退索
     int zipline_launch_attempts = 0;
@@ -103,6 +106,8 @@ struct SemanticState
         zipline_ride_started = {};
         zipline_mount_pos = {};
         zipline_landing = {};
+        zipline_relay = {};
+        zipline_relay_end_index = 0;
         zipline_landing_hits = 0;
         zipline_launch_attempts = 0;
         zipline_pitch_deg = 0.0;

@@ -53,6 +53,12 @@
                 "/tools/pipeline-generate/AutoDelivery/routes.json"
             ],
             "url": "/tools/schema/auto_delivery_routes.schema.json"
+        },
+        {
+            "fileMatch": [
+                "/assets/data/MapNavigator/fixed_zipline_routes.json"
+            ],
+            "url": "/tools/schema/components/fixed_zipline.schema.json#/$defs/RouteFile"
         }
     ],
     "files.associations": {

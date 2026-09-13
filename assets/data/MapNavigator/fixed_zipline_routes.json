@@ -104,6 +104,12 @@
                 }
             ],
             "id": "wuling_city_subaiyi",
+            "continuous_segments": [
+                {
+                    "first": 0,
+                    "last": 15
+                }
+            ],
             "source": "苏白易架序确认记录"
         }
     ]

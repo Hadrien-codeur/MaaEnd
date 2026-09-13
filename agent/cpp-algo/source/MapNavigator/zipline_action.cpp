@@ -31,8 +31,16 @@ namespace
 
 // 跑一个 pipeline 节点, 回答这一趟里点名的那个节点认没认出来。识别不中的节点不会进这一趟的
 // 节点表, 所以「表里有且 completed」等于提示确实在屏幕上、动作也确实发了出去。
-bool RunNodeAndReportHit(MaaContext* context, const char* entry, const char* node, const std::string& pipeline_override)
+bool RunNodeAndReportHit(
+    MaaContext* context,
+    const char* entry,
+    const char* node,
+    const std::string& pipeline_override,
+    bool* succeeded = nullptr)
 {
+    if (succeeded != nullptr) {
+        *succeeded = false;
+    }
     MaaTasker* tasker = MaaContextGetTasker(context);
     if (tasker == nullptr) {
         return false;
@@ -54,6 +62,12 @@ bool RunNodeAndReportHit(MaaContext* context, const char* entry, const char* nod
     if (!MaaTaskerGetTaskDetail(tasker, task_id, entry_name.Get(), node_ids.data(), &node_count, &status)) {
         return false;
     }
+    if (succeeded != nullptr) {
+        if (status != MaaStatus_Succeeded) {
+            return false;
+        }
+        *succeeded = true;
+    }
 
     for (const MaaNodeId node_id : node_ids) {
         ScopedStringBuffer node_name;
@@ -61,10 +75,21 @@ bool RunNodeAndReportHit(MaaContext* context, const char* entry, const char* nod
         MaaActId action_id = 0;
         MaaBool completed = 0;
         if (node_name.Get() == nullptr || !MaaTaskerGetNodeDetail(tasker, node_id, node_name.Get(), &reco_id, &action_id, &completed)) {
+            if (succeeded != nullptr) {
+                *succeeded = false;
+                return false;
+            }
             continue;
         }
         const char* raw = MaaStringBufferGet(node_name.Get());
+        if (raw == nullptr && succeeded != nullptr) {
+            *succeeded = false;
+            return false;
+        }
         if (raw != nullptr && std::strcmp(raw, node) == 0) {
+            if (succeeded != nullptr) {
+                *succeeded = completed != 0;
+            }
             return completed != 0;
         }
     }
@@ -139,6 +164,8 @@ void ClearRideState(const Context& ctx)
     ctx.runtime_state->semantic.zipline_last_pos = {};
     ctx.runtime_state->semantic.zipline_settle_hits = 0;
     ctx.runtime_state->semantic.zipline_returning = false;
+    ctx.runtime_state->semantic.zipline_relay = {};
+    ctx.runtime_state->semantic.zipline_relay_end_index = 0;
 }
 
 // 落地那一帧是冷启动。把这跳的落点、同一架子上其它索的落点、以及上索点本身都交给定位器当
@@ -379,6 +406,23 @@ Result StartZiplineHop(
         return AbandonZipline(ctx, "zipline_target_missing", "waypoint carries no landing point");
     }
 
+    // 连滑段一次只瞄首跳；先取到整段末架，途中不再请求任何中间架定位。
+    ZiplineTarget segment_landing = *waypoint.zipline_target;
+    size_t segment_end = ctx.session->current_node_idx();
+    if (waypoint.zipline_relay_hops > 0) {
+        const auto& path = ctx.session->current_path();
+        if (ctx.runtime_state->fixed_zipline_route.empty() || waypoint.zipline_relay_hops > path.size() - segment_end) {
+            return AbandonZipline(ctx, "zipline_relay_invalid", "continuous segment exceeds the fixed route");
+        }
+        segment_end += waypoint.zipline_relay_hops - 1;
+        for (size_t index = ctx.session->current_node_idx(); index <= segment_end; ++index) {
+            if (path[index].action != ActionType::ZIPLINE || !path[index].zipline_target) {
+                return AbandonZipline(ctx, "zipline_relay_invalid", "continuous segment crosses a non-zipline waypoint");
+            }
+        }
+        segment_landing = *path[segment_end].zipline_target;
+    }
+
     // 链首要先站上架子; 中途落下来人已经站在下一根上, 直接接着瞄就行
     bool mounted_this_hop = false;
     if (!ctx.runtime_state->semantic.zipline_mounted) {
@@ -443,7 +487,13 @@ Result StartZiplineHop(
     ctx.runtime_state->OnWaypointAdvance();
     ctx.runtime_state->semantic.zipline_ride_started = std::chrono::steady_clock::now();
     ctx.runtime_state->semantic.zipline_mount_pos = *ctx.position;
-    ctx.runtime_state->semantic.zipline_landing = landing;
+    ctx.runtime_state->semantic.zipline_landing = segment_landing;
+    ctx.runtime_state->semantic.zipline_relay = { .required = waypoint.zipline_relay_hops };
+    ctx.runtime_state->semantic.zipline_relay_end_index = segment_end;
+    if (waypoint.zipline_relay_hops > 0) {
+        LogInfo << "ZIPLINE relay started after initial mouse launch; no intermediate localization." << VAR(waypoint.zipline_relay_hops)
+                << VAR(segment_landing.x) << VAR(segment_landing.y) << VAR(segment_end);
+    }
     ctx.runtime_state->semantic.zipline_landing_hits = 0;
     ctx.runtime_state->semantic.zipline_settle_hits = 0;
     // 滑行中小地图整个隐藏, 跟踪必然断; 落地帧离上索点一整跨, 若上索点的旧位置还留在跟踪器里,
@@ -473,13 +523,67 @@ Result TickZiplineRide(const Context& ctx)
     const int64_t waited_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(now - ctx.runtime_state->semantic.zipline_ride_started).count();
 
+    auto& relay = ctx.runtime_state->semantic.zipline_relay;
+    if (relay.required > 0 && !relay.readyForLanding()) {
+        MaaTasker* tasker = ctx.maa_context == nullptr ? nullptr : MaaContextGetTasker(ctx.maa_context);
+        if (tasker == nullptr || MaaTaskerStopping(tasker)) {
+            return AbandonZipline(ctx, "zipline_relay_cancelled", "continuous relay cancelled before another input");
+        }
+        if (waited_ms > kZiplineRideTimeoutMs) {
+            LogError << "ZIPLINE relay prompt timeout." << VAR(relay.pressed) << VAR(relay.required) << VAR(relay.awaiting_clear);
+            return AbandonZipline(ctx, "zipline_relay_prompt_timeout", "next relay prompt or its disappearance was not observed");
+        }
+        const bool press = relay.canPress();
+        const bool was_waiting_clear = relay.awaiting_clear;
+        bool succeeded = false;
+        const bool visible = RunNodeAndReportHit(
+            ctx.maa_context,
+            press ? "MapNavigatorZiplineRelayPressStart" : "MapNavigatorZiplineRelayObserveStart",
+            press ? "MapNavigatorZiplineRelayPress" : "MapNavigatorZiplineRelayObserve",
+            "{}",
+            &succeeded);
+        if (MaaTaskerStopping(tasker)) {
+            return AbandonZipline(ctx, "zipline_relay_cancelled", "continuous relay cancelled during prompt recognition");
+        }
+        if (!succeeded) {
+            return AbandonZipline(ctx, "zipline_relay_pipeline_failed", "relay recognition or key action failed");
+        }
+        if (press && visible) {
+            relay.commitPress();
+            ctx.runtime_state->semantic.zipline_ride_started = std::chrono::steady_clock::now();
+            LogInfo << "ZIPLINE relay E pressed; waiting for prompt disappearance." << VAR(relay.pressed) << VAR(relay.required);
+        }
+        else {
+            relay.observe(visible);
+            if (was_waiting_clear && !visible) {
+                ctx.runtime_state->semantic.zipline_ride_started = std::chrono::steady_clock::now();
+                LogInfo << "ZIPLINE relay prompt consumed." << VAR(relay.pressed) << VAR(relay.required);
+            }
+        }
+        if (relay.readyForLanding()) {
+            ctx.position_provider->ResetTracking();
+            LogInfo << "ZIPLINE relay input complete; checking only the segment endpoint." << VAR(relay.pressed);
+        }
+        // 沿用乘索截图轮询间隔；按键资格由提示消失决定，不依赖时间冷却。
+        utils::SleepFor(kZiplineRideRetryIntervalMs);
+        result.stay_in_current_tick = true;
+        return result;
+    }
+
     const NaviPosition& mount = ctx.runtime_state->semantic.zipline_mount_pos;
     const ZiplineTarget& landing = ctx.runtime_state->semantic.zipline_landing;
-    if (!ctx.position_provider->Capture(ctx.position, false, {}, RideSearchHints(mount, landing))
+    if (!ctx.position_provider
+             ->Capture(ctx.position, false, relay.required > 0 ? mount.zone_id : std::string {}, RideSearchHints(mount, landing))
         || ctx.position_provider->LastCaptureWasHeld()) {
         ctx.runtime_state->semantic.zipline_landing_hits = 0;
         ctx.runtime_state->semantic.zipline_settle_hits = 0;
         if (waited_ms > kZiplineRideTimeoutMs) {
+            if (relay.required > 0) {
+                return AbandonZipline(
+                    ctx,
+                    "zipline_relay_landing_timeout",
+                    "no valid endpoint localization after the relay budget completed");
+            }
             return AbandonZipline(ctx, "zipline_ride_timeout", "no usable locator fix for the whole ride");
         }
         result.stay_in_current_tick = true;
@@ -498,6 +602,17 @@ Result TickZiplineRide(const Context& ctx)
         }
         else {
             ctx.runtime_state->semantic.zipline_settle_hits = 0;
+        }
+        if (relay.required > 0) {
+            if (ctx.runtime_state->semantic.zipline_settle_hits >= kZiplineLandingStableFixes) {
+                return AbandonZipline(ctx, "zipline_relay_landed_off_target", "continuous relay stopped outside its confirmed endpoint");
+            }
+            if (waited_ms > kZiplineRideTimeoutMs) {
+                return AbandonZipline(ctx, "zipline_relay_landing_timeout", "continuous relay did not reach its confirmed endpoint");
+            }
+            result.stay_in_current_tick = true;
+            utils::SleepFor(kZiplineRideRetryIntervalMs);
+            return result;
         }
         // 索没通电、或者两端压根没挂上索时，起滑那一下是空响，人还站在架子上。滑一趟必然是大位移，
         // 所以「过了确认时间还在原地」只可能是没滑起来；这一条把它跟「滑起来了但没滑到」分开，
@@ -573,6 +688,15 @@ Result TickZiplineRide(const Context& ctx)
     }
 
     // 落在中继架子上就直接接着瞄下一根, 只有链尾才下索。下早了下一跳还得重新上一次。
+    if (relay.required > 0) {
+        const size_t end_index = ctx.runtime_state->semantic.zipline_relay_end_index;
+        LogInfo << "ZIPLINE relay endpoint confirmed." << VAR(relay.pressed) << VAR(relay.required) << VAR(landing.x) << VAR(landing.y)
+                << VAR(distance_to_landing) << VAR(end_index);
+        if (ctx.session->current_node_idx() <= end_index) {
+            ctx.session->SkipPastWaypoint(end_index, "zipline_relay_endpoint_confirmed");
+            ctx.runtime_state->OnWaypointAdvance();
+        }
+    }
     const bool chain_continues = ctx.session->HasCurrentWaypoint() && ctx.session->CurrentWaypoint().action == ActionType::ZIPLINE;
     if (!chain_continues) {
         LeaveTower(ctx);

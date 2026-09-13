@@ -1,6 +1,6 @@
 # 固定滑索开发与验证
 
-2026-09-13：当前苏白易为 **16 架、15 跳**。上一轮独立空跑成功；本轮补强后待博士再空跑一轮，不要求连续三次。连滑段按路线定制，分段待确认；真实交付、双入口及其他路线暂缓。
+2026-09-14：当前苏白易为 **16 架、15 跳**，补强版一轮空跑及日志核验通过，见 [实机记录](../../docs/zh_cn/dev-notes/苏白易固定逐跳实机验收记录.md)。博士已确认全段连滑，途中不逐架定位；首次左键起滑后再按 15 次 E。连滑代码已编译安装，软件检查通过，待连滑实机验证。真实交付、双入口及其他路线暂缓。
 
 ## 配置与执行边界
 
@@ -12,24 +12,39 @@
 - 生成源在 `tools/pipeline-generate/AutoDelivery/routes.json`；固定 ID 只传给 WithZipline 主路线，不进入普通步行或站位修正节点。现有苏白易业务接线保留，但不视为真实业务验收。
 - 编辑器尚未支持完整固定参数往返，导入含该参数的文件会明确拒绝，避免静默丢失。地图查看使用 `docs/zh_cn/dev-notes/苏白易架序.preview.json`；实际试跑使用独立任务。
 
+## 连滑区间
+
+`fixed_zipline_routes.json` 的每条路线可配置 `continuous_segments`，元素为含首尾的架子索引，例如 `{"first": 0, "last": 15}`。区间必须顺序排列、不重叠，可共享段末/段首；不配置或空数组时保持普通逐跳。
+
+- 预算 = `last - first`，即区间架数减一；首次左键发射另计。当前苏白易 #0～#15 配置为左键后 15 次 E，#0～#3 示例为左键后 3 次 E。
+- 每段只瞄准首跳并左键发射；途中只调用已有 E 模板的识别/按键节点，不调用位置识别，不重新瞄准下一架。
+- 同一提示只消费一次，观察到消失后才允许下一次。按键动作成功才记账，动作失败或停止任务时不继续按键。
+- 完成预算并观察最后提示消失后才定位末架。确认末架后跳过本段剩余逐跳航点，再接下一段或下索步行；预算用尽不等同于到达成功。
+- 等待新提示、提示消失或末架定位超时均停止并记录阶段。超时沿用原滑索 30 秒诊断边界；每次真实提示消费重置等待计时，不通过定时连按推进。
+
 ## 本轮已执行验证
 
 | 检查 | 结果 |
 | --- | --- |
 | 当前账号快照校验 | 16 架唯一匹配；脚本不证明游戏连线和供电 |
-| C++ 生产 Agent | MSVC 本地编译安装成功 |
-| C++ 固定配置局部测试 | 通过：乱序快照、缺中间架、重复/近邻歧义、错层、错类型、高度、坏字段、重复 ID 等 |
-| 原生 Agent 离线规划 | 8 项通过：独立入口完整 15 跳及每跳落点、生成业务节点完整链、未知 ID 拒绝、禁滑参数拒绝、必经动作拒绝、错起始区域拒绝、普通步行、普通自动滑索 |
-| 配置与导入工具 | 5 项通过；地图导入原有 17 项通过 |
+| C++ 生产 Agent | 发现头文件依赖漏编后 clean 完整重建，编译安装成功 |
+| C++ 固定配置与计数测试 | 通过：匹配异常、区间越界/重叠、4 架 3 次与 16 架 15 次、持续提示去重、预算用尽、实际运行状态重启清空 |
+| 原生 Agent 离线规划 | 8 项通过：独立入口完整 15 跳及每跳落点、段首 E 预算 15、生成业务节点完整链、未知 ID 拒绝、禁滑参数拒绝、必经动作拒绝、错起始区域拒绝、普通步行、普通自动滑索 |
+| 配置与导入工具 | 6 项通过（含连滑 Schema）；地图导入原有 17 项为上轮结果 |
+| 连滑 Pipeline 合成截图 | 2 项通过：真实模板有/无提示、只按一次、观察不按键、停止在识别前不发按键 |
 | AutoDelivery 生成器 | 20 项通过，重新生成仍保留固定 ID |
 | `pnpm check` | 通过，6 组资源 |
 | Pipeline/Task Schema | 通过 |
 | `pnpm test` | 通过，1279 项节点用例 |
-| 本轮实机 | 待博士再空跑一轮；真实全局禁滑、取消重启和异常输入的实机行为尚未验收 |
+| 本轮实机 | 补强版一轮空跑与日志核验通过；全局禁滑、取消重启、异常输入和 E 连滑的实机行为尚未验收 |
 
-节点测试首次启动未进入测试且无诊断输出，顺序重新运行后完成全部 1279 项；未修改测试断言。DeliveryJobs 的两项上游历史失败未在此轮修改，不把 AutoDelivery 的 20 项通过说成全部送货生成器通过。
+2026-09-13 节点测试曾首次启动无诊断退出，顺序运行后完成 1279 项；本轮再次顺序运行通过，未修改测试断言。DeliveryJobs 的两项上游历史失败未在此轮修改，不把 AutoDelivery 的 20 项通过说成全部送货生成器通过。
 
-本机安装的 C++ Agent SHA256：`D29138ECC39095053527374F52300212610F41A5072056158DFD115D7A5B33E9`。二进制、原始快照及 `.cache/fixed-delivery-*.log` 仅保留本机。
+本机安装的 C++ Agent SHA256：`9744D8D80A21C596577702D97A726BF201CDBD2F0F4F05D30C37180E24B02C89`。二进制、原始快照及 `.cache/fixed-delivery-*.log` 仅保留本机。
+
+## 本机构建注意事项
+
+本机 CMake/Ninja 把 MSVC 中文 `/showIncludes` 前缀探测成乱码，导致修改头文件时相关对象未重编。直接增量编译曾生成混合新旧结构体布局的程序，原生规划回归因此失败；clean 全部对象后完整构建恢复。不要把仅有少量 cpp 重编的成功退出当作结构体修改已生效。头文件变更后先运行下方 clean 命令，再正常构建。该问题仍是本机增量构建限制，未通过修改全局环境或安装语言包处理。
 
 ## 复现命令
 
@@ -37,6 +52,7 @@
 
 ```powershell
 . .\tools\fixed-delivery\Enter-Dev.ps1
+cmake --build agent/cpp-algo/build --config RelWithDebInfo --target clean
 & .venv/Scripts/python.exe -m tools.setup.build_and_install --cpp-algo
 & .venv/Scripts/python.exe tools/fixed-delivery/validate_fixed_routes.py
 
@@ -45,6 +61,7 @@ cmake --build .cache/fixed-delivery-tests --config Release
 ctest --test-dir .cache/fixed-delivery-tests -C Release --output-on-failure
 & .venv/Scripts/python.exe tools/fixed-delivery/tests/test_fixed_route_tools.py
 & .venv/Scripts/python.exe tools/fixed-delivery/tests/test_native_route.py
+& .venv/Scripts/python.exe tools/fixed-delivery/tests/test_relay_pipeline.py
 
 node --test tools/pipeline-generate/AutoDelivery/*.test.mjs
 # 使用已锁定的本地数据生成，不在验收过程中顺带拉取游戏数据更新。

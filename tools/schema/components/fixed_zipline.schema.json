@@ -1,6 +1,55 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$defs": {
+        "RouteFile": {
+            "type": "object",
+            "required": ["version", "routes"],
+            "additionalProperties": false,
+            "properties": {
+                "version": {"const": 1},
+                "routes": {"type": "array", "items": {"$ref": "#/$defs/Route"}}
+            }
+        },
+        "Route": {
+            "type": "object",
+            "required": ["id", "map_id", "level_id", "template_id", "nodes"],
+            "additionalProperties": false,
+            "properties": {
+                "id": {"type": "string", "minLength": 1},
+                "map_id": {"type": "string", "minLength": 1},
+                "level_id": {"type": "string", "minLength": 1},
+                "template_id": {"type": "string", "minLength": 1},
+                "source": {"type": "string"},
+                "nodes": {
+                    "type": "array",
+                    "minItems": 2,
+                    "items": {
+                        "type": "object",
+                        "required": ["index", "x", "y", "z"],
+                        "additionalProperties": false,
+                        "properties": {
+                            "index": {"type": "integer", "minimum": 0},
+                            "x": {"type": "number"},
+                            "y": {"type": "number"},
+                            "z": {"type": "number"}
+                        }
+                    }
+                },
+                "continuous_segments": {
+                    "description": "按架索引指定连滑区间，含首尾。左键起滑后 E 次数 = last - first；区间必须顺序排列且不重叠，可共享端点。",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["first", "last"],
+                        "additionalProperties": false,
+                        "properties": {
+                            "first": {"type": "integer", "minimum": 0},
+                            "last": {"type": "integer", "minimum": 1}
+                        }
+                    }
+                }
+            }
+        },
         "NavigateParam": {
             "if": {
                 "type": "object",

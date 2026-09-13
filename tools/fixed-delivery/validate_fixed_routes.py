@@ -27,6 +27,16 @@ def main() -> int:
         route_ids.add(route["id"])
         if route["map_id"] not in maps or len(route["nodes"]) < 2:
             raise SystemExit(f"{route['id']}: map missing or fewer than two towers")
+        segments = route.get("continuous_segments", [])
+        if not isinstance(segments, list):
+            raise SystemExit(f"{route['id']}: continuous_segments must be an array")
+        previous_end = 0
+        for segment in segments:
+            first, last = segment.get("first"), segment.get("last")
+            if type(first) is not int or type(last) is not int or not previous_end <= first < last < len(route["nodes"]):
+                raise SystemExit(f"{route['id']}: invalid or overlapping continuous segment")
+            previous_end = last
+            print(f"{route['id']}: continuous #{first} -> #{last}, {last - first} E presses after mouse launch")
         marks = [
             mark
             for mark in maps[route["map_id"]]["marks"]
