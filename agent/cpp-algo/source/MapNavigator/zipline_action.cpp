@@ -488,11 +488,12 @@ Result StartZiplineHop(
     ctx.runtime_state->semantic.zipline_ride_started = std::chrono::steady_clock::now();
     ctx.runtime_state->semantic.zipline_mount_pos = *ctx.position;
     ctx.runtime_state->semantic.zipline_landing = segment_landing;
-    ctx.runtime_state->semantic.zipline_relay = { .required = waypoint.zipline_relay_hops };
+    ctx.runtime_state->semantic.zipline_relay = { .required = ZiplineRelayPressCount(waypoint.zipline_relay_hops) };
     ctx.runtime_state->semantic.zipline_relay_end_index = segment_end;
     if (waypoint.zipline_relay_hops > 0) {
         LogInfo << "ZIPLINE relay started after initial mouse launch; no intermediate localization." << VAR(waypoint.zipline_relay_hops)
-                << VAR(segment_landing.x) << VAR(segment_landing.y) << VAR(segment_end);
+                << VAR(ctx.runtime_state->semantic.zipline_relay.required) << VAR(segment_landing.x) << VAR(segment_landing.y)
+                << VAR(segment_end);
     }
     ctx.runtime_state->semantic.zipline_landing_hits = 0;
     ctx.runtime_state->semantic.zipline_settle_hits = 0;

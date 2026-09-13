@@ -36,7 +36,7 @@ def main() -> int:
             if type(first) is not int or type(last) is not int or not previous_end <= first < last < len(route["nodes"]):
                 raise SystemExit(f"{route['id']}: invalid or overlapping continuous segment")
             previous_end = last
-            print(f"{route['id']}: continuous #{first} -> #{last}, {last - first} E presses after mouse launch")
+            print(f"{route['id']}: continuous #{first} -> #{last}, {last - first - 1} E presses after mouse launch")
         marks = [
             mark
             for mark in maps[route["map_id"]]["marks"]

@@ -36,7 +36,7 @@
                     }
                 },
                 "continuous_segments": {
-                    "description": "按架索引指定连滑区间，含首尾。左键起滑后 E 次数 = last - first；区间必须顺序排列且不重叠，可共享端点。",
+                    "description": "按架索引指定连滑区间，含首尾。左键起滑后 E 次数 = last - first - 1（架数减二）；区间必须顺序排列且不重叠，可共享端点。",
                     "type": "array",
                     "items": {
                         "type": "object",

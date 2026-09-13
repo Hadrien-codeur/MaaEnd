@@ -19,6 +19,7 @@
 #include "fixed_zipline_route.h"
 #include "navi_controller.h"
 #include "navmesh_path_expander.h"
+#include "zipline_relay_state.h"
 
 namespace mapnavigator
 {
@@ -827,8 +828,9 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
         best->relay_hops.resize(best->towers.size() - 1, 0);
         for (const auto& segment : fixed_route->continuous_segments) {
             best->relay_hops[segment.first] = segment.last - segment.first;
+            const size_t relay_presses = ZiplineRelayPressCount(best->relay_hops[segment.first]);
             LogInfo << "ZiplineRoute: continuous segment; E presses exclude the initial mouse launch." << VAR(segment.first)
-                    << VAR(segment.last) << VAR(best->relay_hops[segment.first]);
+                    << VAR(segment.last) << VAR(best->relay_hops[segment.first]) << VAR(relay_presses);
         }
     }
     // 只有链首那一根要按提示上索, 中途都是从索上落到下一根架子上的

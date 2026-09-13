@@ -200,7 +200,7 @@ struct Waypoint
     bool interact_rec;
     // ZIPLINE only: 滑索落点。只由滑索规划写入; 缺这个字段的 ZIPLINE 点是配置写错了, 执行侧拒绝
     std::optional<ZiplineTarget> zipline_target;
-    // 固定连滑段首跳专用：覆盖的跳数，也是首次左键起滑之后的 E 次数（博士确认 N 架按 N-1 次）。
+    // 固定连滑段首跳专用：覆盖的跳数。首跳左键另计，E 预算为跳数减一（区间架数减二）。
     size_t zipline_relay_hops = 0;
     // ZIPLINE only: 备用站位, 只在上索按空一次之后才改瞄它。架子旁边没有供电结构就不写
     std::optional<ZiplineRestand> mount_restand;

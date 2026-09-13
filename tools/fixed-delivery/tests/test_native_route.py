@@ -37,7 +37,7 @@ class NativeFixedRouteTest(unittest.TestCase):
         self.assertTrue(result.get("ok"), result)
         hops = result["zipline_segments"]
         self.assertEqual(len(hops), 15)
-        self.assertEqual(hops[0]["relay_presses_after_launch"], 15)
+        self.assertEqual(hops[0]["relay_presses_after_launch"], 14)
         self.assertTrue(all("relay_presses_after_launch" not in hop for hop in hops[1:]))
         targets = [point["target"] for point in self.param["path"]]
         for hop, expected in zip(hops, targets[1:-1], strict=True):

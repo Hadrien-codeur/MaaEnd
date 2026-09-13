@@ -106,9 +106,15 @@ int main(int argc, char** argv)
             json::array { json::object { { "first", 0 }, { "last", 3 } }, json::object { { "first", 3 }, { "last", 15 } } };
         const auto split_route = mapnavigator::ParseFixedZiplineRoute(malformed, route->id, error);
         require(
-            split_route && split_route->continuous_segments[0].last - split_route->continuous_segments[0].first == 3,
-            "four towers require three E presses after launch");
-        for (const size_t presses : { 3, 15 }) {
+            split_route
+                && mapnavigator::ZiplineRelayPressCount(
+                       split_route->continuous_segments[0].last - split_route->continuous_segments[0].first)
+                       == 2,
+            "four towers require two E presses after launch");
+        require(mapnavigator::ZiplineRelayPressCount(0) == 0, "no relay must not underflow");
+        require(mapnavigator::ZiplineRelayPressCount(1) == 0, "two towers only need the initial mouse launch");
+        require(mapnavigator::ZiplineRelayPressCount(15) == 14, "sixteen towers require fourteen E presses");
+        for (const size_t presses : { mapnavigator::ZiplineRelayPressCount(3), mapnavigator::ZiplineRelayPressCount(15) }) {
             mapnavigator::ZiplineRelayCounter counter { .required = presses };
             require(!counter.readyForLanding(), "left mouse launch does not consume E budget");
             for (size_t index = 0; index < presses; ++index) {
@@ -126,7 +132,7 @@ int main(int argc, char** argv)
             require(!counter.commitPress(), "terminal prompt must never issue another E");
         }
         mapnavigator::NavigationRuntimeState runtime;
-        runtime.semantic.zipline_relay = { .required = 15, .pressed = 7, .awaiting_clear = true };
+        runtime.semantic.zipline_relay = { .required = 14, .pressed = 7, .awaiting_clear = true };
         runtime.semantic.zipline_relay_end_index = 19;
         runtime.semantic.zipline_mounted = true;
         runtime.BeginNavigation(std::chrono::steady_clock::now());

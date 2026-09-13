@@ -22,6 +22,7 @@
 #include "../MapNavigator/navi_param_parser.h"
 #include "../MapNavigator/navmesh_path_expander.h"
 #include "../MapNavigator/zipline_leg_planner.h"
+#include "../MapNavigator/zipline_relay_state.h"
 #include "../Navmesh/BaseNavGeometry.h"
 #include "../Navmesh/BaseNavPlanner.h"
 #include "../Navmesh/BaseNavReader.h"
@@ -633,7 +634,7 @@ json::object BuildRoutePreview(const QueryParam& query)
             { "authored_group_begin", waypoint.authored_group_begin },
         };
         if (waypoint.zipline_relay_hops > 0) {
-            segment.emplace("relay_presses_after_launch", waypoint.zipline_relay_hops);
+            segment.emplace("relay_presses_after_launch", mapnavigator::ZiplineRelayPressCount(waypoint.zipline_relay_hops));
         }
         if (waypoint.mount_restand) {
             segment.emplace("mount_restand", json::array { waypoint.mount_restand->x, waypoint.mount_restand->y });
