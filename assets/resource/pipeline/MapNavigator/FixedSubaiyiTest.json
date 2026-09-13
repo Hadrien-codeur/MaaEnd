@@ -86,6 +86,13 @@
                 {
                     "action": "NAVMESH",
                     "target": [
+                        592.5,
+                        1436.25
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
                         570,
                         1461
                     ]
