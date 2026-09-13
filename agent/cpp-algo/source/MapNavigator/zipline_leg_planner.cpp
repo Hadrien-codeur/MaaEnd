@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <fstream>
 #include <limits>
 #include <memory>
 #include <mutex>
@@ -16,6 +17,7 @@
 #include "../Zipline/ZiplineStore.h"
 #include "navi_controller.h"
 #include "navmesh_path_expander.h"
+#include "../utils.h"
 
 namespace mapnavigator
 {
@@ -33,6 +35,40 @@ thread_local bool g_zipline_not_chosen = false;
 // 一次请求里最多额外跑几条 navmesh 规划。候选是成对的，不设上限的话，滑索密集的地图
 // 会把规划耗时抬高一个量级；触顶后只拿已经算出来的候选做决策，并在日志里说明截断。
 constexpr size_t kMaxExtraPlans = 12;
+
+std::vector<std::array<double, 3>> LoadFixedRouteWorldPoints(const std::string& route_id)
+{
+    if (route_id.empty()) {
+        return {};
+    }
+    const auto path = get_exe_dir() / ".." / "data" / "MapNavigator" / "fixed_zipline_routes.json";
+    std::ifstream input(path, std::ios::binary);
+    if (!input) {
+        LogWarn << "ZiplineRoute: fixed route file unavailable" << VAR(path);
+        return {};
+    }
+    const std::string raw((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+    const auto parsed = json::parse(raw);
+    if (!parsed || !parsed->is_object() || !parsed->as_object().contains("routes")) {
+        return {};
+    }
+    for (const auto& route_value : parsed->as_object().at("routes").as_array()) {
+        if (!route_value.is_object() || route_value.as_object().get("id", std::string {}) != route_id) {
+            continue;
+        }
+        std::vector<std::array<double, 3>> points;
+        for (const auto& node : route_value.as_object().get("nodes", json::array {}).as_array()) {
+            if (!node.is_object()) {
+                continue;
+            }
+            const auto& object = node.as_object();
+            points.push_back({ object.get("x", 0.0), object.get("y", 0.0), object.get("z", 0.0) });
+        }
+        return points;
+    }
+    LogWarn << "ZiplineRoute: fixed route id not found" << VAR(route_id);
+    return {};
+}
 
 // 供电结构离架子这么近才谈得上抢走交互面板, 更远的没必要给它让位。
 constexpr double kMountPoleClearPx = 5.0;
@@ -465,6 +501,26 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
     }
     if (unpowered != 0) {
         LogDebug << "ZiplineRoute: left out the ziplines no power reaches" << VAR(unpowered) << VAR(nodes.size());
+    }
+
+    if (!param.fixed_zipline_route.empty()) {
+        const auto fixed_points = LoadFixedRouteWorldPoints(param.fixed_zipline_route);
+        if (fixed_points.empty()) {
+            return no_zipline("fixed zipline route has no nodes", &g_zipline_no_data);
+        }
+        const auto matches_fixed_point = [&](const zipline::ZiplineNode& node) {
+            constexpr double kMatchDistance = 0.01;
+            return std::any_of(fixed_points.begin(), fixed_points.end(), [&](const auto& point) {
+                const double dx = node.world_x - point[0];
+                const double dy = node.world_y - point[1];
+                const double dz = node.world_z - point[2];
+                return std::sqrt(dx * dx + dy * dy + dz * dz) <= kMatchDistance;
+            });
+        };
+        const auto before = nodes.size();
+        nodes.erase(std::remove_if(nodes.begin(), nodes.end(), [&](const auto& node) { return !matches_fixed_point(node); }), nodes.end());
+        LogInfo << "ZiplineRoute: restricted candidates to fixed route" << VAR(param.fixed_zipline_route) << VAR(before)
+                << VAR(nodes.size());
     }
 
     if (nodes.size() < 2) {
