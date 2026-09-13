@@ -544,7 +544,6 @@ export class NavTestSocket extends SessionSocket {
       path: (route && route.path) || [],
       exported: !!(route && route.exported),
       zip: !!(route && route.zip),
-      fixed_zipline_route: String((route && route.fixed_zipline_route) || ""),
       assert_target: (route && route.assert_target) || null,
     };
   }

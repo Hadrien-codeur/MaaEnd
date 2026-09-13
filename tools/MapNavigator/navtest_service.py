@@ -85,7 +85,6 @@ class NavTestService:
         self._armed_path: list[Any] = []
         self._armed_kind = "route"
         self._armed_zip = False
-        self._armed_fixed_zipline_route = ""
         self._tasker: Any = None
         self._resource: Any = None
         self._position_thread: threading.Thread | None = None
@@ -210,7 +209,6 @@ class NavTestService:
         *,
         exported: bool = False,
         zip_enabled: bool = False,
-        fixed_zipline_route: str = "",
         assert_target: dict | None = None,
     ) -> None:
         """装载待跑的东西: 有断言框就装框, 否则装线。F3 跑的就是这一份。
@@ -237,7 +235,6 @@ class NavTestService:
             self._armed_path = nodes
             self._armed_kind = kind
             self._armed_zip = bool(zip_enabled and kind == "route")
-            self._armed_fixed_zipline_route = fixed_zipline_route.strip() if kind == "route" else ""
         self._on_armed(len(nodes), kind)
 
     def _export_assert(self, assert_target: dict) -> list[Any] | None:
@@ -267,7 +264,6 @@ class NavTestService:
                     points,
                     exported=bool(msg.get("exported")),
                     zip_enabled=bool(msg.get("zip")),
-                    fixed_zipline_route=str(msg.get("fixed_zipline_route") or ""),
                 )
             if kind == "run":
                 self.trigger_run()
@@ -419,8 +415,6 @@ class NavTestService:
             custom_action_param: dict[str, Any] = {"path": path}
             if zip_enabled:
                 custom_action_param["zip"] = True
-            if self._armed_fixed_zipline_route:
-                custom_action_param["fixed_zipline_route"] = self._armed_fixed_zipline_route
             override = {
                 node_name: {
                     "recognition": "DirectHit",
