@@ -56,7 +56,7 @@ export function advanceQuickRouteTest(current, endpoint) {
  * @param {{zip?:boolean}} [options]
  * @returns {{ok:true,request:Object}|{ok:false,error:string}}
  */
-export function buildQuickRouteTestRequest(state, {zip = false, fixedZiplineRoute = ""} = {}) {
+export function buildQuickRouteTestRequest(state, {zip = false} = {}) {
   const start = state?.start;
   const goal = state?.goal;
   if (!isValidEndpoint(start) || !isValidEndpoint(goal)) {
@@ -74,7 +74,6 @@ export function buildQuickRouteTestRequest(state, {zip = false, fixedZiplineRout
 
   const customActionParam = {path: [target]};
   if (zip) customActionParam.zip = true;
-  if (fixedZiplineRoute.trim()) customActionParam.fixed_zipline_route = fixedZiplineRoute.trim();
   return {
     ok: true,
     request: {
