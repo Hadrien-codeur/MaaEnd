@@ -356,6 +356,7 @@ class MapNavigatorApp {
       btnEditStartClear: $("btn-edit-start-clear"),
       chkAutoPlan: $("chk-auto-plan"),
       chkEditZipline: $("chk-edit-zipline"),
+      fixedZiplineRoute: $("fixed-zipline-route"),
       btnCopyAssert: $("btn-copy-assert"),
       assertCopyFormat: $("assert-copy-format"),
       btnImport: $("btn-import"),
@@ -4797,7 +4798,10 @@ class MapNavigatorApp {
 
   /** Plan the temporary S/G pair through the runtime MapNavigateAction preview. */
   async _calculateQuickRouteTest() {
-    const built = buildQuickRouteTestRequest(this.quickRouteTest, {zip: this.els.chkEditZipline.checked});
+    const built = buildQuickRouteTestRequest(this.quickRouteTest, {
+      zip: this.els.chkEditZipline.checked,
+      fixedZiplineRoute: this.els.fixedZiplineRoute.value,
+    });
     if (!built.ok) {
       setStatus(built.error, "#f59e0b");
       return;
