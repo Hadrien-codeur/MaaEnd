@@ -465,6 +465,7 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
     // map_id 留空表示这个区还没绑定到具体哪张森空岛地图，此时已导入的标记全部纳入候选：
     // 坐标对不上的那些接不上网格，在规划预算之内就被淘汰掉。
     std::vector<zipline::ZiplineNode> nodes;
+    std::vector<std::array<double, 3>> fixed_route_points;
     // 供电结构的落点也投一份到像素平面: 通电判定用的是世界坐标, 而让位算的是人站在哪
     std::vector<navmesh::WorldPoint> supply_points;
     size_t unpowered = 0;
@@ -508,12 +509,12 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
     }
 
     if (!param.fixed_zipline_route.empty()) {
-        const auto fixed_points = LoadFixedRouteWorldPoints(param.fixed_zipline_route);
-        if (fixed_points.empty()) {
+        fixed_route_points = LoadFixedRouteWorldPoints(param.fixed_zipline_route);
+        if (fixed_route_points.empty()) {
             return no_zipline("fixed zipline route has no nodes", &g_zipline_no_data);
         }
         const auto matches_fixed_point = [&](const zipline::ZiplineNode& node) {
-            return std::any_of(fixed_points.begin(), fixed_points.end(), [&](const auto& point) {
+            return std::any_of(fixed_route_points.begin(), fixed_route_points.end(), [&](const auto& point) {
                 const double dx = node.world_x - point[0];
                 const double dy = node.world_y - point[1];
                 const double dz = node.world_z - point[2];
@@ -626,6 +627,31 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
 
     // 一条路线用几条索由代价决定，不设跳数上限：换乘要收钱，划不来的长链自己就被淘汰了。
     std::vector<std::vector<size_t>> links = BuildLinks(nodes, span_limit, footprints);
+    if (!fixed_route_points.empty()) {
+        std::vector<size_t> order(nodes.size(), std::numeric_limits<size_t>::max());
+        for (size_t i = 0; i < nodes.size(); ++i) {
+            double best_distance = std::numeric_limits<double>::max();
+            for (size_t j = 0; j < fixed_route_points.size(); ++j) {
+                const auto& point = fixed_route_points[j];
+                const double dx = nodes[i].world_x - point[0];
+                const double dy = nodes[i].world_y - point[1];
+                const double dz = nodes[i].world_z - point[2];
+                const double distance = dx * dx + dy * dy + dz * dz;
+                if (distance < best_distance) {
+                    best_distance = distance;
+                    order[i] = j;
+                }
+            }
+        }
+        for (size_t i = 0; i < links.size(); ++i) {
+            links[i].erase(
+                std::remove_if(links[i].begin(), links[i].end(), [&](size_t j) {
+                    return order[i] == std::numeric_limits<size_t>::max() || order[j] != order[i] + 1;
+                }),
+                links[i].end());
+        }
+        LogInfo << "ZiplineRoute: constrained fixed route edges to authored order" << VAR(param.fixed_zipline_route);
+    }
 
     // 执行侧判死过的跳直接从连通图里拿掉。索不分上下行, 一根滑不动的索反着大概率也滑不动,
     // 两个方向一起封。
