@@ -117,6 +117,13 @@
                         537,
                         1270.5
                     ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        538.031,
+                        1250.27
+                    ]
                 }
             ],
             "fixed_zipline_route": "wuling_city_subaiyi",
