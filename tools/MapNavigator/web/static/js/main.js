@@ -5876,6 +5876,7 @@ class MapNavigatorApp {
       path: this.state.points,
       exported: false,
       zip: this.els.chkEditZipline.checked,
+      fixed_zipline_route: this.els.fixedZiplineRoute.value.trim(),
     };
   }
 
