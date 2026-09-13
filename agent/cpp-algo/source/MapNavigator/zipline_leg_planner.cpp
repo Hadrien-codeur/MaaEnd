@@ -711,7 +711,9 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
     }
     std::sort(candidates.begin(), candidates.end(), [](const Candidate& a, const Candidate& b) { return a.lower_bound < b.lower_bound; });
 
-    size_t plan_budget = kMaxExtraPlans;
+    // 固定架序必须评估到作者指定的末架；通用路线的 12 次预算会在长链中途截断，
+    // 随后把剩余架子误当成离索后的地面段。固定路线候选已被严格收窄，按候选矩阵完整预算。
+    size_t plan_budget = fixed_route_points.empty() ? kMaxExtraPlans : nodes.size() * nodes.size();
 
     // 上索点的高度是导入数据里带来的逐点真值，直接钉住终点所在的那一层。
     LegCache approach_cache(
