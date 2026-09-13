@@ -345,6 +345,9 @@ std::optional<DynamicAnchor> ResolveReachableNavmeshAnchor(
 
 std::optional<DynamicAnchor> ResolveBootstrapAnchor(const NaviParam& param, NavigationSession* session, const NaviPosition& position)
 {
+    if (!param.fixed_zipline_route.empty()) {
+        return ResolveCurrentAnchorFrom(session, position, 0);
+    }
     size_t start_index = 0;
     const std::optional<BootstrapContinueCandidate> continue_candidate =
         ResolveBootstrapContinueCandidate(session->original_path(), position);
@@ -419,6 +422,7 @@ NavigationStateMachine::NavigationStateMachine(
     , walk_mode_(action_wrapper)
 {
     LogInfo << "Navigation route runner selected. backend=orchestrated";
+    runtime_state_.fixed_zipline_route = param.fixed_zipline_route;
 }
 
 bool NavigationStateMachine::Run()
@@ -484,7 +488,7 @@ bool NavigationStateMachine::Bootstrap()
 
     const std::optional<BootstrapContinueCandidate> continue_candidate =
         ResolveBootstrapContinueCandidate(session_->original_path(), *position_);
-    if (continue_candidate && continue_candidate->continue_index > 0
+    if (param_.fixed_zipline_route.empty() && continue_candidate && continue_candidate->continue_index > 0
         && continue_candidate->continue_index < session_->original_path().size()) {
         session_->ApplyDynamicOverlay({}, continue_candidate->continue_index, *position_);
         runtime_state_.route.Reset();
@@ -664,6 +668,20 @@ bool NavigationStateMachine::TryApplyDynamicOverlayToAnchor(
     const Waypoint& anchor,
     bool emit_interior_corners)
 {
+    if (!param_.fixed_zipline_route.empty()) {
+        // 绕障可以重新接近当前架子，不能把未执行的滑索跳当作已走过的地面点。
+        for (size_t index = session_->current_node_idx(); index < session_->current_path().size(); ++index) {
+            if (session_->CurrentPathAt(index).action != ActionType::ZIPLINE) {
+                continue;
+            }
+            const auto pending_hop = session_->CanonicalIndexAtCurrentPath(index);
+            if (!pending_hop || continue_index > *pending_hop) {
+                LogError << "Fixed zipline route refuses overlay past an unconsumed hop." << VAR(reason) << VAR(continue_index);
+                return false;
+            }
+            break;
+        }
+    }
     if (!anchor.HasPosition()) {
         LogWarn << "Dynamic navmesh overlay skipped: anchor has no position." << VAR(reason) << VAR(continue_index);
         return false;
@@ -828,10 +846,10 @@ bool NavigationStateMachine::GiveUpUnreachableZipline(const char* reason)
         return false;
     }
 
-    LogWarn << "Zipline mount tower unreachable after repeated replans; walking instead." << VAR(reason) << VAR(approach.replans)
-            << VAR(anchor->second.x) << VAR(anchor->second.y) << VAR(position_->x) << VAR(position_->y);
+    LogWarn << "Zipline mount tower unreachable after repeated replans." << VAR(reason) << VAR(approach.replans) << VAR(anchor->second.x)
+            << VAR(anchor->second.y) << VAR(position_->x) << VAR(position_->y);
     runtime_state_.dynamic_replan_requested = false;
-    semantic_nodes::AbandonZipline(
+    const auto result = semantic_nodes::AbandonZipline(
         BuildSemanticContext(
             action_wrapper_,
             position_provider_,
@@ -843,6 +861,9 @@ bool NavigationStateMachine::GiveUpUnreachableZipline(const char* reason)
             maa_context_),
         "zipline_unreachable",
         reason);
+    if (result.request_failure) {
+        FailNavigation(result.failure_reason, result.failure_log_message, 0.0, 0.0, 0);
+    }
     return true;
 }
 
@@ -929,6 +950,10 @@ bool NavigationStateMachine::HandleZiplineRecoveryReplan()
 // 交给走路侧的恢复。
 bool NavigationStateMachine::TryReplanRemainingAuthoredRoute(const char* reason)
 {
+    if (!param_.fixed_zipline_route.empty()) {
+        LogError << "Fixed zipline route refuses authored-route restart." << VAR(param_.fixed_zipline_route) << VAR(reason);
+        return false;
+    }
     const std::vector<Waypoint>& authored = param_.authored_path;
     if (authored.empty()) {
         return false;
@@ -1572,7 +1597,7 @@ bool NavigationStateMachine::TickNavigate()
                 if (waypoint.action == ActionType::ZIPLINE) {
                     LogWarn << "Recovery timed out at a zipline tower; dropping the chain and walking." << VAR(recovery_elapsed_ms)
                             << VAR(waypoint.x) << VAR(waypoint.y) << VAR(position_->x) << VAR(position_->y);
-                    semantic_nodes::AbandonZipline(
+                    const auto result = semantic_nodes::AbandonZipline(
                         BuildSemanticContext(
                             action_wrapper_,
                             position_provider_,
@@ -1584,6 +1609,9 @@ bool NavigationStateMachine::TickNavigate()
                             maa_context_),
                         "zipline_recovery_timeout",
                         "stuck at the tower after recovery ran out");
+                    if (result.request_failure) {
+                        return FailNavigation(result.failure_reason, result.failure_log_message, 0.0, 0.0, stalled_ms);
+                    }
                     return true;
                 }
                 return FailNavigation(

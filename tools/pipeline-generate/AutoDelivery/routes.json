@@ -103,6 +103,7 @@
         },
         {
             "source_id": "deliver_target_map02_lv002_01",
+            "fixed_zipline_route": "wuling_city_subaiyi",
             "name": "苏白易",
             "depot_id": "domain_2_lv002_depot_1",
             "description": "技术生产办公室（左上）",

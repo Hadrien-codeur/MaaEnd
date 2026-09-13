@@ -355,6 +355,8 @@ struct ZiplineRecoveryState
 
 struct NavigationRuntimeState
 {
+    // 整趟导航的固定架序约束；每次新建状态机赋值，不随航点切换重置。
+    std::string fixed_zipline_route;
     RouteTrackerState route;
     FlowState flow;
     SemanticState semantic;

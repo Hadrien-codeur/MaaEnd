@@ -4,6 +4,9 @@ import {BASE_NAV_ZONE_IMAGE_PARTS} from "../../MapNavigator/web/static/js/model.
 
 const catalogSource = JSON.parse(readFileSync(new URL("../data/delivery_destinations.json", import.meta.url), "utf8"));
 const routeSource = JSON.parse(readFileSync(new URL("./routes.json", import.meta.url), "utf8"));
+const fixedRoutes = JSON.parse(
+    readFileSync(new URL("../../../assets/data/MapNavigator/fixed_zipline_routes.json", import.meta.url), "utf8"),
+);
 
 const APPROACH_DISTANCE_METERS = 8;
 const COORDINATE_PRECISION = 3;
@@ -30,6 +33,17 @@ function readWalkOnly(value, label) {
         throw new TypeError(`[AutoDelivery] ${label}.walk_only 必须是布尔值`);
     }
     return value;
+}
+
+export function readFixedZiplineRoute(value, walkOnly, label) {
+    if (value === undefined) {
+        return undefined;
+    }
+    const id = assertNonEmptyString(value, `${label}.fixed_zipline_route`);
+    if (walkOnly || fixedRoutes.routes.filter((route) => route.id === id).length !== 1) {
+        throw new Error(`[AutoDelivery] ${label} 固定滑索路线无唯一配置或与 walk_only 冲突：${id}`);
+    }
+    return id;
 }
 
 function assertUnique(items, keyOf, label) {
@@ -175,6 +189,7 @@ export const depots = assertArray(catalogSource.depots, "delivery_destinations.d
         retryPath,
         departurePath: override?.departure_path ?? [],
         walkOnly,
+        fixedZiplineRoute: readFixedZiplineRoute(override?.fixed_zipline_route, walkOnly, `仓储 ${id}`),
         routeNode: buildRouteNode("Depot", id),
         zipRouteNode: buildRouteNode("Depot", id, true),
         retryRouteNode: buildRouteNode("DepotRetry", id),
@@ -238,6 +253,7 @@ export const destinations = assertArray(catalogSource.destinations, "delivery_de
             ],
             retryPath,
             walkOnly,
+            fixedZiplineRoute: readFixedZiplineRoute(override?.fixed_zipline_route, walkOnly, `终点 ${id}`),
             routeNode: buildRouteNode("Destination", id),
             zipRouteNode: buildRouteNode("Destination", id, true),
             retryRouteNode: buildRouteNode("DestinationRetry", id),

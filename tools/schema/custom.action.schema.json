@@ -96,6 +96,17 @@
 	"allOf": [
 		{
 			"if": {
+				"properties": { "custom_action": { "const": "MapNavigateAction" } },
+				"required": [ "custom_action" ]
+			},
+			"then": {
+				"properties": {
+					"custom_action_param": { "$ref": "./components/fixed_zipline.schema.json#/$defs/NavigateParam" }
+				}
+			}
+		},
+		{
+			"if": {
 				"properties": {
 					"custom_action": { "const": "AutoDeliveryResolveDestinationAction" }
 				},

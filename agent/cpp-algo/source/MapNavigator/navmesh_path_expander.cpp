@@ -1399,20 +1399,39 @@ bool ExpandNavmeshWaypoints(
     if (out_diagnostics != nullptr) {
         out_diagnostics->clear();
     }
+    const bool fixed_route = !param.fixed_zipline_route.empty();
+    if (fixed_route && (!param.zipline_enabled || param.path.empty())) {
+        RecordExpansionFailure("fixed_zipline_disabled", "固定滑索路线需要启用滑索并提供终点");
+        return false;
+    }
+    // 当前固定路线是一段完整架序；不允许把交互、必经点或过图静默跨过去。
+    const bool initial_zone = fixed_route && param.path.front().IsZoneDeclaration();
+    if (initial_zone && !NavmeshZonesShareGeometry(param, initial_pos.zone_id, param.path.front().zone_id)) {
+        RecordExpansionFailure("fixed_zipline_wrong_zone", "当前位置与固定路线的起始区域声明不一致");
+        return false;
+    }
+    if (fixed_route
+        && (param.path.size() == static_cast<size_t>(initial_zone)
+            || std::any_of(param.path.begin() + static_cast<size_t>(initial_zone), param.path.end(), [](const Waypoint& point) {
+                   return (point.action != ActionType::NAVMESH && point.action != ActionType::RUN) || point.ClosesGlobalRouteGroup();
+               }))) {
+        RecordExpansionFailure("fixed_zipline_unsupported_path", "固定滑索路线目前仅支持无必经动作的单段移动路径");
+        return false;
+    }
     const bool contains_navmesh = ContainsNavmeshWaypoint(param.path);
     const bool needs_global_planning = param.zipline_enabled && ContainsGlobalRouteTarget(param.path);
     const bool needs_regular_projection =
         param.normalize_position_via_navmesh && std::any_of(param.path.begin(), param.path.end(), [](const Waypoint& waypoint) {
             return HasExplicitCoordinateFrame(waypoint) && (waypoint.HasPosition() || waypoint.ClosesGlobalRouteGroup());
         });
-    if (!contains_navmesh && !needs_global_planning && !needs_regular_projection) {
+    if (!fixed_route && !contains_navmesh && !needs_global_planning && !needs_regular_projection) {
         out_path = param.path;
         return true;
     }
 
     auto state = MakeExpansionState(param, initial_pos);
     if (!state) {
-        if (!contains_navmesh && !needs_regular_projection) {
+        if (!fixed_route && !contains_navmesh && !needs_regular_projection) {
             out_path = param.path;
             LogInfo << "Global route planning unavailable; keeping the authored path.";
             return true;
@@ -1427,7 +1446,7 @@ bool ExpandNavmeshWaypoints(
     const int64_t navmesh_load_ms =
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - expand_started_at).count();
     if (!navmesh) {
-        if (!contains_navmesh && !needs_regular_projection) {
+        if (!fixed_route && !contains_navmesh && !needs_regular_projection) {
             out_path = param.path;
             LogInfo << "Global route navmesh unavailable; keeping the authored path." << VAR(state->navmesh_zone);
             return true;
@@ -1440,6 +1459,23 @@ bool ExpandNavmeshWaypoints(
     }
 
     out_path.clear();
+    if (fixed_route) {
+        if (initial_zone) {
+            out_path.push_back(param.path.front());
+        }
+        const auto target = ResolveProjectedTarget(navmesh->pack, param.path.back());
+        if ((should_stop && should_stop())
+            || !TryAppendZiplineLeg(param, *navmesh, target, nullptr, should_stop, *state, out_path, out_diagnostics)) {
+            out_path.clear();
+            RecordExpansionFailure("fixed_zipline_unavailable", "完整固定滑索路线不可用，已停止；具体原因见 ZiplineRoute 日志", &*state);
+            return false;
+        }
+        for (auto& point : out_path) {
+            point.authored_group_begin = 0;
+        }
+        LogInfo << "Fixed zipline route expanded without fallback." << VAR(param.fixed_zipline_route) << VAR(out_path.size());
+        return true;
+    }
     const bool expanded = needs_global_planning
                               ? AppendGloballyPlannedRoute(param, *navmesh, should_stop, *state, out_path, out_diagnostics)
                               : AppendAuthoredRoute(param, *navmesh, param.path, should_stop, *state, out_path, out_diagnostics);

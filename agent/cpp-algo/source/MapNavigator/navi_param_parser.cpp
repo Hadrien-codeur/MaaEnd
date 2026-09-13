@@ -931,6 +931,11 @@ bool TryParseNaviParam(const json::value& custom_action_param, NaviParam& out_pa
         }
     }
 
+    if (custom_action_param.exists("fixed_zipline_route")
+        && (param.fixed_zipline_route.find_first_not_of(" \t\r\n") == std::string::npos || !param.zipline_enabled || param.path.empty())) {
+        LogError << "Fixed zipline route requires a nonempty id, zip=true and a destination path.";
+        return false;
+    }
     apply_interact_text(route_interact.texts, route_interact.text_node, param.path, 0);
     apply_interact_scan(route_interact.scan, param.path, 0);
     apply_interact_rec(route_interact.rec, param.path, 0);

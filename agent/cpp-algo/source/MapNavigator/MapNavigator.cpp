@@ -54,7 +54,10 @@ MaaBool MAA_CALL MapNavigateActionRun(
 
     NaviController controller(context);
     const bool arrived = controller.Navigate(param);
-    NoticeZiplineOutcome(context);
+    // 固定路线失败会停止；普通滑索的“改走步行”提示不适用于严格入口。
+    if (param.fixed_zipline_route.empty()) {
+        NoticeZiplineOutcome(context);
+    }
     return arrived ? kMaaTrue : kMaaFalse;
 }
 

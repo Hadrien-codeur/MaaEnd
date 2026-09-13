@@ -257,8 +257,8 @@
                     ]
                 }
             ],
-            "fixed_zipline_route": "wuling_city_subaiyi",
-            "zip": true
+            "zip": true,
+            "fixed_zipline_route": "wuling_city_subaiyi"
         },
         "post_delay": 0,
         "rate_limit": 0,

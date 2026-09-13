@@ -1,6 +1,15 @@
 import {depots, destinations, rawJson} from "./model.mjs";
 
-export function buildRows(routeFileId, id, description, path, routeNode, zipRouteNode, walkOnly = false) {
+export function buildRows(
+    routeFileId,
+    id,
+    description,
+    path,
+    routeNode,
+    zipRouteNode,
+    walkOnly = false,
+    fixedZiplineRoute,
+) {
     return [
         {
             RouteFileId: routeFileId,
@@ -12,7 +21,11 @@ export function buildRows(routeFileId, id, description, path, routeNode, zipRout
             RouteFileId: routeFileId,
             Node: zipRouteNode,
             Description: `${description}，${walkOnly ? "仅允许步行" : "允许使用滑索"}（${id}）`,
-            ActionParam: rawJson({path, zip: !walkOnly}),
+            ActionParam: rawJson({
+                path,
+                zip: !walkOnly,
+                ...(!walkOnly && fixedZiplineRoute ? {fixed_zipline_route: fixedZiplineRoute} : {}),
+            }),
         },
     ];
 }
@@ -27,6 +40,7 @@ export default [
             depot.routeNode,
             depot.zipRouteNode,
             depot.walkOnly,
+            depot.fixedZiplineRoute,
         ),
         ...(depot.retryRouteNode
             ? [
@@ -48,6 +62,7 @@ export default [
             destination.routeNode,
             destination.zipRouteNode,
             destination.walkOnly,
+            destination.fixedZiplineRoute,
         ),
         ...(destination.retryRouteNode
             ? [

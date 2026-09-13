@@ -100,6 +100,10 @@ bool NaviController::Navigate(const NaviParam& requested_param)
         LogWarn << "Zipline disabled: this backend has no mouse buttons to aim and launch with." << VAR(controller_type);
         param.zipline_enabled = false;
     }
+    if (!param.fixed_zipline_route.empty() && (!param.zipline_enabled || param.path.empty())) {
+        LogError << "Fixed zipline route cannot run with ziplines disabled or without a destination." << VAR(param.fixed_zipline_route);
+        return false;
+    }
 
     const auto is_stopping = [&]() {
         return MaaTaskerStopping(MaaContextGetTasker(ctx_));
@@ -128,6 +132,9 @@ bool NaviController::Navigate(const NaviParam& requested_param)
     std::vector<Waypoint> expanded_path;
     size_t resume_index = 0;
     if (!ExpandNavmeshWaypoints(param, pos, is_stopping, expanded_path)) {
+        if (!param.fixed_zipline_route.empty()) {
+            return false;
+        }
         const std::optional<size_t> resume = ResolveRouteResumeIndex(param.path, pos);
         if (!resume) {
             return false;

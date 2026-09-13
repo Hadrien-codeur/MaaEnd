@@ -12,31 +12,43 @@ def main() -> int:
     parser.add_argument("--routes", type=Path, default=Path("assets/data/MapNavigator/fixed_zipline_routes.json"))
     parser.add_argument("--snapshot", type=Path, default=Path("install/debug/record/Ziplines.json"))
     args = parser.parse_args()
-    routes = json.loads(args.routes.read_text(encoding="utf-8"))["routes"]
+    config = json.loads(args.routes.read_text(encoding="utf-8"))
+    if config.get("version") != 1 or not isinstance(config.get("routes"), list):
+        raise SystemExit("Expected fixed route version 1 and routes array")
+    routes = config["routes"]
     snapshot = json.loads(args.snapshot.read_text(encoding="utf-8"))
     maps = {entry["map_id"]: entry for entry in snapshot["maps"]}
+    if len(maps) != len(snapshot["maps"]):
+        raise SystemExit("Duplicate map IDs in snapshot")
+    route_ids: set[str] = set()
     for route in routes:
+        if not route.get("id") or route["id"] in route_ids:
+            raise SystemExit("Empty or duplicate fixed route ID")
+        route_ids.add(route["id"])
+        if route["map_id"] not in maps or len(route["nodes"]) < 2:
+            raise SystemExit(f"{route['id']}: map missing or fewer than two towers")
         marks = [
             mark
             for mark in maps[route["map_id"]]["marks"]
             if mark["level_id"] == route["level_id"] and mark["template_id"] == route["template_id"]
         ]
         used: set[int] = set()
-        for node in route["nodes"]:
-            candidates = sorted(
-                (
-                    math.dist((node[axis] for axis in "xyz"), (mark[axis] for axis in "xyz")),
-                    index,
-                    mark,
-                )
+        for expected_index, node in enumerate(route["nodes"]):
+            if node["index"] != expected_index or not all(math.isfinite(node[axis]) for axis in "xyz"):
+                raise SystemExit(f"{route['id']}: invalid index or coordinates at #{expected_index}")
+            candidates = [
+                (index, mark)
                 for index, mark in enumerate(marks)
-                if index not in used
-            )
-            distance, index, mark = candidates[0]
-            if distance > 0:
-                raise SystemExit(f"{route['id']} node {node['index']} mismatch: {distance:.3f}m")
+                if math.dist((node[axis] for axis in "xyz"), (mark[axis] for axis in "xyz")) <= 0.01
+            ]
+            if len(candidates) != 1:
+                raise SystemExit(f"{route['id']} #{node['index']}: expected one match, got {len(candidates)}")
+            index, mark = candidates[0]
+            if index in used:
+                raise SystemExit(f"{route['id']} #{node['index']}: repeated tower")
             used.add(index)
             print(f"{route['id']} #{node['index']}: matched ({mark['x']}, {mark['y']}, {mark['z']})")
+        print(f"{route['id']}: {len(used)} towers, {len(used) - 1} hops; power and live connectivity not checked")
     return 0
 
 

@@ -295,6 +295,16 @@ Result AbandonZipline(const Context& ctx, const char* reason, const char* detail
 {
     Result result;
     StopMotionAndCommitment(ctx);
+    if (!ctx.runtime_state->fixed_zipline_route.empty()) {
+        LogError << "Fixed zipline route failed; stopping without dismount or replan." << VAR(ctx.runtime_state->fixed_zipline_route)
+                 << VAR(reason) << VAR(detail) << VAR(ctx.session->current_node_idx());
+        ClearRideState(ctx);
+        ctx.runtime_state->zipline_approach.Reset();
+        result.request_failure = true;
+        result.failure_reason = reason;
+        result.failure_log_message = detail;
+        return result;
+    }
     LeaveTower(ctx);
 
     // 还没走完的接近段全是走廊上的普通点，链的头一跳就跟在它们后面。先碰到别的语义点就说明

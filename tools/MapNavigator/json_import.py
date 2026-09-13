@@ -219,6 +219,7 @@ def _project_map_navigate_route(node: Any) -> list[PathPoint] | None:
     param = node.get("custom_action_param")
     if not isinstance(param, dict):
         return None
+    _reject_fixed_route_import(param)
     path = param.get("path")
     return _parse_route(path, "")
 
@@ -410,6 +411,7 @@ def _walk_json_node(
     zone_hint: str,
 ) -> None:
     if isinstance(node, dict):
+        _reject_fixed_route_import(node)
         local_zone = _resolve_zone_hint(node, zone_hint)
 
         path_value = node.get("path")
@@ -432,6 +434,11 @@ def _walk_json_node(
 
         for item in node:
             _walk_json_node(item, routes, zone_hint)
+
+
+def _reject_fixed_route_import(node: dict[str, Any]) -> None:
+    if "fixed_zipline_route" in node:
+        raise ValueError("当前编辑器不能保留固定架序参数，请使用独立固定滑索测试任务；地图查看请导入不含该参数的预览文件。")
 
 
 def _walk_assert_location_node(node: Any, assert_locations: list[ImportedAssertLocation]) -> None:
