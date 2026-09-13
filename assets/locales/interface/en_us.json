@@ -2280,5 +2280,7 @@
     "iconRecognition.name.item_slwood_1_hshog_1_1": "Sear-Toasted Liver",
     "iconRecognition.name.ticketgacha_special_single_lt_1_5_1": "Fletched Irontip HH Permit",
     "iconRecognition.name.wpn_funnel_0019": "Umbra of Frigid Eventide",
-    "iconRecognition.name.wpn_funnel_0020": "Suffering's End"
+    "iconRecognition.name.wpn_funnel_0020": "Suffering's End",
+    "task.FixedZiplineTest.label": "Fixed Zipline Test",
+    "task.FixedZiplineTest.description": "Run the fixed Subaiyi zipline route without accepting a delivery."
 }

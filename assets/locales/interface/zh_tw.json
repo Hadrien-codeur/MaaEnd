@@ -2280,5 +2280,7 @@
     "iconRecognition.name.item_slwood_1_hshog_1_1": "香焗獸肝",
     "iconRecognition.name.ticketgacha_special_single_lt_1_5_1": "鏃礪括羽尋訪憑證",
     "iconRecognition.name.wpn_funnel_0019": "寒夜幽影",
-    "iconRecognition.name.wpn_funnel_0020": "苦難的盡頭"
+    "iconRecognition.name.wpn_funnel_0020": "苦難的盡頭",
+    "task.FixedZiplineTest.label": "固定滑索測試",
+    "task.FixedZiplineTest.description": "不接取委託，直接試跑蘇白易固定滑索路線。"
 }

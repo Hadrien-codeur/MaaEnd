@@ -2280,5 +2280,7 @@
     "iconRecognition.name.item_slwood_1_hshog_1_1": "レバーの塩蒸し焼き",
     "iconRecognition.name.ticketgacha_special_single_lt_1_5_1": "「弓の練磨」スカウト券",
     "iconRecognition.name.wpn_funnel_0019": "寒夜の影",
-    "iconRecognition.name.wpn_funnel_0020": "苦難の果"
+    "iconRecognition.name.wpn_funnel_0020": "苦難の果",
+    "task.FixedZiplineTest.label": "固定ジップラインテスト",
+    "task.FixedZiplineTest.description": "依頼を受けずに蘇白易固定ジップラインルートを試走します。"
 }

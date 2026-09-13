@@ -2280,5 +2280,7 @@
     "iconRecognition.name.item_slwood_1_hshog_1_1": "향신료로 구운 비스트의 간",
     "iconRecognition.name.ticketgacha_special_single_lt_1_5_1": "벼린 화살 헤드헌팅 허가증",
     "iconRecognition.name.wpn_funnel_0019": "추운 밤의 그림자",
-    "iconRecognition.name.wpn_funnel_0020": "고난의 끝"
+    "iconRecognition.name.wpn_funnel_0020": "고난의 끝",
+    "task.FixedZiplineTest.label": "고정 집라인 테스트",
+    "task.FixedZiplineTest.description": "의뢰를 받지 않고 소백이 고정 집라인 경로를 시험 주행합니다。"
 }
