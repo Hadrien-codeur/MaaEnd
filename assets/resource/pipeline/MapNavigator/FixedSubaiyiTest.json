@@ -1,0 +1,45 @@
+{
+    "MapNavigatorFixedSubaiyiTest": {
+        "desc": "MapNavigator 固定滑索试跑：武陵城仓储至苏白易",
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        963.66,
+                        1824.46
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        724.98,
+                        1596.8
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        562.69,
+                        1419.46
+                    ]
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        538.031,
+                        1250.27
+                    ]
+                }
+            ],
+            "fixed_zipline_route": "wuling_city_subaiyi",
+            "zip": true
+        }
+    }
+}
