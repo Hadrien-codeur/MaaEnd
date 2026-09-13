@@ -1,14 +1,11 @@
 {
     "MapNavigatorFixedSubaiyiTest": {
         "desc": "MapNavigator 固定滑索试跑：武陵城仓储至苏白易",
+        "recognition": "DirectHit",
         "action": "Custom",
         "custom_action": "MapNavigateAction",
         "custom_action_param": {
             "path": [
-                {
-                    "action": "ZONE",
-                    "zone_id": "Wuling_Base"
-                },
                 {
                     "action": "NAVMESH",
                     "target": [
