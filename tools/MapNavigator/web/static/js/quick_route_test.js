@@ -59,23 +59,16 @@ export function advanceQuickRouteTest(current, endpoint) {
 export function buildQuickRouteTestRequest(state, {zip = false, fixedZiplineRoute = ""} = {}) {
   const start = state?.start;
   const goal = state?.goal;
-  if (!isValidEndpoint(start)) {
-    return {ok: false, error: "请先设置测试起点。"};
+  if (!isValidEndpoint(start) || !isValidEndpoint(goal)) {
+    return {ok: false, error: "请先依次设置测试起点和终点。"};
   }
-  const fixedGoals = {
-    wuling_city_subaiyi: [538.031, 1250.27],
-  };
-  const fixedGoal = fixedGoals[fixedZiplineRoute.trim()];
-  if (!isValidEndpoint(goal) && !fixedGoal) {
-    return {ok: false, error: "请先设置测试终点，或填写可自动定位终点的固定路线 ID。"};
-  }
-  if (isValidEndpoint(goal) && start.geometryZoneId !== goal.geometryZoneId) {
+  if (start.geometryZoneId !== goal.geometryZoneId) {
     return {ok: false, error: "测试起点和终点必须位于同一张 navmesh 底图。"};
   }
 
   const target = {
     action: "NAVMESH",
-    target: isValidEndpoint(goal) ? goal.position.slice(0, 2) : fixedGoal,
+    target: goal.position.slice(0, 2),
   };
   if (goal.targetTier) target.target_tier = goal.targetTier;
 
