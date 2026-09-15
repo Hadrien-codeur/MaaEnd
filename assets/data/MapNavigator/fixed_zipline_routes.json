@@ -112,5 +112,28 @@
             ],
             "source": "苏白易架序确认记录"
         }
+        ,
+        {
+            "level_id": "map02_lv002",
+            "map_id": "map02",
+            "template_id": "0f45150a59b97bd0de9a4eed7a0fbf23",
+            "nodes": [
+                {
+                    "index": 0,
+                    "x": -783,
+                    "z": -577,
+                    "y": 277
+                },
+                {
+                    "index": 1,
+                    "x": -766,
+                    "z": -649,
+                    "y": 279
+                }
+            ],
+            "id": "wuling_city_pickup",
+            "continuous_segments": [],
+            "source": "武陵城固定取货 Navigator 实录"
+        }
     ]
 }

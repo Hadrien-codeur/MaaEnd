@@ -86,7 +86,8 @@
                     ]
                 }
             ],
-            "zip": true
+            "zip": true,
+            "fixed_zipline_route": "wuling_city_pickup"
         },
         "post_delay": 0,
         "rate_limit": 0,
