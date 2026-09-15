@@ -1,0 +1,12 @@
+{
+    "task": [
+        {
+            "name": "FixedWulingPickupDeliveryTest",
+            "label": "$task.FixedWulingPickupDeliveryTest.label",
+            "entry": "MapNavigatorFixedWulingPickupDeliveryTest",
+            "description": "$task.FixedWulingPickupDeliveryTest.description",
+            "controller": ["Win32-Front"],
+            "group": ["open_world"]
+        }
+    ]
+}

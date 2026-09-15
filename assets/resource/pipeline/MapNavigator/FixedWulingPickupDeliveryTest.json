@@ -1,0 +1,14 @@
+{
+    "MapNavigatorFixedWulingPickupDeliveryTest": {
+        "desc": "固定取货与送货空跑：跳过取货和交货识别",
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "SubTask",
+        "custom_action_param": {
+            "sub": [
+                "MapNavigatorFixedWulingPickupTest",
+                "MapNavigatorFixedSubaiyiTest"
+            ]
+        }
+    }
+}

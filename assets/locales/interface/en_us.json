@@ -2284,5 +2284,7 @@
     "task.FixedZiplineTest.label": "Fixed Zipline Test",
     "task.FixedZiplineTest.description": "Run the fixed Subaiyi zipline route without accepting a delivery.",
     "task.FixedWulingPickupTest.label": "Fixed Wuling Pickup Zipline Test",
-    "task.FixedWulingPickupTest.description": "Run the fixed Wuling pickup zipline route without accepting a delivery."
+    "task.FixedWulingPickupTest.description": "Run the fixed Wuling pickup zipline route without accepting a delivery.",
+    "task.FixedWulingPickupDeliveryTest.label": "Fixed Wuling Pickup and Delivery Run",
+    "task.FixedWulingPickupDeliveryTest.description": "Skip pickup and delivery recognition and run the fixed Wuling pickup and Subaiyi delivery routes."
 }
