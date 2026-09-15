@@ -2282,5 +2282,7 @@
     "iconRecognition.name.wpn_funnel_0019": "寒夜の影",
     "iconRecognition.name.wpn_funnel_0020": "苦難の果",
     "task.FixedZiplineTest.label": "固定ジップラインテスト",
-    "task.FixedZiplineTest.description": "依頼を受けずに蘇白易固定ジップラインルートを試走します。"
+    "task.FixedZiplineTest.description": "依頼を受けずに蘇白易固定ジップラインルートを試走します。",
+    "task.FixedWulingPickupTest.label": "武陵城固定ジップライン取貨テスト",
+    "task.FixedWulingPickupTest.description": "依頼を受けずに武陵城の固定取貨ジップラインルートを試走します。"
 }

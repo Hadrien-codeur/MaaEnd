@@ -2282,5 +2282,7 @@
     "iconRecognition.name.wpn_funnel_0019": "寒夜幽影",
     "iconRecognition.name.wpn_funnel_0020": "苦难的尽头",
     "task.FixedZiplineTest.label": "固定滑索测试",
-    "task.FixedZiplineTest.description": "不接取委托，直接试跑苏白易固定滑索路线。"
+    "task.FixedZiplineTest.description": "不接取委托，直接试跑苏白易固定滑索路线。",
+    "task.FixedWulingPickupTest.label": "固定武陵取货滑索测试",
+    "task.FixedWulingPickupTest.description": "不接取委托，直接试跑武陵城固定取货滑索路线。"
 }

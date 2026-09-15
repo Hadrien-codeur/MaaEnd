@@ -2282,5 +2282,7 @@
     "iconRecognition.name.wpn_funnel_0019": "Umbra of Frigid Eventide",
     "iconRecognition.name.wpn_funnel_0020": "Suffering's End",
     "task.FixedZiplineTest.label": "Fixed Zipline Test",
-    "task.FixedZiplineTest.description": "Run the fixed Subaiyi zipline route without accepting a delivery."
+    "task.FixedZiplineTest.description": "Run the fixed Subaiyi zipline route without accepting a delivery.",
+    "task.FixedWulingPickupTest.label": "Fixed Wuling Pickup Zipline Test",
+    "task.FixedWulingPickupTest.description": "Run the fixed Wuling pickup zipline route without accepting a delivery."
 }

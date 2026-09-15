@@ -1,0 +1,30 @@
+{
+    "MapNavigatorFixedWulingPickupTest": {
+        "desc": "MapNavigator 固定滑索试跑：武陵城固定取货路线",
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "path": [
+                {"action": "NAVMESH", "target": [
+                        941.78,
+                        1778.6
+                    ]},
+                {"action": "NAVMESH", "target": [
+                        950.07,
+                        1777.27
+                    ]},
+                {"action": "NAVMESH", "target": [
+                        960.65,
+                        1828
+                    ]},
+                {"action": "NAVMESH", "target": [
+                        952.92,
+                        1832.79
+                    ]}
+            ],
+            "fixed_zipline_route": "wuling_city_pickup",
+            "zip": true
+        }
+    }
+}

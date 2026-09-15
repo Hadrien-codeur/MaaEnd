@@ -2282,5 +2282,7 @@
     "iconRecognition.name.wpn_funnel_0019": "추운 밤의 그림자",
     "iconRecognition.name.wpn_funnel_0020": "고난의 끝",
     "task.FixedZiplineTest.label": "고정 집라인 테스트",
-    "task.FixedZiplineTest.description": "의뢰를 받지 않고 소백이 고정 집라인 경로를 시험 주행합니다。"
+    "task.FixedZiplineTest.description": "의뢰를 받지 않고 소백이 고정 집라인 경로를 시험 주행합니다。",
+    "task.FixedWulingPickupTest.label": "무릉성 고정 픽업 집라인 테스트",
+    "task.FixedWulingPickupTest.description": "의뢰를 받지 않고 무릉성 고정 픽업 집라인 경로를 시험 주행합니다。"
 }

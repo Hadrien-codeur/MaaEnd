@@ -244,6 +244,7 @@
         "tasks/ImportBluePrints.json",
         "tasks/ZiplineImport.json",
         "tasks/FixedZiplineTest.json",
+        "tasks/FixedWulingPickupTest.json",
         "tasks/AeroSalvage.json",
         // group: sanity_sink
         "tasks/AutoUseSpMedication.json",
