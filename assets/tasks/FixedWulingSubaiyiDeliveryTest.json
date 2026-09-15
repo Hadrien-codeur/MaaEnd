@@ -1,0 +1,12 @@
+{
+    "task": [
+        {
+            "name": "FixedWulingSubaiyiDeliveryTest",
+            "description": "$task.FixedWulingSubaiyiDeliveryTest.description",
+            "label": "$task.FixedWulingSubaiyiDeliveryTest.label",
+            "entry": "SeizeDeliveryJobsMain",
+            "controller": ["Win32-Front"],
+            "group": ["regional_development"]
+        }
+    ]
+}

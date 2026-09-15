@@ -2286,5 +2286,7 @@
     "task.FixedWulingPickupTest.label": "武陵城固定ジップライン取貨テスト",
     "task.FixedWulingPickupTest.description": "依頼を受けずに武陵城の固定取貨ジップラインルートを試走します。",
     "task.FixedWulingPickupDeliveryTest.label": "武陵城固定取貨・配達空走",
-    "task.FixedWulingPickupDeliveryTest.description": "取貨と配達の認識をスキップし、武陵城取貨と蘇白易配達ルートを連続試走します。"
+    "task.FixedWulingPickupDeliveryTest.description": "取貨と配達の認識をスキップし、武陵城取貨と蘇白易配達ルートを連続試走します。",
+    "task.FixedWulingSubaiyiDeliveryTest.label": "武陵城・蘇白易配達テスト",
+    "task.FixedWulingSubaiyiDeliveryTest.description": "正式な配達フローを使い、武陵城を出発地、蘇白易を目的地として完全な取貨・配達をテストします。"
 }

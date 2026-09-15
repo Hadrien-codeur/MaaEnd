@@ -225,6 +225,7 @@
         // group: regional_development
         "tasks/OutpostTrading.json",
         "tasks/SeizeDeliveryJobs.json",
+        "tasks/FixedWulingSubaiyiDeliveryTest.json",
         "tasks/DeliveryJobs.json",
         "tasks/AutoStockpile.json",
         "tasks/AutoStockStaple.json",

@@ -2286,5 +2286,7 @@
     "task.FixedWulingPickupTest.label": "固定武陵取货滑索测试",
     "task.FixedWulingPickupTest.description": "不接取委托，直接试跑武陵城固定取货滑索路线。",
     "task.FixedWulingPickupDeliveryTest.label": "固定武陵取货送货空跑",
-    "task.FixedWulingPickupDeliveryTest.description": "跳过取货和交货识别，连续试跑武陵城取货与苏白易送货路线。"
+    "task.FixedWulingPickupDeliveryTest.description": "跳过取货和交货识别，连续试跑武陵城取货与苏白易送货路线。",
+    "task.FixedWulingSubaiyiDeliveryTest.label": "武陵城苏白易接单实测",
+    "task.FixedWulingSubaiyiDeliveryTest.description": "复用正式接单流程，选择武陵城来源和苏白易目的地进行完整取货送货测试。"
 }

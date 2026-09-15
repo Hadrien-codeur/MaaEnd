@@ -2286,5 +2286,7 @@
     "task.FixedWulingPickupTest.label": "무릉성 고정 픽업 집라인 테스트",
     "task.FixedWulingPickupTest.description": "의뢰를 받지 않고 무릉성 고정 픽업 집라인 경로를 시험 주행합니다。",
     "task.FixedWulingPickupDeliveryTest.label": "무릉성 고정 픽업·배송 주행",
-    "task.FixedWulingPickupDeliveryTest.description": "픽업과 배송 인식을 건너뛰고 무릉성 픽업 및 소백이 배송 경로를 연속 주행합니다。"
+    "task.FixedWulingPickupDeliveryTest.description": "픽업과 배송 인식을 건너뛰고 무릉성 픽업 및 소백이 배송 경로를 연속 주행합니다。",
+    "task.FixedWulingSubaiyiDeliveryTest.label": "무릉성 소백이 배송 테스트",
+    "task.FixedWulingSubaiyiDeliveryTest.description": "정식 배송 흐름을 사용하여 무릉성 출발지와 소백이 목적지로 픽업 및 배송을 완전히 테스트합니다。"
 }
