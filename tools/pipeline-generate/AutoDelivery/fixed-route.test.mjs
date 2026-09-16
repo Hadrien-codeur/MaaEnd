@@ -7,12 +7,18 @@ import {buildSyncedRouteConfig} from "./sync-routes.mjs";
 
 test("苏白易固定路线重新生成后保留，普通和站位修正入口不改变", () => {
     const destination = destinations.find((item) => item.id === "deliver_target_map02_lv002_01");
-    const fixed = rows.find((row) => row.Node === destination.zipRouteNode);
+    const fixed = rows.find((row) => row.Node === destination.fixedRouteNode);
     assert.equal(fixed.ActionParam.value.fixed_zipline_route, "wuling_city_subaiyi");
     const depot = depots.find((item) => item.id === "domain_2_lv002_depot_1");
-    const fixedDepot = rows.find((row) => row.Node === depot.zipRouteNode);
+    const fixedDepot = rows.find((row) => row.Node === depot.fixedRouteNode);
     assert.equal(fixedDepot.ActionParam.value.fixed_zipline_route, "wuling_city_pickup");
-    for (const row of rows.filter((item) => ![destination.zipRouteNode, depot.zipRouteNode].includes(item.Node))) {
+    for (const row of rows.filter(
+        (item) =>
+            ![
+                destination.fixedRouteNode,
+                depot.fixedRouteNode,
+            ].includes(item.Node),
+    )) {
         assert.equal(row.ActionParam.value.fixed_zipline_route, undefined);
     }
     const source = JSON.parse(readFileSync(new URL("./routes.json", import.meta.url)));
@@ -22,10 +28,21 @@ test("苏白易固定路线重新生成后保留，普通和站位修正入口�
         synced.destinations.find((item) => item.source_id === destination.id).fixed_zipline_route,
         "wuling_city_subaiyi",
     );
-    assert.equal(
-        synced.depots.find((item) => item.source_id === depot.id).fixed_zipline_route,
-        "wuling_city_pickup",
-    );
+    assert.equal(synced.depots.find((item) => item.source_id === depot.id).fixed_zipline_route, "wuling_city_pickup");
+});
+
+test("自动滑索与固定滑索节点独立，固定节点保留相同地面路径", () => {
+    for (const item of [
+        ...depots,
+        ...destinations,
+    ].filter((item) => item.fixedRouteNode)) {
+        const automatic = rows.find((row) => row.Node === item.zipRouteNode).ActionParam.value;
+        const fixed = rows.find((row) => row.Node === item.fixedRouteNode).ActionParam.value;
+        assert.equal(automatic.zip, true);
+        assert.equal(automatic.fixed_zipline_route, undefined);
+        assert.deepEqual(fixed.path, automatic.path);
+        assert.equal(fixed.fixed_zipline_route, item.fixedZiplineRoute);
+    }
 });
 
 test("固定配置拒绝未知 ID、空 ID 和 walk_only 冲突", () => {

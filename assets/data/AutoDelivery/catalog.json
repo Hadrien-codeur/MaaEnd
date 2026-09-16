@@ -54,6 +54,7 @@
             "map": "map02",
             "route_node": "AutoDeliveryRouteDepotDomain2Lv002Depot1",
             "zip_route_node": "AutoDeliveryRouteDepotDomain2Lv002Depot1WithZipline",
+            "fixed_route_node": "AutoDeliveryRouteDepotDomain2Lv002Depot1WithFixedZipline",
             "retry_route_node": "AutoDeliveryRouteDepotRetryDomain2Lv002Depot1"
         },
         {
@@ -540,6 +541,7 @@
             },
             "route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00201",
             "zip_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00201WithZipline",
+            "fixed_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00201WithFixedZipline",
             "retry_route_node": "AutoDeliveryRouteDestinationRetryDeliverTargetMap02Lv00201"
         },
         {

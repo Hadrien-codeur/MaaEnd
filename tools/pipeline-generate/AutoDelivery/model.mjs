@@ -192,6 +192,7 @@ export const depots = assertArray(catalogSource.depots, "delivery_destinations.d
         fixedZiplineRoute: readFixedZiplineRoute(override?.fixed_zipline_route, walkOnly, `仓储 ${id}`),
         routeNode: buildRouteNode("Depot", id),
         zipRouteNode: buildRouteNode("Depot", id, true),
+        fixedRouteNode: override?.fixed_zipline_route ? `${buildRouteNode("Depot", id)}WithFixedZipline` : undefined,
         retryRouteNode: buildRouteNode("DepotRetry", id),
     };
 });
@@ -256,6 +257,9 @@ export const destinations = assertArray(catalogSource.destinations, "delivery_de
             fixedZiplineRoute: readFixedZiplineRoute(override?.fixed_zipline_route, walkOnly, `终点 ${id}`),
             routeNode: buildRouteNode("Destination", id),
             zipRouteNode: buildRouteNode("Destination", id, true),
+            fixedRouteNode: override?.fixed_zipline_route
+                ? `${buildRouteNode("Destination", id)}WithFixedZipline`
+                : undefined,
             retryRouteNode: buildRouteNode("DestinationRetry", id),
         };
     })
@@ -281,6 +285,7 @@ export const runtimeCatalog = {
         map: item.map,
         route_node: item.routeNode,
         zip_route_node: item.zipRouteNode,
+        ...(item.fixedRouteNode ? {fixed_route_node: item.fixedRouteNode} : {}),
         ...(item.retryRouteNode ? {retry_route_node: item.retryRouteNode} : {}),
     })),
     destinations: destinations.map((item) => ({
@@ -293,6 +298,7 @@ export const runtimeCatalog = {
         area: item.area,
         route_node: item.routeNode,
         zip_route_node: item.zipRouteNode,
+        ...(item.fixedRouteNode ? {fixed_route_node: item.fixedRouteNode} : {}),
         ...(item.retryRouteNode ? {retry_route_node: item.retryRouteNode} : {}),
     })),
 };

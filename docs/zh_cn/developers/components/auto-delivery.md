@@ -65,18 +65,18 @@ AutoDelivery 是任务无关的自动送货组件。调用方打开正确的当�
 
 ## 滑索配置
 
-仓储和终点导航默认都以 `zip: false` 运行。需要允许滑索时，通过任务选项覆写两个固定识别节点的完整 `custom_action_param`，不修改 `AutoDelivery.next`：
+仓储和终点导航默认都以 `zip: false` 运行。需要允许滑索时，通过任务选项覆写两个导航分发节点的 `attach`，不修改 `AutoDelivery.next`：
 
 ```json
 {
     "pipeline_override": {
-        "AutoDeliveryRecognizeDepot": {
-            "custom_action_param": {
+        "AutoDeliveryNavigateDepot": {
+            "attach": {
                 "zip": true
             }
         },
-        "AutoDeliveryRecognizeDestination": {
-            "custom_action_param": {
+        "AutoDeliveryNavigateDestination": {
+            "attach": {
                 "zip": true
             }
         }
@@ -84,7 +84,9 @@ AutoDelivery 是任务无关的自动送货组件。调用方打开正确的当�
 }
 ```
 
-`pipeline_override` 对 `custom_action_param` 使用字段级替换，因此必须提供节点需要的完整参数。`AutoDeliveryRecognizeDepot` 与 `AutoDeliveryRecognizeDestination` 不是执行入口，但节点名属于任务选项使用的配置契约。允许滑索只表示 MapNavigator 可以在合适时选择滑索，不保证实际路线一定使用。
+Go 从 `AutoDeliveryNavigateDepot.attach` 和 `AutoDeliveryNavigateDestination.attach` 读取配置；`custom_action_param` 留给运行时 SubTask 分发。允许滑索只表示 MapNavigator 可以在合适时选择滑索，不保证实际路线一定使用。
+
+本定制分支新增可选 `attach.fixed_zipline`（布尔值，默认 `false`）。与 `zip: true` 同时开启时，在 Win32-Front 下优先使用运行时目录的 `fixed_route_node`；没有固定节点则使用原 `zip_route_node`。生成器保留普通 `WithZipline`，为已配置路线额外生成 `WithFixedZipline`；站位修正仍独立运行。业务入口遇到全局 Never 时选择普通步行并记录原因，严格独立固定测试入口仍拒绝运行。设施缺失、歧义、坏配置或固定段失败仍停止，不自动重新跑上游路线。两类送货任务均已接入该选项。
 
 ## 组件维护
 

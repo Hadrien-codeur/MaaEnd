@@ -2288,5 +2288,7 @@
     "task.FixedWulingPickupDeliveryTest.label": "武陵城固定取貨・配達空走",
     "task.FixedWulingPickupDeliveryTest.description": "取貨と配達の認識をスキップし、武陵城取貨と蘇白易配達ルートを連続試走します。",
     "task.FixedWulingSubaiyiDeliveryTest.label": "武陵城・蘇白易配達テスト",
-    "task.FixedWulingSubaiyiDeliveryTest.description": "正式な配達フローを使い、武陵城を出発地、蘇白易を目的地として完全な取貨・配達をテストします。"
+    "task.FixedWulingSubaiyiDeliveryTest.description": "正式な配達フローを使い、武陵城を出発地、蘇白易を目的地として完全な取貨・配達をテストします。",
+    "task.AutoDeliveryFixedZipline.label": "設定済みの固定ジップラインルートを使用",
+    "task.AutoDeliveryFixedZipline.description": "Win32 前面操作のみ対応。武陵城の集荷と蘇白易への配送で固定された支柱順を使用し、蘇白易の検証済み区間では連続滑走します。未設定の目的地は自動経路を使用します。固定ルートが利用不可、または実行に失敗した場合は停止します。無効にすると通常の自動ジップライン経路に戻ります。全体設定でジップラインが禁止されている場合は徒歩ルートを使用します。"
 }

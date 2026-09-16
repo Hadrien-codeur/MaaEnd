@@ -1,6 +1,6 @@
 # AutoDelivery 路线生成器
 
-私人固定路线扩展：`routes.json` 可声明 `fixed_zipline_route`，对应 `assets/data/MapNavigator/fixed_zipline_routes.json` 中唯一的 ID。生成器只传给 `WithZipline` 主路线，普通步行与站位修正节点不携带；未知 ID、空 ID 和 `walk_only: true` 冲突会报错。当前用于武陵城固定取货与苏白易送货；博士已确认正常取货送货通过，双入口与恢复验收继续进行。详见 [固定路线验证](../../fixed-delivery/README.md)。
+私人固定路线扩展：`routes.json` 可声明 `fixed_zipline_route`，对应 `assets/data/MapNavigator/fixed_zipline_routes.json` 中唯一的 ID。生成器额外生成独立 `WithFixedZipline` 主路线，并在运行时目录中写入 `fixed_route_node`。普通 `WithZipline`、步行与站位修正节点不携带固定 ID；未知 ID、空 ID 和 `walk_only: true` 冲突会报错。抢单与装箱自送通过 `attach.fixed_zipline` 显式选择固定路线，默认关闭，未配置终点保持原自动规划。当前用于武陵城固定取货与苏白易送货；博士已确认正常取货送货通过，暂因无订单跳过后续业务实测，继续开发。详见 [固定路线验证](../../fixed-delivery/README.md)。
 
 `tools/pipeline-generate/data/delivery_destinations.json` 是 zmdmap 数据 CI 生成并由 `fetch:zmdmap` 下载的仓储/终点目录；本目录的 `routes.json` 参考 EnvironmentMonitoring 的 metadata-only 维护方式，自动同步全部仓储和终点的检索元数据，并仅在需要覆盖自动 `NAVMESH` 目标时保存实测路线。`tools/schema/auto_delivery_routes.schema.json` 为其提供 IDE 校验。两者共同生成：
 

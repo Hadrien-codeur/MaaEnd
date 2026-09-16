@@ -1,5 +1,7 @@
 # 固定滑索开发与验证
 
+2026-09-16 开发更新：博士因当前无订单，要求暂缓业务实测继续开发。抢单与装箱自送现已增加默认关闭的“使用已配置的固定滑索路线”选项（先开启“送货时优先使用滑索”）。开启后调用独立 `WithFixedZipline` 节点；关闭后恢复普通 `WithZipline` 自动规划，未配置终点也保持自动规划。业务入口遇到全局 Never 时在移动前选择步行；独立固定测试入口仍严格拒绝。新 Go Agent 已编译安装，使用前重启 Agent / 重新加载资源，旧任务配置需显式开启新增固定选项。
+
 2026-09-14 最新保存点：**苏白易整段连滑实机通过**。16 架 / 15 跳，首跳左键后 14 次 E，末架确认、自动下索和到终点步行全部完成，任务耗时约 107.2 秒，见 [连滑实机验收记录](../../docs/zh_cn/dev-notes/苏白易连滑实机验收记录.md)。前一轮多等第 15 次提示的问题已修复并验证；保留 [首轮诊断](../../docs/zh_cn/dev-notes/苏白易连滑首轮日志分析.md) 供追溯。
 
 固定逐跳的 [实机记录](../../docs/zh_cn/dev-notes/苏白易固定逐跳实机验收记录.md) 同样保留。2026-09-16 博士已确认苏白易取货送货实测通过，当前进入 [双入口与恢复验收](../../docs/zh_cn/dev-notes/苏白易双入口与恢复验收.md)；装箱自送、持货恢复和其他路线尚未全部验收。
@@ -10,8 +12,8 @@
 - 测试任务：`FixedZiplineTest` → `MapNavigatorFixedSubaiyiTest`，Win32-Front，仓储附近开始，走到苏白易终点即停，不取货或交付。
 - `MapNavigateAction` 同时需要非空 `fixed_zipline_route`、`zip: true` 和终点 `path`。当前仅支持单段 NAVMESH/RUN 移动提示，可保留经区域核验的首个 ZONE 声明，不接受中途必经动作或跨图；完整架序来自数据文件。
 - 匹配以地图、Level、模板及三维坐标为准，容差 0.01 米。所有架子唯一匹配并可用后才规划首架至末架；不按成本截取子链。
-- 这是严格固定入口：全局 Never 禁滑、错误配置、缺架、歧义、供电或连接不可用时拒绝移动。固定段失败停止，不直接下索换路或重跑整条路线。普通自动滑索仍使用上游恢复逻辑。以后业务模式的可选降级在业务接入阶段另行实现。
-- 生成源在 `tools/pipeline-generate/AutoDelivery/routes.json`；固定 ID 只传给 WithZipline 主路线，不进入普通步行或站位修正节点。当前包含武陵城固定取货与苏白易送货。
+- 独立测试是严格固定入口：全局 Never 禁滑、错误配置、缺架、歧义、供电或连接不可用时拒绝移动。固定段失败停止，不直接下索换路或重跑整条路线。普通自动滑索仍使用上游恢复逻辑。业务入口只对全局 Never 和未配置终点提前分流，设施缺失等其他情况的启动前降级尚未实现。
+- 生成源在 `tools/pipeline-generate/AutoDelivery/routes.json`；固定 ID 只传给新增的 WithFixedZipline 主路线，不进入普通 WithZipline、步行或站位修正节点。运行时目录的 `fixed_route_node` 供共享 Go 分发选择；当前包含武陵城固定取货与苏白易送货。
 - 编辑器尚未支持完整固定参数往返，导入含该参数的文件会明确拒绝，避免静默丢失。地图查看使用 `docs/zh_cn/dev-notes/苏白易架序.preview.json`；实际试跑使用独立任务。
 
 ## 连滑区间
@@ -25,6 +27,8 @@
 - 等待新提示、提示消失或末架定位超时均停止并记录阶段。超时沿用原滑索 30 秒诊断边界；每次真实提示消费重置等待计时，不通过定时连按推进。
 
 ## 已执行验证（含前序未受影响的检查）
+
+下表保留 9 月 14 日的 C++ / 连滑验证基线。9 月 16 日路线开关改动已通过 Go 分发测试、实际 MaaFramework 选项合并测试、9 项原生规划、资源 / Schema 检查和节点测试；生成器 50 项中 49 通过，剩余一项为已记录的任务详情旧断言，详见 [本轮验收说明](../../docs/zh_cn/dev-notes/苏白易双入口与恢复验收.md)。本轮未执行游戏实测。
 
 | 检查 | 结果 |
 | --- | --- |
@@ -64,6 +68,7 @@ ctest --test-dir .cache/fixed-delivery-tests -C Release --output-on-failure
 & .venv/Scripts/python.exe tools/fixed-delivery/tests/test_fixed_route_tools.py
 & .venv/Scripts/python.exe tools/fixed-delivery/tests/test_native_route.py
 & .venv/Scripts/python.exe tools/fixed-delivery/tests/test_relay_pipeline.py
+& .venv/Scripts/python.exe tools/fixed-delivery/tests/test_delivery_options.py
 
 node --test tools/pipeline-generate/AutoDelivery/*.test.mjs
 # 使用已锁定的本地数据生成，不在验收过程中顺带拉取游戏数据更新。

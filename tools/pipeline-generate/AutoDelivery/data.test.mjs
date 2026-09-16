@@ -330,7 +330,11 @@ test("AutoDelivery 路线为每个仓储和终点生成可独立执行的普通/
         ...depots,
         ...destinations,
     ].filter((item) => item.retryRouteNode).length;
-    assert.equal(routeRows.length, depots.length * 2 + destinations.length * 2 + retryCount);
+    const fixedCount = [
+        ...depots,
+        ...destinations,
+    ].filter((item) => item.fixedRouteNode).length;
+    assert.equal(routeRows.length, depots.length * 2 + destinations.length * 2 + retryCount + fixedCount);
     assert.equal(new Set(routeRows.map((item) => item.Node)).size, routeRows.length);
     for (const row of routeRows) {
         assert.match(row.Node, /^AutoDeliveryRoute/);

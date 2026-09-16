@@ -383,7 +383,10 @@
                                 "zip": true
                             }
                         }
-                    }
+                    },
+                    "option": [
+                        "SeizeDeliveryJobsFixedZipline"
+                    ]
                 }
             ]
         },
@@ -417,6 +420,44 @@
                     "pipeline_override": {
                         "SeizeDeliveryJobsMain": {
                             "max_hit": 3
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsFixedZipline": {
+            "type": "switch",
+            "label": "$task.AutoDeliveryFixedZipline.label",
+            "description": "$task.AutoDeliveryFixedZipline.description",
+            "default_case": "No",
+            "cases": [
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "AutoDeliveryNavigateDepot": {
+                            "attach": {
+                                "fixed_zipline": false
+                            }
+                        },
+                        "AutoDeliveryNavigateDestination": {
+                            "attach": {
+                                "fixed_zipline": false
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "AutoDeliveryNavigateDepot": {
+                            "attach": {
+                                "fixed_zipline": true
+                            }
+                        },
+                        "AutoDeliveryNavigateDestination": {
+                            "attach": {
+                                "fixed_zipline": true
+                            }
                         }
                     }
                 }

@@ -2288,5 +2288,7 @@
     "task.FixedWulingPickupDeliveryTest.label": "固定武陵取货送货空跑",
     "task.FixedWulingPickupDeliveryTest.description": "跳过取货和交货识别，连续试跑武陵城取货与苏白易送货路线。",
     "task.FixedWulingSubaiyiDeliveryTest.label": "武陵城苏白易接单实测",
-    "task.FixedWulingSubaiyiDeliveryTest.description": "复用正式接单流程，选择武陵城来源和苏白易目的地进行完整取货送货测试。"
+    "task.FixedWulingSubaiyiDeliveryTest.description": "复用正式接单流程，选择武陵城来源和苏白易目的地进行完整取货送货测试。",
+    "task.AutoDeliveryFixedZipline.label": "使用已配置的固定滑索路线",
+    "task.AutoDeliveryFixedZipline.description": "仅支持 Win32 前台。开启后，武陵城取货和苏白易送货使用固定架序，苏白易按已验证路段连滑；未配置终点继续自动规划。固定路线不可用或运行失败时停止。关闭后恢复普通自动滑索规划。全局禁止滑索时改走步行路线。"
 }

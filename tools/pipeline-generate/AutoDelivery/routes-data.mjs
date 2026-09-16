@@ -9,6 +9,7 @@ export function buildRows(
     zipRouteNode,
     walkOnly = false,
     fixedZiplineRoute,
+    fixedRouteNode,
 ) {
     return [
         {
@@ -24,9 +25,18 @@ export function buildRows(
             ActionParam: rawJson({
                 path,
                 zip: !walkOnly,
-                ...(!walkOnly && fixedZiplineRoute ? {fixed_zipline_route: fixedZiplineRoute} : {}),
             }),
         },
+        ...(!walkOnly && fixedZiplineRoute && fixedRouteNode
+            ? [
+                  {
+                      RouteFileId: routeFileId,
+                      Node: fixedRouteNode,
+                      Description: `${description}，使用固定滑索（${id}）`,
+                      ActionParam: rawJson({path, zip: true, fixed_zipline_route: fixedZiplineRoute}),
+                  },
+              ]
+            : []),
     ];
 }
 
@@ -41,6 +51,7 @@ export default [
             depot.zipRouteNode,
             depot.walkOnly,
             depot.fixedZiplineRoute,
+            depot.fixedRouteNode,
         ),
         ...(depot.retryRouteNode
             ? [
@@ -63,6 +74,7 @@ export default [
             destination.zipRouteNode,
             destination.walkOnly,
             destination.fixedZiplineRoute,
+            destination.fixedRouteNode,
         ),
         ...(destination.retryRouteNode
             ? [
