@@ -5,6 +5,11 @@
             "description": "$task.FixedWulingSubaiyiDeliveryTest.description",
             "label": "$task.FixedWulingSubaiyiDeliveryTest.label",
             "entry": "SeizeDeliveryJobsMain",
+            "option": [
+                "SeizeDeliveryJobsReward",
+                "SeizeDeliveryJobsCommissionSource",
+                "SeizeDeliveryJobsPostProcessing"
+            ],
             "controller": ["Win32-Front"],
             "group": ["regional_development"]
         }
