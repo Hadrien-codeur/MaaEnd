@@ -1,6 +1,6 @@
 # AutoDelivery 路线生成器
 
-私人固定路线扩展：`routes.json` 可声明 `fixed_zipline_route`，对应 `assets/data/MapNavigator/fixed_zipline_routes.json` 中唯一的 ID。生成器额外生成独立 `WithFixedZipline` 主路线，并在运行时目录中写入 `fixed_route_node`。普通 `WithZipline`、步行与站位修正节点不携带固定 ID；未知 ID、空 ID 和 `walk_only: true` 冲突会报错。抢单与装箱自送通过 `attach.fixed_zipline` 显式选择固定路线，默认关闭，未配置终点保持原自动规划。当前覆盖武陵城取货、苏白易、材料研究所、观测站和猫头鹰送货。三条新终点可在源配置中声明 `fixed_approach_path` / `fixed_departure_path`，仅传入独立固定节点，逐点保留录制地面段和离索后的最终 HEADING；固定数据中的 `dismount_heading` 在末架确认后、下索前生效。苏白易取货送货已通过，三条新终点待博士实际接单测试。详见 [固定路线验证](../../fixed-delivery/README.md)。
+私人固定路线扩展：`routes.json` 可声明 `fixed_zipline_route`，对应 `assets/data/MapNavigator/fixed_zipline_routes.json` 中唯一的 ID。生成器额外生成独立 `WithFixedZipline` 主路线，并在运行时目录中写入 `fixed_route_node`。普通 `WithZipline`、步行与站位修正节点不携带固定 ID；未知 ID、空 ID 和 `walk_only: true` 冲突会报错。抢单与装箱自送通过 `attach.fixed_zipline` 显式选择固定路线，默认关闭，未配置终点保持原自动规划。当前覆盖武陵城取货、苏白易、材料研究所、观测站和猫头鹰送货。三条新终点可在源配置中声明 `fixed_approach_path` / `fixed_departure_path`，仅传入独立固定节点，逐点保留录制地面段和离索后的最终 HEADING；固定数据中的 `dismount_heading` 在末架确认后、下索前生效。苏白易既有取货送货结果保持通过；博士对本次新路线实测反馈滑索段正常、交付步行段有问题，留待下次修复。测试目的地覆盖未逐条说明，完整交付闭环尚未验收。详见 [固定路线验证](../../fixed-delivery/README.md)。
 
 `tools/pipeline-generate/data/delivery_destinations.json` 是 zmdmap 数据 CI 生成并由 `fetch:zmdmap` 下载的仓储/终点目录；本目录的 `routes.json` 参考 EnvironmentMonitoring 的 metadata-only 维护方式，自动同步全部仓储和终点的检索元数据，并仅在需要覆盖自动 `NAVMESH` 目标时保存实测路线。`tools/schema/auto_delivery_routes.schema.json` 为其提供 IDE 校验。两者共同生成：
 
