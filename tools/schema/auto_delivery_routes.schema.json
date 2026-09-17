@@ -51,10 +51,14 @@
                     "fixed_zipline_route": {
                         "type": "string",
                         "pattern": "\\S",
-                        "description": "仅 WithZipline 主路线使用的固定架序 ID，与 walk_only 互斥。"
+                        "description": "仅 WithFixedZipline 主路线使用的固定架序 ID，与 walk_only 互斥。"
                     }
                 },
-                "allOf": [{ "$ref": "#/$defs/fixedRouteOptions" }]
+                "allOf": [
+                    {
+                        "$ref": "#/$defs/fixedRouteOptions"
+                    }
+                ]
             }
         },
         "destinations": {
@@ -101,17 +105,45 @@
                     "fixed_zipline_route": {
                         "type": "string",
                         "pattern": "\\S",
-                        "description": "仅 WithZipline 主路线使用的固定架序 ID，与 walk_only 互斥。"
+                        "description": "仅 WithFixedZipline 主路线使用的固定架序 ID，与 walk_only 互斥。"
+                    },
+                    "fixed_approach_path": {
+                        "$ref": "#/$defs/path"
+                    },
+                    "fixed_departure_path": {
+                        "$ref": "#/$defs/path"
                     }
                 },
-                "allOf": [{ "$ref": "#/$defs/fixedRouteOptions" }]
+                "allOf": [
+                    {
+                        "$ref": "#/$defs/fixedRouteOptions"
+                    }
+                ],
+                "dependentRequired": {
+                    "fixed_approach_path": [
+                        "fixed_zipline_route"
+                    ],
+                    "fixed_departure_path": [
+                        "fixed_zipline_route"
+                    ]
+                }
             }
         }
     },
     "$defs": {
         "fixedRouteOptions": {
-            "if": { "required": [ "fixed_zipline_route" ] },
-            "then": { "properties": { "walk_only": { "const": false } } }
+            "if": {
+                "required": [
+                    "fixed_zipline_route"
+                ]
+            },
+            "then": {
+                "properties": {
+                    "walk_only": {
+                        "const": false
+                    }
+                }
+            }
         },
         "path": {
             "type": "array",

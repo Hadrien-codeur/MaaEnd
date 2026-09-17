@@ -2290,5 +2290,11 @@
     "task.FixedWulingSubaiyiDeliveryTest.label": "Wuling Subaiyi Delivery Test",
     "task.FixedWulingSubaiyiDeliveryTest.description": "Run the full delivery flow with Wuling City as the source and Subaiyi as the destination.",
     "task.AutoDeliveryFixedZipline.label": "Use configured fixed zipline routes",
-    "task.AutoDeliveryFixedZipline.description": "Win32 foreground only. Use the fixed tower sequence for Wuling City pickup and Subaiyi delivery, with continuous riding on the verified Subaiyi segment. Other destinations use automatic routing. Stop if a fixed route is unavailable or fails. Disable to restore automatic zipline routing. A global zipline ban selects the walking route."
+    "task.AutoDeliveryFixedZipline.description": "Win32 foreground only. Use the fixed tower sequence for Wuling City pickup and Subaiyi delivery, with continuous riding on the verified Subaiyi segment. Other destinations use automatic routing. Stop if a fixed route is unavailable or fails. Disable to restore automatic zipline routing. A global zipline ban selects the walking route.",
+    "task.FixedWulingLindTest.label": "Fixed Wuling Materials Lab Trial",
+    "task.FixedWulingLindTest.description": "Start near the Wuling City depot and follow the fixed ziplines and recorded ground path to the delivery position, without collecting or delivering cargo.",
+    "task.FixedWulingYushiTest.label": "Fixed Wuling Observatory Trial",
+    "task.FixedWulingYushiTest.description": "Start near the Wuling City depot and follow the fixed ziplines and recorded ground path to the delivery position, without collecting or delivering cargo.",
+    "task.FixedWulingRecycleTest.label": "Fixed Wuling Owl Trial",
+    "task.FixedWulingRecycleTest.description": "Start near the Wuling City depot and follow the fixed ziplines and recorded ground path to the delivery position, without collecting or delivering cargo."
 }

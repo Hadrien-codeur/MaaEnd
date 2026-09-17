@@ -12,14 +12,18 @@ test("苏白易固定路线重新生成后保留，普通和站位修正入口�
     const depot = depots.find((item) => item.id === "domain_2_lv002_depot_1");
     const fixedDepot = rows.find((row) => row.Node === depot.fixedRouteNode);
     assert.equal(fixedDepot.ActionParam.value.fixed_zipline_route, "wuling_city_pickup");
-    for (const row of rows.filter(
-        (item) =>
-            ![
-                destination.fixedRouteNode,
-                depot.fixedRouteNode,
-            ].includes(item.Node),
-    )) {
+    const fixedNodes = new Set(
+        [
+            ...depots,
+            ...destinations,
+        ]
+            .map((item) => item.fixedRouteNode)
+            .filter(Boolean),
+    );
+    for (const row of rows.filter((item) => !fixedNodes.has(item.Node))) {
         assert.equal(row.ActionParam.value.fixed_zipline_route, undefined);
+        assert.equal(row.ActionParam.value.fixed_approach_path, undefined);
+        assert.equal(row.ActionParam.value.fixed_departure_path, undefined);
     }
     const source = JSON.parse(readFileSync(new URL("./routes.json", import.meta.url)));
     const catalog = JSON.parse(readFileSync(new URL("../data/delivery_destinations.json", import.meta.url)));
@@ -29,6 +33,73 @@ test("苏白易固定路线重新生成后保留，普通和站位修正入口�
         "wuling_city_subaiyi",
     );
     assert.equal(synced.depots.find((item) => item.source_id === depot.id).fixed_zipline_route, "wuling_city_pickup");
+});
+
+test("武陵三条新路线保留独立录制地面段与终点朝向，重同步不丢失", () => {
+    const source = JSON.parse(readFileSync(new URL("./routes.json", import.meta.url)));
+    const catalog = JSON.parse(readFileSync(new URL("../data/delivery_destinations.json", import.meta.url)));
+    const synced = buildSyncedRouteConfig(catalog, source);
+    for (const [
+        suffix,
+        routeId,
+        stance,
+        facing,
+    ] of [
+        [
+            "02",
+            "wuling_city_lind",
+            [
+                462.78,
+                1712.92,
+            ],
+            [
+                462.06,
+                1712.79,
+            ],
+        ],
+        [
+            "03",
+            "wuling_city_yushi",
+            [
+                894.71,
+                1409.1,
+            ],
+            [
+                894.97,
+                1407.6,
+            ],
+        ],
+        [
+            "recycle_01",
+            "wuling_city_recycle",
+            [
+                514.06,
+                1651.68,
+            ],
+            [
+                513.39,
+                1650.67,
+            ],
+        ],
+    ]) {
+        const id = `deliver_target_map02_lv002_${suffix}`;
+        const destination = destinations.find((item) => item.id === id);
+        const fixed = rows.find((row) => row.Node === destination.fixedRouteNode).ActionParam.value;
+        assert.equal(fixed.fixed_zipline_route, routeId);
+        assert.equal(fixed.fixed_approach_path.length, 8);
+        assert.deepEqual(
+            fixed.fixed_approach_path.at(-1),
+            [
+                961.28,
+                1831.17,
+            ],
+        );
+        assert.deepEqual(fixed.fixed_departure_path.at(-2), {action: "RUN", target: stance, strict_arrival: true});
+        assert.deepEqual(fixed.fixed_departure_path.at(-1), {action: "HEADING", target: facing});
+        const saved = synced.destinations.find((item) => item.source_id === id);
+        assert.deepEqual(saved.fixed_approach_path, fixed.fixed_approach_path);
+        assert.deepEqual(saved.fixed_departure_path, fixed.fixed_departure_path);
+    }
 });
 
 test("自动滑索与固定滑索节点独立，固定节点保留相同地面路径", () => {

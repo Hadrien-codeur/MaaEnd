@@ -31,6 +31,9 @@ struct NaviParam
     bool zipline_enabled = false;
     // 固定架序 ID；非空时必须执行完整有向链，规划或乘索失败不得静默换路。
     std::string fixed_zipline_route;
+    // 固定链专用录制地面段，逐点保留；为空时沿用首末架的自动地面规划。
+    std::vector<Waypoint> fixed_approach_path;
+    std::vector<Waypoint> fixed_departure_path;
     // 展开前的原始作者路线。执行侧拿到的 path 是全局展开后的；滑索链半路失败时要靠它重新展开
     // 剩余路线，而不是沿着按链尾落点规划的旧展开走。
     std::vector<Waypoint> authored_path;

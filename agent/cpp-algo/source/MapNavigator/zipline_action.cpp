@@ -239,7 +239,7 @@ bool ResetPitchToMaximum(const Context& ctx)
 // 站在架子上瞄准。先等上索后的新定位稳定，再按后端单批上限逐步转镜头；每一步都等稳定反馈后
 // 重算剩余角度，避免拿上索前的旧朝向一次性排入整段转向。俯仰仍按算好的仰角开环发。
 // 站在架子上按前进是没验证过的输入，所以这里只转镜头；闭环超时就退索，不盲按左键起滑。
-bool AimAtLanding(const Context& ctx, const ZiplineTarget& landing, int attempt, bool reset_pitch)
+bool AlignTowerHeading(const Context& ctx, const ZiplineTarget* landing, double target_heading, int attempt)
 {
     const auto started_at = std::chrono::steady_clock::now();
     const auto deadline = started_at + std::chrono::milliseconds(kZiplineAimHeadingTimeoutMs);
@@ -251,11 +251,12 @@ bool AimAtLanding(const Context& ctx, const ZiplineTarget& landing, int attempt,
     }
 
     const SteeringTransportProfile profile = ctx.action_wrapper->SteeringProfile();
-    double target_heading = 0.0;
     double residual = 0.0;
     int turn_step = 0;
     while (true) {
-        target_heading = NaviMath::CalcTargetRotation(ctx.position->x, ctx.position->y, landing.x, landing.y);
+        if (landing != nullptr) {
+            target_heading = NaviMath::CalcTargetRotation(ctx.position->x, ctx.position->y, landing->x, landing->y);
+        }
         residual = NaviMath::NormalizeAngle(target_heading - achieved);
         if (std::abs(residual) <= kZiplineAimToleranceDeg) {
             break;
@@ -284,6 +285,15 @@ bool AimAtLanding(const Context& ctx, const ZiplineTarget& landing, int attempt,
         }
     }
 
+    LogInfo << "Zipline tower heading aligned." << VAR(target_heading) << VAR(achieved) << VAR(turn_step);
+    return true;
+}
+
+bool AimAtLanding(const Context& ctx, const ZiplineTarget& landing, int attempt, bool reset_pitch)
+{
+    if (!AlignTowerHeading(ctx, &landing, 0.0, attempt)) {
+        return false;
+    }
     if (reset_pitch && !ResetPitchToMaximum(ctx)) {
         return false;
     }
@@ -300,8 +310,7 @@ bool AimAtLanding(const Context& ctx, const ZiplineTarget& landing, int attempt,
         utils::SleepFor(kWaitAfterFirstTurnMs);
     }
 
-    LogInfo << "Zipline aim settled." << VAR(attempt) << VAR(turn_step) << VAR(target_heading) << VAR(achieved)
-            << VAR(landing.elevation_deg) << VAR(pitch_target);
+    LogInfo << "Zipline aim settled." << VAR(attempt) << VAR(landing.elevation_deg) << VAR(pitch_target);
     return true;
 }
 
@@ -700,6 +709,12 @@ Result TickZiplineRide(const Context& ctx)
     }
     const bool chain_continues = ctx.session->HasCurrentWaypoint() && ctx.session->CurrentWaypoint().action == ActionType::ZIPLINE;
     if (!chain_continues) {
+        if (landing.dismount_heading) {
+            LogInfo << "Fixed zipline: aligning before dismount." << VAR(*landing.dismount_heading);
+            if (!AlignTowerHeading(ctx, nullptr, *landing.dismount_heading, 0)) {
+                return AbandonZipline(ctx, "zipline_dismount_heading_failed", "could not confirm the authored dismount heading");
+            }
+        }
         LeaveTower(ctx);
     }
 

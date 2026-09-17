@@ -27,6 +27,14 @@ int main(int argc, char** argv)
         const auto route = mapnavigator::ParseFixedZiplineRoute(*source, "wuling_city_subaiyi", error);
         require(route.has_value(), "parse confirmed route");
         require(route->nodes.size() == 16, "confirmed route must have 16 towers");
+        require(!route->dismount_heading, "existing routes keep default dismount behavior");
+        const auto recycle = mapnavigator::ParseFixedZiplineRoute(*source, "wuling_city_recycle", error);
+        require(recycle && recycle->dismount_heading == 101.0, "recycle route must turn east before dismount");
+        for (const json::value& invalid_heading : { json::value(-1), json::value(360), json::value("101"), json::value(true) }) {
+            auto invalid = *source;
+            invalid["routes"][0]["dismount_heading"] = invalid_heading;
+            require(!mapnavigator::ParseFixedZiplineRoute(invalid, route->id, error), "invalid dismount heading must fail");
+        }
         require(
             route->continuous_segments.size() == 1 && route->continuous_segments[0].first == 0 && route->continuous_segments[0].last == 15,
             "confirmed route is one full continuous segment");

@@ -247,6 +247,7 @@
         "tasks/FixedZiplineTest.json",
         "tasks/FixedWulingPickupTest.json",
         "tasks/FixedWulingPickupDeliveryTest.json",
+        "tasks/FixedWulingDestinationsTest.json",
         "tasks/AeroSalvage.json",
         // group: sanity_sink
         "tasks/AutoUseSpMedication.json",

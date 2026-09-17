@@ -826,6 +826,7 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
     }
     if (fixed_route) {
         best->relay_hops.resize(best->towers.size() - 1, 0);
+        best->dismount_heading = fixed_route->dismount_heading;
         for (const auto& segment : fixed_route->continuous_segments) {
             best->relay_hops[segment.first] = segment.last - segment.first;
             const size_t relay_presses = ZiplineRelayPressCount(best->relay_hops[segment.first]);

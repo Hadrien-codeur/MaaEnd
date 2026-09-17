@@ -28,6 +28,10 @@ def main() -> int:
         if route["map_id"] not in maps or len(route["nodes"]) < 2:
             raise SystemExit(f"{route['id']}: map missing or fewer than two towers")
         segments = route.get("continuous_segments", [])
+        if "dismount_heading" in route:
+            heading = route["dismount_heading"]
+            if type(heading) not in (int, float) or not math.isfinite(heading) or not 0 <= heading < 360:
+                raise SystemExit(f"{route['id']}: invalid dismount heading")
         if not isinstance(segments, list):
             raise SystemExit(f"{route['id']}: continuous_segments must be an array")
         previous_end = 0

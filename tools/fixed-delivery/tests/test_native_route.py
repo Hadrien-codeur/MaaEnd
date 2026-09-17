@@ -88,6 +88,53 @@ class NativeFixedRouteTest(unittest.TestCase):
         param["zip"] = False
         self.assertFalse(self.preview(param).get("ok"))
 
+    def new_destination_param(self, route_id):
+        pipeline = json.loads((ROOT / "assets/resource/pipeline/AutoDelivery/Routes/WulingCity.json").read_text(encoding="utf-8"))
+        return next(node["custom_action_param"] for node in pipeline.values()
+                    if node.get("custom_action_param", {}).get("fixed_zipline_route") == route_id)
+
+    def test_three_new_routes_preserve_towers_ground_paths_and_headings(self):
+        for route_id, relays, stance, facing, heading in [
+            ("wuling_city_lind", {0: 9}, [462.78, 1712.92], [462.06, 1712.79], None),
+            ("wuling_city_yushi", {0: 4, 5: 2}, [894.71, 1409.1], [894.97, 1407.6], None),
+            ("wuling_city_recycle", {0: 8, 9: 1}, [514.06, 1651.68], [513.39, 1650.67], 101),
+        ]:
+            with self.subTest(route=route_id):
+                param = self.new_destination_param(route_id)
+                result = self.preview(param)
+                self.assertTrue(result.get("ok"), result)
+                self.assert_tower_chain(result, route_id)
+                self.assertEqual({i: hop["relay_presses_after_launch"] for i, hop in enumerate(result["zipline_segments"])
+                                  if "relay_presses_after_launch" in hop}, relays)
+                hops = result["zipline_segments"]
+                self.assertEqual(hops[-1].get("dismount_heading"), heading)
+                self.assertTrue(all("dismount_heading" not in hop for hop in hops[:-1]))
+                self.assertEqual(result["points"][-1], stance)
+                self.assertEqual(result["headings"], [{"target": facing}])
+                for field, walk in [("fixed_approach_path", result["walk_segments"][0]),
+                                    ("fixed_departure_path", result["walk_segments"][-1])]:
+                    cursor = 0
+                    for point in param[field]:
+                        if isinstance(point, dict) and point["action"] in ["ZONE", "HEADING"]:
+                            continue
+                        target = point if isinstance(point, list) else point["target"]
+                        # Every recorded bend must survive in order, not just the final destination.
+                        cursor = walk.index(target, cursor) + 1
+
+    def test_fixed_ground_paths_reject_invalid_or_cross_zone_input(self):
+        for field in ["fixed_approach_path", "fixed_departure_path"]:
+            for path in [[], None, [{"action": "ZONE", "zone_id": "Wuling_Base"}],
+                         [{"action": "INTERACT", "target": [961, 1831]}],
+                         [[961, 1831], {"action": "RUN", "target": [962, 1831], "zone_id": "ValleyIV_Base"}],
+                         [{"action": "ZONE", "zone_id": "ValleyIV_Base"}, [961, 1831]]]:
+                with self.subTest(field=field, path=path):
+                    param = self.new_destination_param("wuling_city_lind")
+                    param[field] = path
+                    self.assertFalse(self.preview(param).get("ok"))
+        param = self.new_destination_param("wuling_city_lind")
+        del param["fixed_zipline_route"]
+        self.assertFalse(self.preview(param).get("ok"))
+
     def test_semantic_boundary_rejected(self):
         param = copy.deepcopy(self.param)
         # A ZONE declaration is legal; an intermediate required movement is not.

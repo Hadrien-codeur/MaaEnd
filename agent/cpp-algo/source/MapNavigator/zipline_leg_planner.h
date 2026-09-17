@@ -37,6 +37,7 @@ struct ZiplineRoute
     std::vector<zipline::ZiplineNode> towers;
     // 各跳开始的连滑区间长度，0 表示普通单跳；只在固定配置显式指定的段首非零。
     std::vector<size_t> relay_hops;
+    std::optional<double> dismount_heading;
     // 与 towers 逐跳对应(最后一根没有)：这根架子上除了下一跳以外还挂着索通向哪些架子。
     // 执行侧拿它当落地定位的备选先验，挂错索也认得出落在哪。
     std::vector<std::vector<zipline::ZiplineNode>> hop_alternates;

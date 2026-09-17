@@ -3,35 +3,79 @@
     "$defs": {
         "RouteFile": {
             "type": "object",
-            "required": ["version", "routes"],
+            "required": [
+                "version",
+                "routes"
+            ],
             "additionalProperties": false,
             "properties": {
-                "version": {"const": 1},
-                "routes": {"type": "array", "items": {"$ref": "#/$defs/Route"}}
+                "version": {
+                    "const": 1
+                },
+                "routes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/Route"
+                    }
+                }
             }
         },
         "Route": {
             "type": "object",
-            "required": ["id", "map_id", "level_id", "template_id", "nodes"],
+            "required": [
+                "id",
+                "map_id",
+                "level_id",
+                "template_id",
+                "nodes"
+            ],
             "additionalProperties": false,
             "properties": {
-                "id": {"type": "string", "minLength": 1},
-                "map_id": {"type": "string", "minLength": 1},
-                "level_id": {"type": "string", "minLength": 1},
-                "template_id": {"type": "string", "minLength": 1},
-                "source": {"type": "string"},
+                "id": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "map_id": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "level_id": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "template_id": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "source": {
+                    "type": "string"
+                },
                 "nodes": {
                     "type": "array",
                     "minItems": 2,
                     "items": {
                         "type": "object",
-                        "required": ["index", "x", "y", "z"],
+                        "required": [
+                            "index",
+                            "x",
+                            "y",
+                            "z"
+                        ],
                         "additionalProperties": false,
                         "properties": {
-                            "index": {"type": "integer", "minimum": 0},
-                            "x": {"type": "number"},
-                            "y": {"type": "number"},
-                            "z": {"type": "number"}
+                            "index": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "x": {
+                                "type": "number"
+                            },
+                            "y": {
+                                "type": "number"
+                            },
+                            "z": {
+                                "type": "number"
+                            }
                         }
                     }
                 },
@@ -40,28 +84,76 @@
                     "type": "array",
                     "items": {
                         "type": "object",
-                        "required": ["first", "last"],
+                        "required": [
+                            "first",
+                            "last"
+                        ],
                         "additionalProperties": false,
                         "properties": {
-                            "first": {"type": "integer", "minimum": 0},
-                            "last": {"type": "integer", "minimum": 1}
+                            "first": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "last": {
+                                "type": "integer",
+                                "minimum": 1
+                            }
                         }
                     }
+                },
+                "dismount_heading": {
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMaximum": 360,
+                    "description": "固定链末架定位确认后、下索前的朝向；北为 0 度，顺时针。"
                 }
             }
         },
         "NavigateParam": {
             "if": {
                 "type": "object",
-                "required": ["fixed_zipline_route"]
+                "required": [
+                    "fixed_zipline_route"
+                ]
             },
             "then": {
-                "required": ["path", "zip"],
+                "required": [
+                    "path",
+                    "zip"
+                ],
                 "properties": {
-                    "fixed_zipline_route": {"type": "string", "pattern": "\\S"},
-                    "zip": {"const": true},
-                    "path": {"type": "array", "minItems": 1}
+                    "fixed_zipline_route": {
+                        "type": "string",
+                        "pattern": "\\S"
+                    },
+                    "zip": {
+                        "const": true
+                    },
+                    "path": {
+                        "type": "array",
+                        "minItems": 1
+                    }
                 }
+            },
+            "properties": {
+                "fixed_approach_path": {
+                    "type": "array",
+                    "minItems": 1,
+                    "description": "固定链专用录制地面路径，逐点保留；仅离索路径允许最终 HEADING。"
+                },
+                "fixed_departure_path": {
+                    "type": "array",
+                    "minItems": 1,
+                    "description": "固定链专用录制地面路径，逐点保留；仅离索路径允许最终 HEADING。"
+                }
+            },
+            "dependentRequired": {
+                "fixed_approach_path": [
+                    "fixed_zipline_route"
+                ],
+                "fixed_departure_path": [
+                    "fixed_zipline_route"
+                ]
             }
         }
     }

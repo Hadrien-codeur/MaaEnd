@@ -255,6 +255,8 @@ export const destinations = assertArray(catalogSource.destinations, "delivery_de
             retryPath,
             walkOnly,
             fixedZiplineRoute: readFixedZiplineRoute(override?.fixed_zipline_route, walkOnly, `终点 ${id}`),
+            fixedApproachPath: override?.fixed_approach_path,
+            fixedDeparturePath: override?.fixed_departure_path,
             routeNode: buildRouteNode("Destination", id),
             zipRouteNode: buildRouteNode("Destination", id, true),
             fixedRouteNode: override?.fixed_zipline_route

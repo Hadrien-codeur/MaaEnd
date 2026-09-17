@@ -936,6 +936,40 @@ bool TryParseNaviParam(const json::value& custom_action_param, NaviParam& out_pa
         LogError << "Fixed zipline route requires a nonempty id, zip=true and a destination path.";
         return false;
     }
+    for (const auto& [key, path] : {
+             std::pair { std::string("fixed_approach_path"), &param.fixed_approach_path },
+             std::pair { std::string("fixed_departure_path"), &param.fixed_departure_path },
+         }) {
+        if (!custom_action_param.exists(key)) {
+            continue;
+        }
+        NaviParamInput ground_input;
+        std::string ground_zone = param.map_name;
+        if (param.fixed_zipline_route.empty() || !custom_action_param.at(key).is_array()
+            || !ground_input.from_json(json::object { { "path", custom_action_param.at(key) } })
+            || !append_parsed_waypoints(ground_input.path_, *path, ground_zone, caller_name_text) || path->empty()) {
+            LogError << "Fixed ground path requires a fixed route and a nonempty waypoint array." << VAR(key);
+            return false;
+        }
+        bool has_position = false;
+        for (size_t index = 0; index < path->size(); ++index) {
+            const auto& point = (*path)[index];
+            if (index == 0 && point.IsZoneDeclaration()) {
+                continue;
+            }
+            const bool final_heading =
+                path == &param.fixed_departure_path && index + 1 == path->size() && point.action == ActionType::HEADING && has_position;
+            if (!final_heading && point.action != ActionType::RUN && point.action != ActionType::NAVMESH) {
+                LogError << "Fixed ground path only supports movement, an initial zone and a final departure heading." << VAR(key);
+                return false;
+            }
+            has_position = has_position || point.action == ActionType::RUN || point.action == ActionType::NAVMESH;
+        }
+        if (!has_position) {
+            LogError << "Fixed ground path has no movement target." << VAR(key);
+            return false;
+        }
+    }
     apply_interact_text(route_interact.texts, route_interact.text_node, param.path, 0);
     apply_interact_scan(route_interact.scan, param.path, 0);
     apply_interact_rec(route_interact.rec, param.path, 0);

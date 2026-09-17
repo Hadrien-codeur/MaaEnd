@@ -2290,5 +2290,11 @@
     "task.FixedWulingSubaiyiDeliveryTest.label": "武陵城蘇白易接單實測",
     "task.FixedWulingSubaiyiDeliveryTest.description": "復用正式接單流程，選擇武陵城來源和蘇白易目的地進行完整取貨送貨測試。",
     "task.AutoDeliveryFixedZipline.label": "使用已設定的固定滑索路線",
-    "task.AutoDeliveryFixedZipline.description": "僅支援 Win32 前台。開啟後，武陵城取貨和蘇白易送貨使用固定架序，蘇白易依已驗證路段連滑；未設定終點繼續自動規劃。固定路線無法使用或執行失敗時停止。關閉後恢復一般自動滑索規劃。全域禁止滑索時改走步行路線。"
+    "task.AutoDeliveryFixedZipline.description": "僅支援 Win32 前台。開啟後，武陵城取貨和蘇白易送貨使用固定架序，蘇白易依已驗證路段連滑；未設定終點繼續自動規劃。固定路線無法使用或執行失敗時停止。關閉後恢復一般自動滑索規劃。全域禁止滑索時改走步行路線。",
+    "task.FixedWulingLindTest.label": "固定武陵材料研究所空跑",
+    "task.FixedWulingLindTest.description": "從武陵城倉儲附近開始，按固定滑索與錄製地面路徑到達交付站位，不取貨、不交付。",
+    "task.FixedWulingYushiTest.label": "固定武陵觀測站空跑",
+    "task.FixedWulingYushiTest.description": "從武陵城倉儲附近開始，按固定滑索與錄製地面路徑到達交付站位，不取貨、不交付。",
+    "task.FixedWulingRecycleTest.label": "固定武陵貓頭鷹空跑",
+    "task.FixedWulingRecycleTest.description": "從武陵城倉儲附近開始，按固定滑索與錄製地面路徑到達交付站位，不取貨、不交付。"
 }

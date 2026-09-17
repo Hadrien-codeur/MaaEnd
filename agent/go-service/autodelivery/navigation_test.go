@@ -69,7 +69,13 @@ func TestFixedRouteDispatch(t *testing.T) {
 					depot.RouteNode, depot.ZipRouteNode, depot.FixedRouteNode)
 			}
 			for _, dest := range destinations {
-				if (dest.FixedRouteNode != "") != (dest.ID == "deliver_target_map02_lv002_01") {
+				fixedDestinations := map[string]bool{
+					"deliver_target_map02_lv002_01":         true,
+					"deliver_target_map02_lv002_02":         true,
+					"deliver_target_map02_lv002_03":         true,
+					"deliver_target_map02_lv002_recycle_01": true,
+				}
+				if (dest.FixedRouteNode != "") != fixedDestinations[dest.ID] {
 					t.Fatalf("unexpected fixed destination: %s", dest.ID)
 				}
 				check(buildDestinationNavigationOverride(dest, options), navigateDestinationNode, retryNavigateDestinationNode,

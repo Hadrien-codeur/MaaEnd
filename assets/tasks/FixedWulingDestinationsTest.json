@@ -1,0 +1,40 @@
+{
+    "task": [
+        {
+            "name": "FixedWulingLindTest",
+            "label": "$task.FixedWulingLindTest.label",
+            "description": "$task.FixedWulingLindTest.description",
+            "entry": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00202WithFixedZipline",
+            "controller": [
+                "Win32-Front"
+            ],
+            "group": [
+                "open_world"
+            ]
+        },
+        {
+            "name": "FixedWulingYushiTest",
+            "label": "$task.FixedWulingYushiTest.label",
+            "description": "$task.FixedWulingYushiTest.description",
+            "entry": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00203WithFixedZipline",
+            "controller": [
+                "Win32-Front"
+            ],
+            "group": [
+                "open_world"
+            ]
+        },
+        {
+            "name": "FixedWulingRecycleTest",
+            "label": "$task.FixedWulingRecycleTest.label",
+            "description": "$task.FixedWulingRecycleTest.description",
+            "entry": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv002Recycle01WithFixedZipline",
+            "controller": [
+                "Win32-Front"
+            ],
+            "group": [
+                "open_world"
+            ]
+        }
+    ]
+}

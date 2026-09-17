@@ -10,6 +10,8 @@ export function buildRows(
     walkOnly = false,
     fixedZiplineRoute,
     fixedRouteNode,
+    fixedApproachPath,
+    fixedDeparturePath,
 ) {
     return [
         {
@@ -33,7 +35,13 @@ export function buildRows(
                       RouteFileId: routeFileId,
                       Node: fixedRouteNode,
                       Description: `${description}，使用固定滑索（${id}）`,
-                      ActionParam: rawJson({path, zip: true, fixed_zipline_route: fixedZiplineRoute}),
+                      ActionParam: rawJson({
+                          path,
+                          zip: true,
+                          fixed_zipline_route: fixedZiplineRoute,
+                          ...(fixedApproachPath ? {fixed_approach_path: fixedApproachPath} : {}),
+                          ...(fixedDeparturePath ? {fixed_departure_path: fixedDeparturePath} : {}),
+                      }),
                   },
               ]
             : []),
@@ -75,6 +83,8 @@ export default [
             destination.walkOnly,
             destination.fixedZiplineRoute,
             destination.fixedRouteNode,
+            destination.fixedApproachPath,
+            destination.fixedDeparturePath,
         ),
         ...(destination.retryRouteNode
             ? [

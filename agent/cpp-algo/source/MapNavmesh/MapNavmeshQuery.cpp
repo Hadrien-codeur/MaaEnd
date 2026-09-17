@@ -596,6 +596,7 @@ json::object BuildRoutePreview(const QueryParam& query)
     std::vector<navmesh::WorldPoint> current_walk;
     json::array walk_segments;
     json::array zipline_segments;
+    json::array headings;
     const navmesh::WorldPoint start { .x = position.x, .y = position.y };
     AppendDistinct(all_points, start);
     AppendDistinct(current_walk, start);
@@ -608,6 +609,11 @@ json::object BuildRoutePreview(const QueryParam& query)
     };
 
     for (const mapnavigator::Waypoint& waypoint : expanded) {
+        if (waypoint.action == mapnavigator::ActionType::HEADING) {
+            headings.emplace_back(
+                waypoint.heading_uses_target ? json::object { { "target", json::array { waypoint.x, waypoint.y } } }
+                                             : json::object { { "angle", waypoint.heading_angle } });
+        }
         if (!waypoint.HasPosition()) {
             continue;
         }
@@ -636,6 +642,9 @@ json::object BuildRoutePreview(const QueryParam& query)
         if (waypoint.zipline_relay_hops > 0) {
             segment.emplace("relay_presses_after_launch", mapnavigator::ZiplineRelayPressCount(waypoint.zipline_relay_hops));
         }
+        if (target.dismount_heading) {
+            segment.emplace("dismount_heading", *target.dismount_heading);
+        }
         if (waypoint.mount_restand) {
             segment.emplace("mount_restand", json::array { waypoint.mount_restand->x, waypoint.mount_restand->y });
         }
@@ -656,6 +665,7 @@ json::object BuildRoutePreview(const QueryParam& query)
         { "points", PointsToJson(all_points) },
         { "walk_segments", std::move(walk_segments) },
         { "zipline_segments", std::move(zipline_segments) },
+        { "headings", std::move(headings) },
         { "diagnostics", std::move(diagnostic_items) },
         { "expanded_waypoints", expanded.size() },
         { "zipline",

@@ -894,6 +894,7 @@ bool TryAppendZiplineLeg(
             .y = to.y,
             .height = to.height,
             .elevation_deg = std::atan2(rise, std::hypot(span_x, span_z)) * 180.0 / kPi,
+            .dismount_heading = hop + 2 == route->towers.size() ? route->dismount_heading : std::nullopt,
         };
         if (hop < route->hop_alternates.size()) {
             for (const zipline::ZiplineNode& other : route->hop_alternates[hop]) {
@@ -1413,6 +1414,14 @@ bool ExpandNavmeshWaypoints(
         RecordExpansionFailure("fixed_zipline_wrong_zone", "当前位置与固定路线的起始区域声明不一致");
         return false;
     }
+    for (const auto* ground : { &param.fixed_approach_path, &param.fixed_departure_path }) {
+        if (std::any_of(ground->begin(), ground->end(), [&](const Waypoint& point) {
+                return !point.zone_id.empty() && !NavmeshZonesShareGeometry(param, initial_pos.zone_id, point.zone_id);
+            })) {
+            RecordExpansionFailure("fixed_zipline_wrong_zone", "固定地面段必须与滑索链位于同一区域");
+            return false;
+        }
+    }
     if (fixed_route
         && (param.path.size() == static_cast<size_t>(initial_zone)
             || std::any_of(param.path.begin() + static_cast<size_t>(initial_zone), param.path.end(), [](const Waypoint& point) {
@@ -1466,11 +1475,28 @@ bool ExpandNavmeshWaypoints(
         if (initial_zone) {
             out_path.push_back(param.path.front());
         }
-        const auto target = ResolveProjectedTarget(navmesh->pack, param.path.back());
+        NaviParam ground_param = param;
+        ground_param.zipline_enabled = false;
+        ground_param.fixed_zipline_route.clear();
+        if (!AppendAuthoredRoute(ground_param, *navmesh, param.fixed_approach_path, should_stop, *state, out_path, out_diagnostics)) {
+            out_path.clear();
+            return false;
+        }
+        // 有录制离索段时只规划到它的首个地面点，余下录制点和最终朝向逐点保留。
+        const auto departure_first =
+            std::find_if(param.fixed_departure_path.begin(), param.fixed_departure_path.end(), [](const Waypoint& point) {
+                return point.action == ActionType::RUN || point.action == ActionType::NAVMESH;
+            });
+        const auto& goal = departure_first == param.fixed_departure_path.end() ? param.path.back() : *departure_first;
+        const auto target = ResolveProjectedTarget(navmesh->pack, goal);
         if ((should_stop && should_stop())
             || !TryAppendZiplineLeg(param, *navmesh, target, nullptr, should_stop, *state, out_path, out_diagnostics)) {
             out_path.clear();
             RecordExpansionFailure("fixed_zipline_unavailable", "完整固定滑索路线不可用，已停止；具体原因见 ZiplineRoute 日志", &*state);
+            return false;
+        }
+        if (!AppendAuthoredRoute(ground_param, *navmesh, param.fixed_departure_path, should_stop, *state, out_path, out_diagnostics)) {
+            out_path.clear();
             return false;
         }
         for (auto& point : out_path) {

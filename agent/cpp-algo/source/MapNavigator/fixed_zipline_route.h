@@ -42,8 +42,10 @@ struct FixedZiplineRoute
     };
 
     std::vector<ContinuousSegment> continuous_segments;
+    // 仅链尾下索前使用，北为 0°、顺时针；未配置时保持原下索行为。
+    std::optional<double> dismount_heading;
 
-    MEO_JSONIZATION(id, map_id, level_id, template_id, nodes, MEO_OPT continuous_segments)
+    MEO_JSONIZATION(id, map_id, level_id, template_id, nodes, MEO_OPT continuous_segments, MEO_OPT dismount_heading)
 };
 
 inline std::optional<FixedZiplineRoute> ParseFixedZiplineRoute(const json::value& value, const std::string& id, std::string& error)
@@ -64,6 +66,11 @@ inline std::optional<FixedZiplineRoute> ParseFixedZiplineRoute(const json::value
         if (selected || !route.from_json(entry) || route.id.empty() || route.map_id.empty() || route.level_id.empty()
             || route.template_id.empty() || route.nodes.size() < 2) {
             error = "invalid or duplicate fixed route definition";
+            return std::nullopt;
+        }
+        if (route.dismount_heading
+            && (!std::isfinite(*route.dismount_heading) || *route.dismount_heading < 0.0 || *route.dismount_heading >= 360.0)) {
+            error = "dismount heading must be finite and in [0, 360)";
             return std::nullopt;
         }
         for (size_t i = 0; i < route.nodes.size(); ++i) {
