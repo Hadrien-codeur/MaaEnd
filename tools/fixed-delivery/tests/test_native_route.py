@@ -73,6 +73,14 @@ class NativeFixedRouteTest(unittest.TestCase):
         result = self.preview(param)
         self.assertTrue(result.get("ok"), result)
         self.assertEqual(len(result["zipline_segments"]), 15)
+        self.assertEqual(result["points"][-1], [538.75, 1250.66])
+        walk = result["walk_segments"][-1]
+        self.assertEqual(walk[1], [537.86, 1269.57])
+        cursor = 0
+        for point in param["fixed_departure_path"][1:]:
+            target = point if isinstance(point, list) else point["target"]
+            cursor = walk.index(target, cursor) + 1
+        self.assertEqual(cursor, len(walk))
 
     def test_generated_pickup_keeps_single_directed_hop(self):
         pipeline = json.loads((ROOT / "assets/resource/pipeline/AutoDelivery/Routes/WulingCity.json").read_text(encoding="utf-8"))
