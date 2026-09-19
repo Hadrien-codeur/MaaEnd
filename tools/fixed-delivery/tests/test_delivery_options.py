@@ -29,6 +29,7 @@ class DeliveryOptionsTest(unittest.TestCase):
             zip_cases = {case["name"]: case for case in options[zip_name]["cases"]}
             fixed_cases = {case["name"]: case for case in options[fixed_name]["cases"]}
             self.assertEqual(options[fixed_name]["default_case"], "No")
+            self.assertEqual(options[fixed_name]["controller"], ["Win32-Front"])
             self.assertIn(fixed_name, zip_cases["Yes"]["option"])
             with self.subTest(task=filename), tempfile.TemporaryDirectory() as directory:
                 bundle = Path(directory)

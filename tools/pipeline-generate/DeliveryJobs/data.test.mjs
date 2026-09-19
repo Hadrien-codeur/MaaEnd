@@ -1184,7 +1184,7 @@ test("AutoDelivery ensures the delivery mission detail before branching", () => 
         strict: true,
     });
     assert.deepEqual(common.AutoDeliverySelectDeliveryMissionFromList.next, [
-        "AutoDeliveryCheckDeliveryMissionSelected",
+        "AutoDeliveryInDeliveryMissionDetail",
         "AutoDeliverySelectDeliveryMission",
         "AutoDeliveryCheckDeliveryMissionListComplete",
         "[JumpBack]AutoDeliveryScrollMissionList",
@@ -1240,7 +1240,7 @@ test("AutoDelivery ensures the delivery mission detail before branching", () => 
     ]);
     assert.equal(common.AutoDeliverySelectDeliveryMission.action, "Click");
     assert.deepEqual(common.AutoDeliverySelectDeliveryMission.next, [
-        "AutoDeliveryCheckDeliveryMissionSelected",
+        "AutoDeliveryInDeliveryMissionDetail",
     ]);
     assert.equal(common.AutoDeliveryScrollMissionList.max_hit, undefined);
     assert.deepEqual(common.AutoDeliveryScrollMissionList.all_of, [

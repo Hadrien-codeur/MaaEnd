@@ -447,6 +447,7 @@ function buildTaskOptions() {
         type: "switch",
         label: "$task.AutoDeliveryFixedZipline.label",
         description: "$task.AutoDeliveryFixedZipline.description",
+        controller: ["Win32-Front"],
         default_case: "No",
         cases: [
             false,
