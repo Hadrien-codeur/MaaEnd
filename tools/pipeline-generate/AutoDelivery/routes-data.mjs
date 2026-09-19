@@ -1,5 +1,15 @@
 import {depots, destinations, rawJson} from "./model.mjs";
 
+function buildFixedPath(path) {
+    return path.map((point) => {
+        if (Array.isArray(point) || point.required !== true) {
+            return point;
+        }
+        const {required, ...movement} = point;
+        return movement;
+    });
+}
+
 export function buildRows(
     routeFileId,
     id,
@@ -36,7 +46,7 @@ export function buildRows(
                       Node: fixedRouteNode,
                       Description: `${description}，使用固定滑索（${id}）`,
                       ActionParam: rawJson({
-                          path,
+                          path: buildFixedPath(path),
                           zip: true,
                           fixed_zipline_route: fixedZiplineRoute,
                           ...(fixedApproachPath ? {fixed_approach_path: fixedApproachPath} : {}),

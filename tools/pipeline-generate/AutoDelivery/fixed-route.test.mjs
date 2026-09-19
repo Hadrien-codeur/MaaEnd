@@ -234,8 +234,8 @@ test("试验园区三条固定路线保留架序、E 区间和录制地面段", 
             4,
             323,
             [
-                1369.66,
-                1534.32,
+                1084.06,
+                1455.88,
             ],
         ],
         [
@@ -245,8 +245,8 @@ test("试验园区三条固定路线保留架序、E 区间和录制地面段", 
             4,
             343,
             [
-                1084.06,
-                1455.88,
+                1369.66,
+                1534.32,
             ],
         ],
         [
@@ -299,8 +299,24 @@ test("自动滑索与固定滑索节点独立，固定节点保留相同地面�
         const fixed = rows.find((row) => row.Node === item.fixedRouteNode).ActionParam.value;
         assert.equal(automatic.zip, true);
         assert.equal(automatic.fixed_zipline_route, undefined);
-        assert.deepEqual(fixed.path, automatic.path);
+        assert.deepEqual(
+            fixed.path,
+            automatic.path.map((point) => {
+                if (Array.isArray(point) || point.required !== true) {
+                    return point;
+                }
+                const {required, ...movement} = point;
+                return movement;
+            }),
+        );
         assert.equal(fixed.fixed_zipline_route, item.fixedZiplineRoute);
+    }
+});
+
+test("固定节点去除普通规划专用的 required 移动标记", () => {
+    for (const item of destinations.filter((destination) => destination.fixedRouteNode)) {
+        const fixed = rows.find((row) => row.Node === item.fixedRouteNode).ActionParam.value;
+        assert.ok(fixed.path.every((point) => point.required !== true));
     }
 });
 
