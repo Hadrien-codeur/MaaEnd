@@ -662,6 +662,7 @@
             },
             "route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00501",
             "zip_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00501WithZipline",
+            "fixed_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00501WithFixedZipline",
             "retry_route_node": "AutoDeliveryRouteDestinationRetryDeliverTargetMap02Lv00501"
         },
         {
@@ -691,6 +692,7 @@
             },
             "route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00502",
             "zip_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00502WithZipline",
+            "fixed_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00502WithFixedZipline",
             "retry_route_node": "AutoDeliveryRouteDestinationRetryDeliverTargetMap02Lv00502"
         },
         {
@@ -720,6 +722,7 @@
             },
             "route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00503",
             "zip_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00503WithZipline",
+            "fixed_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00503WithFixedZipline",
             "retry_route_node": "AutoDeliveryRouteDestinationRetryDeliverTargetMap02Lv00503"
         }
     ]

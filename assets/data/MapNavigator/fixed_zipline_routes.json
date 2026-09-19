@@ -380,6 +380,150 @@
             ],
             "source": "武陵城其他三条固定路线接入记录（2026-09-18 在线填写）",
             "dismount_heading": 101
+        },
+        {
+            "id": "test_area_pei",
+            "map_id": "map02",
+            "level_id": "map02_lv005",
+            "template_id": "0f45150a59b97bd0de9a4eed7a0fbf23",
+            "nodes": [
+                {
+                    "index": 0,
+                    "x": -378,
+                    "y": 267,
+                    "z": -536
+                },
+                {
+                    "index": 1,
+                    "x": -442,
+                    "y": 259,
+                    "z": -457
+                },
+                {
+                    "index": 2,
+                    "x": -460,
+                    "y": 246,
+                    "z": -358
+                },
+                {
+                    "index": 3,
+                    "x": -553,
+                    "y": 248,
+                    "z": -299
+                },
+                {
+                    "index": 4,
+                    "x": -604,
+                    "y": 242,
+                    "z": -252
+                },
+                {
+                    "index": 5,
+                    "x": -596,
+                    "y": 243,
+                    "z": -161
+                }
+            ],
+            "continuous_segments": [
+                {
+                    "first": 0,
+                    "last": 5
+                }
+            ],
+            "source": "试验园区固定滑索路线填写表（2026-09-19）",
+            "dismount_heading": 323
+        },
+        {
+            "id": "test_area_ahe",
+            "map_id": "map02",
+            "level_id": "map02_lv005",
+            "template_id": "0f45150a59b97bd0de9a4eed7a0fbf23",
+            "nodes": [
+                {
+                    "index": 0,
+                    "x": -378,
+                    "y": 267,
+                    "z": -536
+                },
+                {
+                    "index": 1,
+                    "x": -329,
+                    "y": 266,
+                    "z": -537
+                },
+                {
+                    "index": 2,
+                    "x": -293,
+                    "y": 264,
+                    "z": -439
+                },
+                {
+                    "index": 3,
+                    "x": -233,
+                    "y": 266,
+                    "z": -379
+                },
+                {
+                    "index": 4,
+                    "x": -222,
+                    "y": 245,
+                    "z": -364
+                },
+                {
+                    "index": 5,
+                    "x": -221,
+                    "y": 259,
+                    "z": -257
+                }
+            ],
+            "continuous_segments": [
+                {
+                    "first": 0,
+                    "last": 5
+                }
+            ],
+            "source": "试验园区固定滑索路线填写表（2026-09-19）",
+            "dismount_heading": 343
+        },
+        {
+            "id": "test_area_zhaozhao",
+            "map_id": "map02",
+            "level_id": "map02_lv005",
+            "template_id": "0f45150a59b97bd0de9a4eed7a0fbf23",
+            "nodes": [
+                {
+                    "index": 0,
+                    "x": -378,
+                    "y": 267,
+                    "z": -536
+                },
+                {
+                    "index": 1,
+                    "x": -329,
+                    "y": 266,
+                    "z": -537
+                },
+                {
+                    "index": 2,
+                    "x": -293,
+                    "y": 264,
+                    "z": -439
+                },
+                {
+                    "index": 3,
+                    "x": -233,
+                    "y": 266,
+                    "z": -379
+                }
+            ],
+            "continuous_segments": [
+                {
+                    "first": 0,
+                    "last": 3
+                }
+            ],
+            "source": "试验园区固定滑索路线填写表（2026-09-19）",
+            "dismount_heading": 108
         }
     ]
 }

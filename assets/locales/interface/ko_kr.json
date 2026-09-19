@@ -2296,5 +2296,11 @@
     "task.FixedWulingYushiTest.label": "무릉 관측소 고정 경로 주행",
     "task.FixedWulingYushiTest.description": "무릉성 창고 근처에서 고정 집라인과 기록된 지상 경로를 따라 배송 위치까지 이동합니다. 화물을 수령하거나 전달하지 않습니다.",
     "task.FixedWulingRecycleTest.label": "무릉 부엉이 고정 경로 주행",
-    "task.FixedWulingRecycleTest.description": "무릉성 창고 근처에서 고정 집라인과 기록된 지상 경로를 따라 배송 위치까지 이동합니다. 화물을 수령하거나 전달하지 않습니다."
+    "task.FixedWulingRecycleTest.description": "무릉성 창고 근처에서 고정 집라인과 기록된 지상 경로를 따라 배송 위치까지 이동합니다. 화물을 수령하거나 전달하지 않습니다.",
+    "task.FixedTestAreaPeiTest.label": "실험 구역 배령용 고정 경로 주행",
+    "task.FixedTestAreaPeiTest.description": "실험 구역 창고 근처에서 고정 집라인과 기록된 지상 경로를 따라 배령용 배송 위치까지 이동합니다. 화물을 수령하거나 전달하지 않습니다.",
+    "task.FixedTestAreaAheTest.label": "실험 구역 수이 고정 경로 주행",
+    "task.FixedTestAreaAheTest.description": "실험 구역 창고 근처에서 고정 집라인과 기록된 지상 경로를 따라 수이 배송 위치까지 이동합니다. 화물을 수령하거나 전달하지 않습니다.",
+    "task.FixedTestAreaZhaozhaoTest.label": "실험 구역 조조 고정 경로 주행",
+    "task.FixedTestAreaZhaozhaoTest.description": "실험 구역 창고 근처에서 고정 집라인과 기록된 지상 경로를 따라 조조 배송 위치까지 이동합니다. 화물을 수령하거나 전달하지 않습니다."
 }

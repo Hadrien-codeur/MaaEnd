@@ -2296,5 +2296,11 @@
     "task.FixedWulingYushiTest.label": "武陵観測所・固定ルート試走",
     "task.FixedWulingYushiTest.description": "武陵城の倉庫付近から固定ジップラインと記録済みの地上経路で配達位置まで移動します。荷物の受け取り・引き渡しは行いません。",
     "task.FixedWulingRecycleTest.label": "武陵フクロウ・固定ルート試走",
-    "task.FixedWulingRecycleTest.description": "武陵城の倉庫付近から固定ジップラインと記録済みの地上経路で配達位置まで移動します。荷物の受け取り・引き渡しは行いません。"
+    "task.FixedWulingRecycleTest.description": "武陵城の倉庫付近から固定ジップラインと記録済みの地上経路で配達位置まで移動します。荷物の受け取り・引き渡しは行いません。",
+    "task.FixedTestAreaPeiTest.label": "実験区域・ペイ・リンロン固定ルート試走",
+    "task.FixedTestAreaPeiTest.description": "実験区域の倉庫付近から固定ジップラインと記録済みの地上経路でペイ・リンロンの配達位置まで移動します。荷物の受け取り・引き渡しは行いません。",
+    "task.FixedTestAreaAheTest.label": "実験区域・フウ固定ルート試走",
+    "task.FixedTestAreaAheTest.description": "実験区域の倉庫付近から固定ジップラインと記録済みの地上経路でフウの配達位置まで移動します。荷物の受け取り・引き渡しは行いません。",
+    "task.FixedTestAreaZhaozhaoTest.label": "実験区域・ジャオ・ジャオ固定ルート試走",
+    "task.FixedTestAreaZhaozhaoTest.description": "実験区域の倉庫付近から固定ジップラインと記録済みの地上経路でジャオ・ジャオの配達位置まで移動します。荷物の受け取り・引き渡しは行いません。"
 }

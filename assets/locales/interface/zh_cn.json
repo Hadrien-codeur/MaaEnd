@@ -2296,5 +2296,11 @@
     "task.FixedWulingYushiTest.label": "固定武陵观测站空跑",
     "task.FixedWulingYushiTest.description": "从武陵城仓储附近开始，按固定滑索与录制地面路径到达交付站位，不取货、不交付。",
     "task.FixedWulingRecycleTest.label": "固定武陵猫头鹰空跑",
-    "task.FixedWulingRecycleTest.description": "从武陵城仓储附近开始，按固定滑索与录制地面路径到达交付站位，不取货、不交付。"
+    "task.FixedWulingRecycleTest.description": "从武陵城仓储附近开始，按固定滑索与录制地面路径到达交付站位，不取货、不交付。",
+    "task.FixedTestAreaPeiTest.label": "固定试验园区裴令容空跑",
+    "task.FixedTestAreaPeiTest.description": "从试验园区仓储附近开始，按固定滑索与录制地面路径到达裴令容交付站位，不取货、不交付。",
+    "task.FixedTestAreaAheTest.label": "固定试验园区阿禾空跑",
+    "task.FixedTestAreaAheTest.description": "从试验园区仓储附近开始，按固定滑索与录制地面路径到达阿禾交付站位，不取货、不交付。",
+    "task.FixedTestAreaZhaozhaoTest.label": "固定试验园区赵昭空跑",
+    "task.FixedTestAreaZhaozhaoTest.description": "从试验园区仓储附近开始，按固定滑索与录制地面路径到达赵昭交付站位，不取货、不交付。"
 }

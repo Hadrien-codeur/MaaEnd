@@ -103,9 +103,9 @@
         },
         {
             "source_id": "deliver_target_map02_lv002_01",
-            "fixed_zipline_route": "wuling_city_subaiyi",
             "name": "苏白易",
             "depot_id": "domain_2_lv002_depot_1",
+            "fixed_zipline_route": "wuling_city_subaiyi",
             "description": "技术生产办公室（左上）",
             "path": [
                 {
@@ -555,18 +555,169 @@
             "source_id": "deliver_target_map02_lv005_01",
             "name": "赵昭",
             "depot_id": "domain_2_lv005_depot_1",
-            "description": "经纬田区（右）"
+            "description": "经纬田区（右）",
+            "fixed_zipline_route": "test_area_zhaozhao",
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1253.57,
+                    1751.81
+                ],
+                [
+                    1253.52,
+                    1750.49
+                ],
+                [
+                    1253.54,
+                    1748.63
+                ],
+                [
+                    1253.6,
+                    1746.74
+                ],
+                [
+                    1253.45,
+                    1745.95
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1363.8,
+                    1629.58
+                ],
+                [
+                    1364.82,
+                    1629.61
+                ],
+                [
+                    1366.72,
+                    1629.73
+                ],
+                [
+                    1366.58,
+                    1631.1
+                ],
+                [
+                    1366.09,
+                    1632.84
+                ],
+                [
+                    1366.23,
+                    1633.93
+                ],
+                [
+                    1367.84,
+                    1633.96
+                ],
+                [
+                    1369.78,
+                    1633.76
+                ],
+                [
+                    1371.6,
+                    1633.54
+                ],
+                [
+                    1373.49,
+                    1633.39
+                ],
+                [
+                    1375.34,
+                    1633.35
+                ],
+                [
+                    1377.21,
+                    1633.29
+                ],
+                [
+                    1378.91,
+                    1633.21
+                ],
+                [
+                    1380.85,
+                    1633.29
+                ],
+                [
+                    1382.74,
+                    1633.45
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        1383.91,
+                        1633.4
+                    ],
+                    "strict_arrival": true
+                }
+            ]
         },
         {
             "source_id": "deliver_target_map02_lv005_02",
             "name": "裴令容",
-            "depot_id": "domain_2_lv005_depot_1"
+            "depot_id": "domain_2_lv005_depot_1",
+            "fixed_zipline_route": "test_area_pei",
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1253.57,
+                    1751.81
+                ],
+                [
+                    1253.52,
+                    1750.49
+                ],
+                [
+                    1253.54,
+                    1748.63
+                ],
+                [
+                    1253.6,
+                    1746.74
+                ],
+                [
+                    1253.45,
+                    1745.95
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1370.25,
+                    1535.55
+                ],
+                [
+                    1369.91,
+                    1534.84
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        1369.66,
+                        1534.32
+                    ],
+                    "strict_arrival": true
+                }
+            ]
         },
         {
             "source_id": "deliver_target_map02_lv005_03",
             "name": "阿禾",
             "depot_id": "domain_2_lv005_depot_1",
             "description": "三号丙型辅桩区（右上）",
+            "fixed_zipline_route": "test_area_ahe",
             "path": [
                 {
                     "action": "NAVMESH",
@@ -582,6 +733,62 @@
                         1369.87,
                         1533.92
                     ]
+                }
+            ],
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1253.57,
+                    1751.81
+                ],
+                [
+                    1253.52,
+                    1750.49
+                ],
+                [
+                    1253.54,
+                    1748.63
+                ],
+                [
+                    1253.6,
+                    1746.74
+                ],
+                [
+                    1253.45,
+                    1745.95
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1088.62,
+                    1462.1
+                ],
+                [
+                    1087.36,
+                    1460.64
+                ],
+                [
+                    1086.29,
+                    1459.15
+                ],
+                [
+                    1085.11,
+                    1457.51
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        1084.06,
+                        1455.88
+                    ],
+                    "strict_arrival": true
                 }
             ]
         }

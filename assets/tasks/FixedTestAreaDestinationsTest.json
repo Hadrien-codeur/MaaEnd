@@ -1,0 +1,40 @@
+{
+    "task": [
+        {
+            "name": "FixedTestAreaPeiTest",
+            "label": "$task.FixedTestAreaPeiTest.label",
+            "description": "$task.FixedTestAreaPeiTest.description",
+            "entry": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00502WithFixedZipline",
+            "controller": [
+                "Win32-Front"
+            ],
+            "group": [
+                "open_world"
+            ]
+        },
+        {
+            "name": "FixedTestAreaAheTest",
+            "label": "$task.FixedTestAreaAheTest.label",
+            "description": "$task.FixedTestAreaAheTest.description",
+            "entry": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00503WithFixedZipline",
+            "controller": [
+                "Win32-Front"
+            ],
+            "group": [
+                "open_world"
+            ]
+        },
+        {
+            "name": "FixedTestAreaZhaozhaoTest",
+            "label": "$task.FixedTestAreaZhaozhaoTest.label",
+            "description": "$task.FixedTestAreaZhaozhaoTest.description",
+            "entry": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00501WithFixedZipline",
+            "controller": [
+                "Win32-Front"
+            ],
+            "group": [
+                "open_world"
+            ]
+        }
+    ]
+}

@@ -225,6 +225,71 @@ test("材料研究所末架下索前朝向保持为 294 度", () => {
     assert.equal(routes.routes.find((route) => route.id === "wuling_city_lind").dismount_heading, 294);
 });
 
+test("试验园区三条固定路线保留架序、E 区间和录制地面段", () => {
+    const expected = [
+        [
+            "deliver_target_map02_lv005_02",
+            "test_area_pei",
+            6,
+            4,
+            323,
+            [
+                1369.66,
+                1534.32,
+            ],
+        ],
+        [
+            "deliver_target_map02_lv005_03",
+            "test_area_ahe",
+            6,
+            4,
+            343,
+            [
+                1084.06,
+                1455.88,
+            ],
+        ],
+        [
+            "deliver_target_map02_lv005_01",
+            "test_area_zhaozhao",
+            4,
+            2,
+            108,
+            [
+                1383.91,
+                1633.4,
+            ],
+        ],
+    ];
+    const routes = JSON.parse(
+        readFileSync(new URL("../../../assets/data/MapNavigator/fixed_zipline_routes.json", import.meta.url)),
+    );
+    for (const [
+        destinationId,
+        routeId,
+        nodeCount,
+        ePresses,
+        heading,
+        finalPoint,
+    ] of expected) {
+        const destination = destinations.find((item) => item.id === destinationId);
+        assert.equal(destination.fixedZiplineRoute, routeId);
+        const fixed = rows.find((row) => row.Node === destination.fixedRouteNode).ActionParam.value;
+        assert.equal(fixed.fixed_zipline_route, routeId);
+        assert.deepEqual(fixed.fixed_approach_path[0], {action: "ZONE", zone_id: "Wuling_Base"});
+        assert.deepEqual(fixed.fixed_departure_path.at(-1), {
+            action: "RUN",
+            target: finalPoint,
+            strict_arrival: true,
+        });
+        const route = routes.routes.find((item) => item.id === routeId);
+        assert.equal(route.nodes.length, nodeCount);
+        assert.deepEqual(route.continuous_segments, [{first: 0, last: nodeCount - 1}]);
+        assert.equal(route.continuous_segments[0].last - route.continuous_segments[0].first - 1, ePresses);
+        assert.equal(route.dismount_heading, heading);
+    }
+});
+
 test("自动滑索与固定滑索节点独立，固定节点保留相同地面路径", () => {
     for (const item of [
         ...depots,

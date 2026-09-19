@@ -2296,5 +2296,11 @@
     "task.FixedWulingYushiTest.label": "Fixed Wuling Observatory Trial",
     "task.FixedWulingYushiTest.description": "Start near the Wuling City depot and follow the fixed ziplines and recorded ground path to the delivery position, without collecting or delivering cargo.",
     "task.FixedWulingRecycleTest.label": "Fixed Wuling Owl Trial",
-    "task.FixedWulingRecycleTest.description": "Start near the Wuling City depot and follow the fixed ziplines and recorded ground path to the delivery position, without collecting or delivering cargo."
+    "task.FixedWulingRecycleTest.description": "Start near the Wuling City depot and follow the fixed ziplines and recorded ground path to the delivery position, without collecting or delivering cargo.",
+    "task.FixedTestAreaPeiTest.label": "Fixed Test Area Pei Lingrong Trial",
+    "task.FixedTestAreaPeiTest.description": "Start near the Test Area depot and follow the fixed ziplines and recorded ground path to Pei Lingrong's delivery position, without collecting or delivering cargo.",
+    "task.FixedTestAreaAheTest.label": "Fixed Test Area Ah He Trial",
+    "task.FixedTestAreaAheTest.description": "Start near the Test Area depot and follow the fixed ziplines and recorded ground path to Ah He's delivery position, without collecting or delivering cargo.",
+    "task.FixedTestAreaZhaozhaoTest.label": "Fixed Test Area Zhao Zhao Trial",
+    "task.FixedTestAreaZhaozhaoTest.description": "Start near the Test Area depot and follow the fixed ziplines and recorded ground path to Zhao Zhao's delivery position, without collecting or delivering cargo."
 }
