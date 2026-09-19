@@ -423,6 +423,7 @@ NavigationStateMachine::NavigationStateMachine(
 {
     LogInfo << "Navigation route runner selected. backend=orchestrated";
     runtime_state_.fixed_zipline_route = param.fixed_zipline_route;
+    runtime_state_.has_fixed_departure_path = !param.fixed_zipline_route.empty() && !param.fixed_departure_path.empty();
 }
 
 bool NavigationStateMachine::Run()
@@ -879,8 +880,8 @@ bool NavigationStateMachine::HandleZiplineRecoveryReplan()
     const int64_t elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - recovery.started_at).count();
     if (elapsed_ms >= kZiplineRecoveryTimeoutMs) {
         return FailNavigation(
-            "zipline_recovery_localization_timeout",
-            "Zipline recovery could not obtain a stable on-mesh position; refusing to follow the stale departure route.",
+            runtime_state_.fixed_departure_handoff ? "fixed_departure_localization_timeout" : "zipline_recovery_localization_timeout",
+            "Zipline rejoin could not obtain a stable on-mesh position; refusing to follow a stale departure route.",
             0.0,
             0.0,
             elapsed_ms);
@@ -923,6 +924,34 @@ bool NavigationStateMachine::HandleZiplineRecoveryReplan()
     }
     LogInfo << "Zipline recovery position stabilized." << VAR(elapsed_ms) << VAR(recovery.stable_hits) << VAR(recovery.rejected_fixes)
             << VAR(position_->x) << VAR(position_->y) << VAR(position_->zone_id);
+
+    if (runtime_state_.fixed_departure_handoff) {
+        std::optional<DynamicAnchor> anchor;
+        for (size_t index = session_->current_node_idx(); index < session_->current_path().size(); ++index) {
+            const Waypoint& waypoint = session_->CurrentPathAt(index);
+            if (!waypoint.HasPosition()) {
+                continue;
+            }
+            if (const auto canonical = session_->CanonicalIndexAtCurrentPath(index)) {
+                anchor = { *canonical, waypoint };
+            }
+            break;
+        }
+        if (!anchor || !TryApplyDynamicOverlayToAnchor("fixed_departure_rejoin", anchor->first, anchor->second)) {
+            return FailNavigation(
+                "fixed_departure_rejoin_unavailable",
+                "Fixed departure could not reach its first recorded ground point from the measured landing.",
+                0.0,
+                0.0,
+                elapsed_ms);
+        }
+        LogInfo << "Fixed departure rejoined from measured landing." << VAR(position_->x) << VAR(position_->y)
+                << VAR(anchor->second.x) << VAR(anchor->second.y) << VAR(anchor->first);
+        runtime_state_.fixed_departure_handoff = false;
+        recovery.Reset();
+        SelectPhaseForCurrentWaypoint("fixed_departure_rejoin");
+        return true;
+    }
 
     const std::optional<DynamicAnchor> anchor =
         ResolveReachableNavmeshAnchor(param_, session_, *position_, session_->current_node_idx(), "zipline_recovery");
@@ -1171,6 +1200,10 @@ bool NavigationStateMachine::TickNavigate()
     if (!session_->HasCurrentWaypoint()) {
         session_->NoteRouteTailConsumed(*position_, "route_tail_consumed");
         return true;
+    }
+
+    if (runtime_state_.fixed_departure_handoff) {
+        return HandleZiplineRecoveryReplan();
     }
 
     const semantic_nodes::Context semantic_ctx = BuildSemanticContext(

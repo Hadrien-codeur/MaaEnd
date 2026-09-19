@@ -905,14 +905,21 @@ bool TryAppendZiplineLeg(
 
     const size_t departure_index = out_path.size();
     const navmesh::WorldPoint landing = route->departure.points.back();
-    AppendGeneratedNavmeshWaypoints(route->departure, out_path, true, false, &navmesh.planner, route->departure.zone_id);
-    if (out_path.size() == departure_index) {
-        // 下索点就是终点: 滑行本身已经把人送到了, 补一个到达点让这一腿仍以目标点收尾
-        out_path.emplace_back(landing.x, landing.y, ActionType::RUN);
-        out_path.back().strict_arrival = true;
+    if (!param.fixed_zipline_route.empty() && !param.fixed_departure_path.empty()) {
+        // 仍用名义落点验证链尾可达, 但真正的接入路径留到下索定位稳定后从脚下规划。
+        LogInfo << "Fixed zipline departure connector deferred until measured landing." << VAR(route->towers.back().x)
+                << VAR(route->towers.back().y) << VAR(target.point.x) << VAR(target.point.y);
     }
-    if (target.deck_y) {
-        out_path.back().target_deck_y = target.deck_y;
+    else {
+        AppendGeneratedNavmeshWaypoints(route->departure, out_path, true, false, &navmesh.planner, route->departure.zone_id);
+        if (out_path.size() == departure_index) {
+            // 下索点就是终点: 滑行本身已经把人送到了, 补一个到达点让这一腿仍以目标点收尾
+            out_path.emplace_back(landing.x, landing.y, ActionType::RUN);
+            out_path.back().strict_arrival = true;
+        }
+        if (target.deck_y) {
+            out_path.back().target_deck_y = target.deck_y;
+        }
     }
 
     state.MoveRouteStart(landing);
@@ -1495,7 +1502,47 @@ bool ExpandNavmeshWaypoints(
             RecordExpansionFailure("fixed_zipline_unavailable", "完整固定滑索路线不可用，已停止；具体原因见 ZiplineRoute 日志", &*state);
             return false;
         }
-        if (!AppendAuthoredRoute(ground_param, *navmesh, param.fixed_departure_path, should_stop, *state, out_path, out_diagnostics)) {
+        // The first recorded point is the runtime rejoin anchor, not a leg to expand from the nominal tower landing.
+        // RUN points already append verbatim; NAVMESH points need projection but must not emit nominal-start corners.
+        if (!param.fixed_departure_path.empty() && departure_first == param.fixed_departure_path.end()) {
+            RecordExpansionFailure("fixed_departure_missing_anchor", "固定离索段缺少首个地面路点", &*state);
+            out_path.clear();
+            return false;
+        }
+        if (departure_first != param.fixed_departure_path.end() && departure_first->action == ActionType::NAVMESH) {
+            if (!AppendAuthoredRoute(
+                    ground_param,
+                    *navmesh,
+                    std::vector<Waypoint>(param.fixed_departure_path.begin(), departure_first),
+                    should_stop,
+                    *state,
+                    out_path,
+                    out_diagnostics)) {
+                out_path.clear();
+                return false;
+            }
+            const auto projected = ResolveProjectedTarget(navmesh->pack, *departure_first);
+            Waypoint first = *departure_first;
+            first.x = projected.point.x;
+            first.y = projected.point.y;
+            first.action = ActionType::RUN;
+            first.strict_arrival = true;
+            first.target_tier.clear();
+            out_path.push_back(first);
+            UpdateStateFromRegularWaypoint(first, *state);
+        }
+        const auto remaining_begin = departure_first != param.fixed_departure_path.end()
+                                         && departure_first->action == ActionType::NAVMESH
+                                         ? departure_first + 1
+                                         : param.fixed_departure_path.begin();
+        if (!AppendAuthoredRoute(
+                ground_param,
+                *navmesh,
+                std::vector<Waypoint>(remaining_begin, param.fixed_departure_path.end()),
+                should_stop,
+                *state,
+                out_path,
+                out_diagnostics)) {
             out_path.clear();
             return false;
         }

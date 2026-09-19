@@ -145,12 +145,18 @@ int main(int argc, char** argv)
         runtime.semantic.zipline_relay = { .required = 14, .pressed = 7, .awaiting_clear = true };
         runtime.semantic.zipline_relay_end_index = 19;
         runtime.semantic.zipline_mounted = true;
+        runtime.has_fixed_departure_path = true;
+        runtime.fixed_departure_handoff = true;
         runtime.BeginNavigation(std::chrono::steady_clock::now());
         require(
             runtime.semantic.zipline_relay.required == 0 && runtime.semantic.zipline_relay.pressed == 0
                 && !runtime.semantic.zipline_relay.awaiting_clear && runtime.semantic.zipline_relay_end_index == 0
                 && !runtime.semantic.zipline_mounted,
             "new navigation must not inherit a cancelled relay");
+        require(runtime.has_fixed_departure_path && !runtime.fixed_departure_handoff, "new navigation clears only the pending handoff");
+        runtime.fixed_departure_handoff = true;
+        runtime.OnWaypointAdvance();
+        require(!runtime.fixed_departure_handoff, "advancing a waypoint must clear a stale departure handoff");
         std::cout << "Fixed route parsing and matching checks passed\n";
         return 0;
     }

@@ -362,6 +362,8 @@ struct NavigationRuntimeState
 {
     // 整趟导航的固定架序约束；每次新建状态机赋值，不随航点切换重置。
     std::string fixed_zipline_route;
+    bool has_fixed_departure_path = false;
+    bool fixed_departure_handoff = false;
     RouteTrackerState route;
     FlowState flow;
     SemanticState semantic;
@@ -401,6 +403,7 @@ struct NavigationRuntimeState
         steering_rate.Reset();
         offroute.Reset();
         zipline_recovery.Reset();
+        fixed_departure_handoff = false;
         dynamic_replan_requested = false;
         nav_run_dirty = true;
     }
@@ -419,6 +422,7 @@ struct NavigationRuntimeState
         cross_tier_escape.Reset();
         zipline_approach.Reset();
         zipline_recovery.Reset();
+        fixed_departure_handoff = false;
         zipline_hop_bans.clear();
         virtual_no_go.clear();
         zipline_abandon_count = 0;
@@ -440,6 +444,7 @@ struct NavigationRuntimeState
         bypass.Reset();
         offroute.Reset();
         zipline_recovery.Reset();
+        fixed_departure_handoff = false;
         global_reacquire_streak = 0;
         dynamic_replan_requested = false;
         nav_run_dirty = true;

@@ -708,6 +708,7 @@ Result TickZiplineRide(const Context& ctx)
         }
     }
     const bool chain_continues = ctx.session->HasCurrentWaypoint() && ctx.session->CurrentWaypoint().action == ActionType::ZIPLINE;
+    const bool fixed_departure_handoff = !chain_continues && ctx.runtime_state->has_fixed_departure_path;
     if (!chain_continues) {
         if (landing.dismount_heading) {
             LogInfo << "Fixed zipline: aligning before dismount." << VAR(*landing.dismount_heading);
@@ -733,6 +734,10 @@ Result TickZiplineRide(const Context& ctx)
     ctx.runtime_state->route.startup_motion_confirmed = true;
     ClearRideState(ctx);
     ctx.position_provider->ResetTracking();
+    if (fixed_departure_handoff) {
+        ctx.runtime_state->zipline_recovery.Begin(std::chrono::steady_clock::now());
+        ctx.runtime_state->fixed_departure_handoff = true;
+    }
 
     if (!ctx.session->HasCurrentWaypoint()) {
         ctx.session->NoteRouteTailConsumed(*ctx.position, "route_tail_consumed");

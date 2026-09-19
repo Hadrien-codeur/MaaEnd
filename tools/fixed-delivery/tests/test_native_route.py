@@ -121,6 +121,34 @@ class NativeFixedRouteTest(unittest.TestCase):
                         # Every recorded bend must survive in order, not just the final destination.
                         cursor = walk.index(target, cursor) + 1
 
+    def test_fixed_departure_does_not_prepend_nominal_landing_detour(self):
+        for route_id in ["wuling_city_lind", "wuling_city_yushi", "wuling_city_recycle"]:
+            with self.subTest(route=route_id):
+                param = self.new_destination_param(route_id)
+                result = self.preview(param)
+                self.assertTrue(result.get("ok"), result)
+                recorded = next(point for point in param["fixed_departure_path"]
+                                if isinstance(point, list) or point["action"] in ["RUN", "NAVMESH"])
+                first = recorded if isinstance(recorded, list) else recorded["target"]
+                self.assertEqual(result["walk_segments"][-1][1], first)
+
+        param = self.new_destination_param("wuling_city_lind")
+        first = next(point for point in param["fixed_departure_path"] if isinstance(point, list))
+        param["fixed_departure_path"][1] = {"action": "NAVMESH", "target": first}
+        result = self.preview(param)
+        self.assertTrue(result.get("ok"), result)
+        self.assertEqual(result["walk_segments"][-1][1], first)
+
+    def test_measured_lind_landing_rejoins_directly(self):
+        target = [473.58, 1718.96]
+        param = {"path": [{"action": "NAVMESH", "target": target}], "zip": False}
+        measured = self.preview(param, position=[474.44, 1720.03])
+        nominal = self.preview(param, position=[474.75, 1721.25])
+        self.assertTrue(measured.get("ok"), measured)
+        self.assertTrue(nominal.get("ok"), nominal)
+        self.assertEqual(measured["points"], [[474.44, 1720.03], target])
+        self.assertGreater(len(nominal["points"]), len(measured["points"]))
+
     def test_fixed_ground_paths_reject_invalid_or_cross_zone_input(self):
         for field in ["fixed_approach_path", "fixed_departure_path"]:
             for path in [[], None, [{"action": "ZONE", "zone_id": "Wuling_Base"}],
