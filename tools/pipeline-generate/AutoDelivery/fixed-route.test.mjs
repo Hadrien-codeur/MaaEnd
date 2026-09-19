@@ -129,6 +129,36 @@ test("武陵城接单实测入口复用四终点固定路线且保留正式任�
     }
 });
 
+test("试验园区固定路线接入抢单与装箱自送正式选项链", () => {
+    const seize = JSON.parse(readFileSync(new URL("../../../assets/tasks/SeizeDeliveryJobs.json", import.meta.url)));
+    const seizeSource = seize.option.SeizeDeliveryJobsCommissionSource.cases.find(
+        (item) => item.name === "TestArea",
+    );
+    assert.ok(seizeSource?.option.includes("SeizeDeliveryJobsSpecifyDeliveryPointTestArea"));
+    assert.ok(seize.option.SeizeDeliveryJobsPostDeparturePreferZipline.cases
+        .find((item) => item.name === "Yes")
+        ?.option.includes("SeizeDeliveryJobsFixedZipline"));
+
+    const delivery = JSON.parse(readFileSync(new URL("../../../assets/tasks/DeliveryJobs.json", import.meta.url)));
+    const deliveryRegion = delivery.option.Wuling.cases.find((item) => item.name === "Yes");
+    assert.ok(deliveryRegion?.option.includes("TestArea"));
+    const deliveryZipline = delivery.option.DeliveryJobsAutoDeliveryPreferZipline.cases.find(
+        (item) => item.name === "Yes",
+    );
+    assert.ok(deliveryZipline?.option.includes("DeliveryJobsAutoDeliveryFixedZipline"));
+
+    for (const id of [
+        "deliver_target_map02_lv005_01",
+        "deliver_target_map02_lv005_02",
+        "deliver_target_map02_lv005_03",
+    ]) {
+        const destination = destinations.find((item) => item.id === id);
+        assert.ok(destination?.fixedRouteNode);
+        const fixed = rows.find((row) => row.Node === destination.fixedRouteNode);
+        assert.equal(fixed.ActionParam.value.fixed_zipline_route, destination.fixedZiplineRoute);
+    }
+});
+
 test("武陵三条新路线保留独立录制地面段与已配置的终点朝向，重同步不丢失", () => {
     const source = JSON.parse(readFileSync(new URL("./routes.json", import.meta.url)));
     const catalog = JSON.parse(readFileSync(new URL("../data/delivery_destinations.json", import.meta.url)));
