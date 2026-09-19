@@ -28,6 +28,8 @@ int main(int argc, char** argv)
         require(route.has_value(), "parse confirmed route");
         require(route->nodes.size() == 16, "confirmed route must have 16 towers");
         require(!route->dismount_heading, "existing routes keep default dismount behavior");
+        const auto lind = mapnavigator::ParseFixedZiplineRoute(*source, "wuling_city_lind", error);
+        require(lind && lind->dismount_heading == 294.0, "Lind route must face northwest before dismount");
         const auto recycle = mapnavigator::ParseFixedZiplineRoute(*source, "wuling_city_recycle", error);
         require(recycle && recycle->dismount_heading == 101.0, "recycle route must turn east before dismount");
         for (const json::value& invalid_heading : { json::value(-1), json::value(360), json::value("101"), json::value(true) }) {

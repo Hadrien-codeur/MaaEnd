@@ -95,9 +95,9 @@ class NativeFixedRouteTest(unittest.TestCase):
 
     def test_three_new_routes_preserve_towers_ground_paths_and_headings(self):
         for route_id, relays, stance, facing, heading in [
-            ("wuling_city_lind", {0: 9}, [462.78, 1712.92], [462.06, 1712.79], None),
+            ("wuling_city_lind", {0: 9}, [462.71, 1713.21], [461.93, 1713.43], 294),
             ("wuling_city_yushi", {0: 4, 5: 2}, [894.71, 1409.1], [894.97, 1407.6], None),
-            ("wuling_city_recycle", {0: 8, 9: 1}, [514.06, 1651.68], [513.39, 1650.67], 101),
+            ("wuling_city_recycle", {0: 8, 9: 1}, [513.33, 1652.14], None, 101),
         ]:
             with self.subTest(route=route_id):
                 param = self.new_destination_param(route_id)
@@ -110,7 +110,7 @@ class NativeFixedRouteTest(unittest.TestCase):
                 self.assertEqual(hops[-1].get("dismount_heading"), heading)
                 self.assertTrue(all("dismount_heading" not in hop for hop in hops[:-1]))
                 self.assertEqual(result["points"][-1], stance)
-                self.assertEqual(result["headings"], [{"target": facing}])
+                self.assertEqual(result["headings"], [{"target": facing}] if facing else [])
                 for field, walk in [("fixed_approach_path", result["walk_segments"][0]),
                                     ("fixed_departure_path", result["walk_segments"][-1])]:
                     cursor = 0
