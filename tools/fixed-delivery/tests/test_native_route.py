@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import copy
 import json
+import math
 from pathlib import Path
 import sys
 import unittest
@@ -101,6 +102,26 @@ class NativeFixedRouteTest(unittest.TestCase):
         return next(node["custom_action_param"] for node in pipeline.values()
                     if node.get("custom_action_param", {}).get("fixed_zipline_route") == route_id)
 
+    def destination_param_from(self, route_id, route_file):
+        pipeline = json.loads((ROOT / "assets/resource/pipeline/AutoDelivery/Routes" / route_file).read_text(encoding="utf-8"))
+        return next(node["custom_action_param"] for node in pipeline.values()
+                    if node.get("custom_action_param", {}).get("fixed_zipline_route") == route_id)
+
+    def assert_recorded_path(self, walk, path):
+        cursor = 0
+        for point in path:
+            if isinstance(point, dict) and point["action"] == "ZONE":
+                continue
+            if isinstance(point, dict) and point.get("strict_arrival"):
+                continue
+            target = point if isinstance(point, list) else point["target"]
+            match = next(
+                (index for index in range(cursor, len(walk)) if math.dist(walk[index], target) <= 0.05),
+                None,
+            )
+            self.assertIsNotNone(match, f"recorded target {target} missing from planned walk")
+            cursor = match + 1
+
     def test_three_new_routes_preserve_towers_ground_paths_and_headings(self):
         for route_id, relays, stance, facing, heading in [
             ("wuling_city_lind", {0: 9}, [462.71, 1713.21], [461.93, 1713.43], 294),
@@ -128,6 +149,24 @@ class NativeFixedRouteTest(unittest.TestCase):
                         target = point if isinstance(point, list) else point["target"]
                         # Every recorded bend must survive in order, not just the final destination.
                         cursor = walk.index(target, cursor) + 1
+
+    def test_test_area_routes_preserve_towers_ground_paths_and_headings(self):
+        for route_id, relays, stance, heading in [
+            ("test_area_pei", {0: 4}, [1084.06, 1455.88], 323),
+            ("test_area_ahe", {0: 4}, [1369.66, 1534.32], 343),
+            ("test_area_zhaozhao", {0: 2}, [1383.91, 1633.4], 108),
+        ]:
+            with self.subTest(route=route_id):
+                param = self.destination_param_from(route_id, "TestArea.json")
+                result = self.preview(param, position=[1252.88, 1751.5])
+                self.assertTrue(result.get("ok"), result)
+                self.assert_tower_chain(result, route_id)
+                hops = result["zipline_segments"]
+                self.assertEqual({i: hop["relay_presses_after_launch"] for i, hop in enumerate(hops)
+                                  if "relay_presses_after_launch" in hop}, relays)
+                self.assertEqual(hops[-1].get("dismount_heading"), heading)
+                self.assertEqual(result["points"][-1], stance)
+                self.assert_recorded_path(result["walk_segments"][-1], param["fixed_departure_path"])
 
     def test_fixed_departure_does_not_prepend_nominal_landing_detour(self):
         for route_id in ["wuling_city_lind", "wuling_city_yushi", "wuling_city_recycle"]:
