@@ -2290,7 +2290,7 @@
     "task.FixedWulingSubaiyiDeliveryTest.label": "고정 집라인 배송 테스트 (무릉성/실험 구역)",
     "task.FixedWulingSubaiyiDeliveryTest.description": "정식 수주 흐름을 재사용해 무릉성 또는 실험 구역 출발지와 설정된 고정 집라인 목적지를 테스트합니다. 고정 경로는 기본적으로 꺼져 있으므로 배송 시 집라인 우선을 켠 다음 설정된 고정 경로 옵션을 켜세요.",
     "task.AutoDeliveryFixedZipline.label": "설정된 고정 집라인 경로 사용",
-    "task.AutoDeliveryFixedZipline.description": "Win32 전경에서만 지원합니다. 무릉성 수령과 소백이, 재료 연구소, 관측소, 부엉이 배송 시 고정된 지주 순서를 사용하며, 각 경로에 설정된 구간에서는 연속 이동합니다. 설정되지 않은 목적지는 자동 경로를 사용합니다. 고정 경로를 사용할 수 없거나 실행에 실패하면 중지합니다. 끄면 일반 자동 집라인 경로로 돌아갑니다. 전체 설정에서 집라인을 금지하면 도보 경로를 사용합니다.",
+    "task.AutoDeliveryFixedZipline.description": "Win32 전경에서만 지원합니다. 설정된 무릉성 및 실험 구역 경로에서 고정된 지주 순서를 사용하며, 각 경로에 설정된 구간에서는 연속 이동합니다. 설정되지 않은 목적지는 자동 경로를 사용합니다. 고정 경로를 사용할 수 없거나 실행에 실패하면 중지합니다. 끄면 일반 자동 집라인 경로로 돌아갑니다. 전체 설정에서 집라인을 금지하면 도보 경로를 사용합니다.",
     "task.FixedWulingLindTest.label": "무릉 재료 연구소 고정 경로 주행",
     "task.FixedWulingLindTest.description": "무릉성 창고 근처에서 고정 집라인과 기록된 지상 경로를 따라 배송 위치까지 이동합니다. 화물을 수령하거나 전달하지 않습니다.",
     "task.FixedWulingYushiTest.label": "무릉 관측소 고정 경로 주행",

@@ -2290,7 +2290,7 @@
     "task.FixedWulingSubaiyiDeliveryTest.label": "固定滑索接單實測（武陵城/實驗園區）",
     "task.FixedWulingSubaiyiDeliveryTest.description": "復用正式接單流程，可選擇武陵城或實驗園區來源，並選擇已設定的固定滑索終點進行完整取貨送貨測試。固定路線預設關閉，請先在配送時優先使用滑索，再開啟固定滑索路線。",
     "task.AutoDeliveryFixedZipline.label": "使用已設定的固定滑索路線",
-    "task.AutoDeliveryFixedZipline.description": "僅支援 Win32 前台。開啟後，武陵城取貨及蘇白易、材料研究所、觀測站、貓頭鷹送貨使用固定架序，依各自設定的路段連滑；未設定終點繼續自動規劃。固定路線無法使用或執行失敗時停止。關閉後恢復一般自動滑索規劃。全域禁止滑索時改走步行路線。",
+    "task.AutoDeliveryFixedZipline.description": "僅支援 Win32 前台。開啟後，已設定的武陵城與實驗園區固定路線使用固定架序，依各自設定的路段連滑；未設定終點繼續自動規劃。固定路線無法使用或執行失敗時停止。關閉後恢復一般自動滑索規劃。全域禁止滑索時改走步行路線。",
     "task.FixedWulingLindTest.label": "固定武陵材料研究所空跑",
     "task.FixedWulingLindTest.description": "從武陵城倉儲附近開始，按固定滑索與錄製地面路徑到達交付站位，不取貨、不交付。",
     "task.FixedWulingYushiTest.label": "固定武陵觀測站空跑",

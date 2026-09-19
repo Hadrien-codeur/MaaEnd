@@ -2290,7 +2290,7 @@
     "task.FixedWulingSubaiyiDeliveryTest.label": "固定ジップライン配達テスト（武陵城/実験区域）",
     "task.FixedWulingSubaiyiDeliveryTest.description": "正式な受注フローを再利用し、武陵城または実験区域の出発地と設定済み固定ジップライン配達先をテストします。固定ルートは初期状態で無効です。配達時にジップライン優先を有効にしてから、設定済み固定ルートを有効にしてください。",
     "task.AutoDeliveryFixedZipline.label": "設定済みの固定ジップラインルートを使用",
-    "task.AutoDeliveryFixedZipline.description": "Win32 前面操作のみ対応。武陵城の集荷と蘇白易・材料研究所・観測所・フクロウへの配送で固定された支柱順を使用し、各ルートに設定された区間では連続滑走します。未設定の目的地は自動経路を使用します。固定ルートが利用不可、または実行に失敗した場合は停止します。無効にすると通常の自動ジップライン経路に戻ります。全体設定でジップラインが禁止されている場合は徒歩ルートを使用します。",
+    "task.AutoDeliveryFixedZipline.description": "Win32 前面操作のみ対応。設定済みの武陵城と実験区域のルートで固定された支柱順を使用し、各ルートに設定された区間では連続滑走します。未設定の目的地は自動経路を使用します。固定ルートが利用不可、または実行に失敗した場合は停止します。無効にすると通常の自動ジップライン経路に戻ります。全体設定でジップラインが禁止されている場合は徒歩ルートを使用します。",
     "task.FixedWulingLindTest.label": "武陵素材研究所・固定ルート試走",
     "task.FixedWulingLindTest.description": "武陵城の倉庫付近から固定ジップラインと記録済みの地上経路で配達位置まで移動します。荷物の受け取り・引き渡しは行いません。",
     "task.FixedWulingYushiTest.label": "武陵観測所・固定ルート試走",
