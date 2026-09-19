@@ -74,6 +74,9 @@ func TestFixedRouteDispatch(t *testing.T) {
 					"deliver_target_map02_lv002_02":         true,
 					"deliver_target_map02_lv002_03":         true,
 					"deliver_target_map02_lv002_recycle_01": true,
+					"deliver_target_map02_lv005_01":         true,
+					"deliver_target_map02_lv005_02":         true,
+					"deliver_target_map02_lv005_03":         true,
 				}
 				if (dest.FixedRouteNode != "") != fixedDestinations[dest.ID] {
 					t.Fatalf("unexpected fixed destination: %s", dest.ID)
