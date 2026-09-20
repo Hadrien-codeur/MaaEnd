@@ -91,9 +91,10 @@ pnpm test
 七条正式送货路线通过后，更新上游必须先在候选 worktree 中运行固定路线兼容检查：
 
 ```powershell
+.\tools\fixed-delivery\stage-upstream-update.ps1
 $env:PYTHONIOENCODING = 'utf-8'
 python tools/fixed-delivery/check_compatibility.py
 python tools/fixed-delivery/check_compatibility.py --json
 ```
 
-检查契约维护在 `tools/fixed-delivery/compatibility.json`。检查器只报告兼容性，不会覆盖候选文件或静默修复上游变化。完整更新顺序见 [版本兼容与自动接入方案](../../docs/zh_cn/dev-notes/新版固定滑索版本兼容与自动接入方案.md)。
+脚本会先应用路线 overlay，再运行检查器；当前上游缺少固定路线核心接口时会保留候选并失败退出。检查契约维护在 `tools/fixed-delivery/compatibility.json`。检查器只报告兼容性，不会静默修复上游变化。完整更新顺序见 [版本兼容与自动接入方案](../../docs/zh_cn/dev-notes/新版固定滑索版本兼容与自动接入方案.md)。
