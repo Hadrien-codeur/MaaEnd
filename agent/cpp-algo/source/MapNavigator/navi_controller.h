@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,10 @@ struct NaviParam
     // 这条路线允许不允许借滑索。默认关：没有显式写 zip 的请求一律纯走路，既不去找最近的
     // 滑索也不做加速，规划结果与没有滑索这件事时逐位相同。
     bool zipline_enabled = false;
+    // Nonempty only for an authored fixed route. Fixed routes refuse automatic fallback.
+    std::string fixed_zipline_route;
+    std::vector<Waypoint> fixed_approach_path;
+    std::vector<Waypoint> fixed_departure_path;
     // Scene 初始化时由 CaptureUid 写入隐藏 Pipeline 节点的伪匿名账号标识。滑索记录必须先按
     // 此字段隔离，再按地图筛选；空值时宁可步行，也不能猜一个账号的数据。
     std::string zipline_account_id;

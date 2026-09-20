@@ -83,6 +83,48 @@
             }
         }
     },
+    "AutoDeliveryRouteDepotDomain2Lv002Depot1WithFixedZipline": {
+        "desc": "AutoDelivery 仓储路线：前往武陵城仓储节点，使用固定滑索（domain_2_lv002_depot_1）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        956.407,
+                        1831.725
+                    ],
+                    "target_deck_y": 278.757
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        950.498,
+                        1832.767
+                    ],
+                    "target_deck_y": 278.757
+                }
+            ],
+            "zip": true,
+            "fixed_zipline_route": "wuling_city_pickup"
+        },
+        "post_delay": 0,
+        "rate_limit": 0,
+        "focus": {
+            "Node.Action.Succeeded": {
+                "trace": true
+            },
+            "Node.Action.Failed": {
+                "trace": true
+            }
+        }
+    },
     "AutoDeliveryRouteDepotRetryDomain2Lv002Depot1": {
         "desc": "AutoDelivery 仓储站位修正路线：武陵城仓储节点（domain_2_lv002_depot_1）",
         "pre_delay": 0,
@@ -178,6 +220,106 @@
                 }
             ],
             "zip": true
+        },
+        "post_delay": 0,
+        "rate_limit": 0,
+        "focus": {
+            "Node.Action.Succeeded": {
+                "trace": true
+            },
+            "Node.Action.Failed": {
+                "trace": true
+            }
+        }
+    },
+    "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00201WithFixedZipline": {
+        "desc": "AutoDelivery 终点路线：从武陵城仓储节点前往苏白易，使用固定滑索（deliver_target_map02_lv002_01）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        538.031,
+                        1250.27
+                    ],
+                    "target_deck_y": 275.148
+                }
+            ],
+            "zip": true,
+            "fixed_zipline_route": "wuling_city_subaiyi",
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    537.86,
+                    1269.57
+                ],
+                [
+                    537.95,
+                    1268.94
+                ],
+                [
+                    538.37,
+                    1267.02
+                ],
+                [
+                    538.79,
+                    1265.18
+                ],
+                [
+                    539.15,
+                    1263.33
+                ],
+                [
+                    539.55,
+                    1261.4
+                ],
+                [
+                    540.01,
+                    1259.53
+                ],
+                [
+                    540.42,
+                    1257.67
+                ],
+                [
+                    540.76,
+                    1255.76
+                ],
+                [
+                    541.19,
+                    1253.86
+                ],
+                [
+                    541.53,
+                    1251.68
+                ],
+                [
+                    541.58,
+                    1251.15
+                ],
+                [
+                    540.56,
+                    1250.9
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        538.75,
+                        1250.66
+                    ],
+                    "strict_arrival": true
+                }
+            ]
         },
         "post_delay": 0,
         "rate_limit": 0,
@@ -297,6 +439,123 @@
             }
         }
     },
+    "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00202WithFixedZipline": {
+        "desc": "AutoDelivery 终点路线：从武陵城仓储节点前往普里莫·林德，使用固定滑索（deliver_target_map02_lv002_02）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        461.92,
+                        1712.802
+                    ],
+                    "target_deck_y": 315.37
+                }
+            ],
+            "zip": true,
+            "fixed_zipline_route": "wuling_city_lind",
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    952.84,
+                    1832.95
+                ],
+                [
+                    953.86,
+                    1832.9
+                ],
+                [
+                    955.75,
+                    1832.86
+                ],
+                [
+                    957.7,
+                    1832.87
+                ],
+                [
+                    959.55,
+                    1832.83
+                ],
+                [
+                    961.39,
+                    1832.63
+                ],
+                [
+                    961.28,
+                    1831.17
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    473.58,
+                    1718.96
+                ],
+                [
+                    472.05,
+                    1717.99
+                ],
+                [
+                    470.39,
+                    1717.16
+                ],
+                [
+                    468.68,
+                    1716.36
+                ],
+                [
+                    466.99,
+                    1715.5
+                ],
+                [
+                    465.32,
+                    1714.57
+                ],
+                [
+                    463.57,
+                    1713.62
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        462.71,
+                        1713.21
+                    ],
+                    "strict_arrival": true
+                },
+                {
+                    "action": "HEADING",
+                    "target": [
+                        461.93,
+                        1713.43
+                    ]
+                }
+            ]
+        },
+        "post_delay": 0,
+        "rate_limit": 0,
+        "focus": {
+            "Node.Action.Succeeded": {
+                "trace": true
+            },
+            "Node.Action.Failed": {
+                "trace": true
+            }
+        }
+    },
     "AutoDeliveryRouteDestinationRetryDeliverTargetMap02Lv00202": {
         "desc": "AutoDelivery 终点站位修正路线：普里莫·林德（deliver_target_map02_lv002_02）",
         "pre_delay": 0,
@@ -392,6 +651,143 @@
                 }
             ],
             "zip": true
+        },
+        "post_delay": 0,
+        "rate_limit": 0,
+        "focus": {
+            "Node.Action.Succeeded": {
+                "trace": true
+            },
+            "Node.Action.Failed": {
+                "trace": true
+            }
+        }
+    },
+    "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00203WithFixedZipline": {
+        "desc": "AutoDelivery 终点路线：从武陵城仓储节点前往于施，使用固定滑索（deliver_target_map02_lv002_03）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        894.615,
+                        1408.425
+                    ],
+                    "target_deck_y": 265.279
+                }
+            ],
+            "zip": true,
+            "fixed_zipline_route": "wuling_city_yushi",
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    952.84,
+                    1832.95
+                ],
+                [
+                    953.86,
+                    1832.9
+                ],
+                [
+                    955.75,
+                    1832.86
+                ],
+                [
+                    957.7,
+                    1832.87
+                ],
+                [
+                    959.55,
+                    1832.83
+                ],
+                [
+                    961.39,
+                    1832.63
+                ],
+                [
+                    961.28,
+                    1831.17
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    898.4,
+                    1407.4
+                ],
+                [
+                    899.76,
+                    1407.57
+                ],
+                [
+                    900.82,
+                    1409.1
+                ],
+                [
+                    901.32,
+                    1410.87
+                ],
+                [
+                    901.32,
+                    1412.71
+                ],
+                [
+                    900.88,
+                    1414.61
+                ],
+                [
+                    899.87,
+                    1416.11
+                ],
+                [
+                    898.07,
+                    1416.48
+                ],
+                [
+                    896.39,
+                    1415.65
+                ],
+                [
+                    895.18,
+                    1414.2
+                ],
+                [
+                    894.7,
+                    1412.26
+                ],
+                [
+                    894.67,
+                    1410.39
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        894.71,
+                        1409.1
+                    ],
+                    "strict_arrival": true
+                },
+                {
+                    "action": "HEADING",
+                    "target": [
+                        894.97,
+                        1407.6
+                    ]
+                }
+            ]
         },
         "post_delay": 0,
         "rate_limit": 0,
@@ -517,6 +913,116 @@
                 }
             ],
             "zip": true
+        },
+        "post_delay": 0,
+        "rate_limit": 0,
+        "focus": {
+            "Node.Action.Succeeded": {
+                "trace": true
+            },
+            "Node.Action.Failed": {
+                "trace": true
+            }
+        }
+    },
+    "AutoDeliveryRouteDestinationDeliverTargetMap02Lv002Recycle01WithFixedZipline": {
+        "desc": "AutoDelivery 终点路线：从武陵城仓储节点前往火锅探店达人，使用固定滑索（deliver_target_map02_lv002_recycle_01）",
+        "pre_delay": 0,
+        "action": "Custom",
+        "custom_action": "MapNavigateAction",
+        "custom_action_param": {
+            "path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        512.093,
+                        1656.682
+                    ],
+                    "target_deck_y": 325.819
+                },
+                {
+                    "action": "NAVMESH",
+                    "target": [
+                        513.135,
+                        1650.773
+                    ],
+                    "target_deck_y": 325.819
+                }
+            ],
+            "zip": true,
+            "fixed_zipline_route": "wuling_city_recycle",
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    952.84,
+                    1832.95
+                ],
+                [
+                    953.86,
+                    1832.9
+                ],
+                [
+                    955.75,
+                    1832.86
+                ],
+                [
+                    957.7,
+                    1832.87
+                ],
+                [
+                    959.55,
+                    1832.83
+                ],
+                [
+                    961.39,
+                    1832.63
+                ],
+                [
+                    961.28,
+                    1831.17
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    510.94,
+                    1652.51
+                ],
+                [
+                    511.5,
+                    1653.55
+                ],
+                [
+                    511.9,
+                    1654.64
+                ],
+                [
+                    513.02,
+                    1654.86
+                ],
+                [
+                    513.23,
+                    1653.47
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        513.33,
+                        1652.14
+                    ],
+                    "strict_arrival": true
+                }
+            ]
         },
         "post_delay": 0,
         "rate_limit": 0,

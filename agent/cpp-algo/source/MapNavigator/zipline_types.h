@@ -49,6 +49,9 @@ struct ZiplineHopPlan
     std::vector<ZiplineMountSpot> mount_spots;
     // 落点就是下一跳的上索架: 落地不下索, 直接接着瞄
     bool chain_continues = false;
+    // Fixed-route continuous segment length, excluding the initial mouse launch.
+    size_t relay_hops = 0;
+    std::optional<double> dismount_heading;
 };
 
 enum class LandingClass

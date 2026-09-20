@@ -2437,5 +2437,7 @@
     "option.AutoCollectValleyIVCommonRoutes.label": "一般採集物",
     "option.AutoCollectWuling.label": "武陵",
     "option.AutoCollectWulingRareRoutes.label": "稀有採集物",
-    "option.AutoCollectWulingCommonRoutes.label": "一般採集物"
+    "option.AutoCollectWulingCommonRoutes.label": "一般採集物",
+    "task.AutoDeliveryFixedZipline.label": "使用已設定的固定滑索路線",
+    "task.AutoDeliveryFixedZipline.description": "僅支援 Win32 前台。開啟後，已設定的武陵城與實驗園區固定路線使用固定架序，依各自設定的路段連滑；未設定終點繼續自動規劃。固定路線無法使用或執行失敗時停止。關閉後恢復一般自動滑索規劃。全域禁止滑索時改走步行路線。"
 }

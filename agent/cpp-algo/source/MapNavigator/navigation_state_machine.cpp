@@ -463,6 +463,8 @@ bool NavigationStateMachine::Run()
 bool NavigationStateMachine::Bootstrap()
 {
     runtime_state_.BeginNavigation(std::chrono::steady_clock::now());
+    runtime_state_.fixed_zipline_route = param_.fixed_zipline_route;
+    runtime_state_.has_fixed_departure_path = !param_.fixed_departure_path.empty();
     sensitivity::BeginRun();
 
     // 线路可以关掉起步 A*：两条取锚点的路子最后都要 PlanNavmeshRoute，跳过就等于不规划起步，

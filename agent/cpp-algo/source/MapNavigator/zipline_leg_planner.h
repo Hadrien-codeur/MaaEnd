@@ -40,6 +40,9 @@ struct ZiplineRoute
     // 与 towers 逐跳对应(最后一根没有)：这根架子上除了下一跳以外还挂着索通向哪些架子。
     // 执行侧拿它当落地定位的备选先验，挂错索也认得出落在哪。
     std::vector<std::vector<zipline::ZiplineNode>> hop_alternates;
+    // Fixed-route relay budget for each authored segment; zero means ordinary hop handling.
+    std::vector<size_t> relay_hops;
+    std::optional<double> dismount_heading;
     // 折算成等效走路距离的总代价，与 baseline_length 可直接比大小。
     double cost = 0.0;
     // 链首上索要依次试的站位，执行侧按顺序走，认不出提示就换下一个。

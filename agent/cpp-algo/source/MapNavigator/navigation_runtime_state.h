@@ -9,6 +9,7 @@
 #include "navi_domain_types.h"
 #include "prompt_scan_profile.h"
 #include "zipline_ride_machine.h"
+#include "zipline_relay_state.h"
 
 namespace mapnavigator
 {
@@ -412,6 +413,10 @@ struct NavigationRuntimeState
     ZiplineRecoveryState zipline_recovery;
     // 正在滑的这一跳和这趟导航每一跳的账本。账本跨越丢链和重规划, 只由 BeginNavigation 清
     ZiplineRideMachine zipline_ride;
+    std::string fixed_zipline_route;
+    bool has_fixed_departure_path = false;
+    ZiplineRelayCounter zipline_relay;
+    size_t zipline_relay_end_index = 0;
     // 置于顶层且不参与任何 Reset: 禁区按世界坐标记录障碍, 生命周期为整趟导航, 仅由 BeginNavigation 清空。
     // 若随重规划一并清零, 下一次规划会再次穿过刚判定出障碍的位置。
     std::vector<VirtualNoGoDisc> virtual_no_go;
@@ -453,6 +458,8 @@ struct NavigationRuntimeState
         zipline_recovery.Reset();
         find.Reset();
         zipline_ride.ResetNavigation();
+        zipline_relay = {};
+        zipline_relay_end_index = 0;
         virtual_no_go.clear();
         progress_identity.Reset();
         global_reacquire_streak = 0;

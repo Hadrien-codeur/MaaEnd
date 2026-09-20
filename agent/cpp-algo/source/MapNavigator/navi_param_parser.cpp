@@ -633,6 +633,7 @@ struct NaviParamInput
     double navmesh_snap_radius_ = 5.0;
     double snap_radius_ = 5.0;
     bool zip_ = false;
+    std::string fixed_zipline_route_;
     NaviActionListInput action_;
     NaviActionListInput actions_;
     double x_ = 0.0;
@@ -669,6 +670,7 @@ struct NaviParamInput
         MEO_OPT MEO_KEY("snap_radius") snap_radius_,
         MEO_OPT MEO_KEY("action") action_,
         MEO_OPT MEO_KEY("actions") actions_,
+        MEO_OPT MEO_KEY("fixed_zipline_route") fixed_zipline_route_,
         MEO_OPT MEO_KEY("x") x_,
         MEO_OPT MEO_KEY("y") y_,
         MEO_OPT MEO_KEY("angle") angle_,
@@ -745,6 +747,7 @@ NaviParam build_navi_param(const NaviParamInput& input)
     param.sprint_threshold = input.sprint_threshold_;
     param.enable_local_driver = input.enable_local_driver_;
     param.zipline_enabled = input.zip_;
+    param.fixed_zipline_route = input.fixed_zipline_route_;
     param.enable_bootstrap_navmesh = input.enable_bootstrap_navmesh_;
 
     if (input.has_navmesh_file_) {
@@ -1173,6 +1176,45 @@ bool TryParseNaviParam(const json::value& custom_action_param, NaviParam& out_pa
         NaviWaypointInput waypoint;
         if (!waypoint.from_json(custom_action_param) || !append_parsed_waypoint(waypoint, param.path, zone_context)) {
             LogError << "Failed to parse " << caller_name_text << " waypoint from custom_action_param object.";
+            return false;
+        }
+    }
+
+    if (custom_action_param.exists("fixed_zipline_route")
+        && (param.fixed_zipline_route.find_first_not_of(" \t\r\n") == std::string::npos || !param.zipline_enabled || param.path.empty())) {
+        LogError << "Fixed zipline route requires a nonempty id, zip=true and a destination path.";
+        return false;
+    }
+    for (const auto& [key, path] : {
+             std::pair { std::string("fixed_approach_path"), &param.fixed_approach_path },
+             std::pair { std::string("fixed_departure_path"), &param.fixed_departure_path },
+         }) {
+        if (!custom_action_param.exists(key)) {
+            continue;
+        }
+        NaviParamInput ground_input;
+        std::string ground_zone = param.map_name;
+        if (param.fixed_zipline_route.empty() || !custom_action_param.at(key).is_array()
+            || !ground_input.from_json(json::object { { "path", custom_action_param.at(key) } })
+            || !append_parsed_waypoints(ground_input.path_, *path, ground_zone, caller_name_text) || path->empty()) {
+            LogError << "Fixed ground path requires a fixed route and a nonempty waypoint array." << VAR(key);
+            return false;
+        }
+        bool has_position = false;
+        for (size_t index = 0; index < path->size(); ++index) {
+            const auto& point = (*path)[index];
+            const bool final_heading = path == &param.fixed_departure_path && index + 1 == path->size()
+                                       && point.action == ActionType::HEADING && has_position;
+            if (!final_heading && point.action != ActionType::RUN && point.action != ActionType::NAVMESH
+                && !point.IsZoneDeclaration()) {
+                LogError << "Fixed ground path only supports movement, an initial zone and a final departure heading."
+                         << VAR(key);
+                return false;
+            }
+            has_position = has_position || point.action == ActionType::RUN || point.action == ActionType::NAVMESH;
+        }
+        if (!has_position) {
+            LogError << "Fixed ground path has no movement target." << VAR(key);
             return false;
         }
     }

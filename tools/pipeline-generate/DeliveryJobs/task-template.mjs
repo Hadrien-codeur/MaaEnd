@@ -301,6 +301,7 @@ function buildOngoingDeliveryFallbackOption() {
 function buildAutoDeliveryPreferZiplineOption() {
     const buildCase = (name, zip) => ({
         name,
+        ...(zip ? {option: ["DeliveryJobsAutoDeliveryFixedZipline"]} : {}),
         pipeline_override: Object.fromEntries(
             AUTO_DELIVERY_NAVIGATE_NODES.map((node) => [
                 node,
@@ -443,6 +444,25 @@ function buildTaskOptions() {
     }
 
     options.DeliveryJobsAutoDeliveryPreferZipline = buildAutoDeliveryPreferZiplineOption();
+    options.DeliveryJobsAutoDeliveryFixedZipline = {
+        type: "switch",
+        label: "$task.AutoDeliveryFixedZipline.label",
+        description: "$task.AutoDeliveryFixedZipline.description",
+        controller: ["Win32-Front"],
+        default_case: "No",
+        cases: [
+            false,
+            true,
+        ].map((fixedZipline) => ({
+            name: fixedZipline ? "Yes" : "No",
+            pipeline_override: Object.fromEntries(
+                AUTO_DELIVERY_NAVIGATE_NODES.map((node) => [
+                    node,
+                    {attach: {fixed_zipline: fixedZipline}},
+                ]),
+            ),
+        })),
+    };
     options.DeliveryJobsOngoingDeliveryFallback = buildOngoingDeliveryFallbackOption();
     options.PackCargoSelectItem = {
         type: "switch",

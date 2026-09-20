@@ -34,8 +34,16 @@ namespace
 
 // 跑一个 pipeline 节点, 回答这一趟里点名的那个节点认没认出来。识别不中的节点不会进这一趟的
 // 节点表, 所以「表里有且 completed」等于提示确实在屏幕上、动作也确实发了出去。
-bool RunNodeAndReportHit(MaaContext* context, const char* entry, const char* node, const std::string& pipeline_override)
+bool RunNodeAndReportHit(
+    MaaContext* context,
+    const char* entry,
+    const char* node,
+    const std::string& pipeline_override,
+    bool* succeeded = nullptr)
 {
+    if (succeeded != nullptr) {
+        *succeeded = false;
+    }
     MaaTasker* tasker = MaaContextGetTasker(context);
     if (tasker == nullptr) {
         return false;
@@ -64,10 +72,17 @@ bool RunNodeAndReportHit(MaaContext* context, const char* entry, const char* nod
         MaaActId action_id = 0;
         MaaBool completed = 0;
         if (node_name.Get() == nullptr || !MaaTaskerGetNodeDetail(tasker, node_id, node_name.Get(), &reco_id, &action_id, &completed)) {
+            if (succeeded != nullptr) {
+                *succeeded = false;
+                return false;
+            }
             continue;
         }
         const char* raw = MaaStringBufferGet(node_name.Get());
         if (raw != nullptr && std::strcmp(raw, node) == 0) {
+            if (succeeded != nullptr) {
+                *succeeded = status == MaaStatus_Succeeded && completed != 0;
+            }
             return completed != 0;
         }
     }
@@ -271,8 +286,16 @@ Result FinishHop(const Context& ctx, const HopCompleted& done)
     result.consumed = true;
     result.stay_in_current_tick = true;
 
-    ctx.session->NoteCanonicalFinalGoalConsumed(ctx.session->CurrentAbsoluteNodeIndex(), done.at, "zipline_ride_complete");
-    ctx.session->AdvanceToNextWaypoint(ActionType::ZIPLINE, "zipline_ride_complete");
+    const size_t relay_end_index = ctx.runtime_state->zipline_relay_end_index;
+    if (ctx.runtime_state->zipline_relay.required > 0 && relay_end_index >= ctx.session->current_node_idx()) {
+        ctx.session->SkipPastWaypoint(relay_end_index, "zipline_relay_endpoint_confirmed");
+    }
+    else {
+        ctx.session->NoteCanonicalFinalGoalConsumed(ctx.session->CurrentAbsoluteNodeIndex(), done.at, "zipline_ride_complete");
+        ctx.session->AdvanceToNextWaypoint(ActionType::ZIPLINE, "zipline_ride_complete");
+    }
+    ctx.runtime_state->zipline_relay = {};
+    ctx.runtime_state->zipline_relay_end_index = 0;
     ctx.runtime_state->OnWaypointAdvance();
     LogInfo << "Action: ZIPLINE ride landed." << VAR(done.at.x) << VAR(done.at.y) << VAR(done.still_on_tower);
     if (!done.at.zone_id.empty()) {
@@ -354,6 +377,16 @@ bool CurrentHopStartsUnderfoot(const Context& ctx)
 
 Result AbandonZipline(const Context& ctx, const char* reason, const char* detail)
 {
+    if (!ctx.runtime_state->fixed_zipline_route.empty()) {
+        StopMotionAndCommitment(ctx);
+        LogError << "Fixed zipline route failed; stopping without fallback." << VAR(ctx.runtime_state->fixed_zipline_route)
+                 << VAR(reason) << VAR(detail) << VAR(ctx.session->current_node_idx());
+        Result result;
+        result.request_failure = true;
+        result.failure_reason = reason;
+        result.failure_log_message = detail;
+        return result;
+    }
     return DropChainAndRecover(ctx, reason, detail, /*stay_on_tower=*/false);
 }
 
@@ -410,9 +443,33 @@ Result StartZiplineHop(const Context& ctx, const Waypoint& waypoint, double actu
         ctx.runtime_state->zipline_approach.press_missed = false;
     }
 
-    ride.Begin(*waypoint.zipline_hop);
-    LogInfo << "Action: ZIPLINE hop started." << VAR(waypoint.zipline_hop->landing.x) << VAR(waypoint.zipline_hop->landing.y)
-            << VAR(waypoint.zipline_hop->planned_elevation_deg) << VAR(waypoint.zipline_hop->chain_continues) << VAR(actual_distance);
+    ZiplineHopPlan plan = *waypoint.zipline_hop;
+    if (plan.relay_hops > 0) {
+        const auto& path = ctx.session->current_path();
+        const size_t start_index = ctx.session->current_node_idx();
+        const size_t end_index = start_index + plan.relay_hops - 1;
+        if (end_index >= path.size()) {
+            return AbandonZipline(ctx, "zipline_relay_invalid", "continuous segment exceeds the fixed route");
+        }
+        for (size_t index = start_index; index <= end_index; ++index) {
+            if (path[index].action != ActionType::ZIPLINE || !path[index].zipline_hop) {
+                return AbandonZipline(ctx, "zipline_relay_invalid", "continuous segment crosses a non-zipline waypoint");
+            }
+        }
+        plan.landing = path[end_index].zipline_hop->landing;
+        plan.chain_continues = false;
+        ctx.runtime_state->zipline_relay = { .required = plan.relay_hops - 1 };
+        ctx.runtime_state->zipline_relay_end_index = end_index;
+        LogInfo << "ZIPLINE relay started after initial mouse launch; no intermediate localization."
+                << VAR(plan.relay_hops) << VAR(ctx.runtime_state->zipline_relay.required) << VAR(end_index);
+    }
+    else {
+        ctx.runtime_state->zipline_relay = {};
+        ctx.runtime_state->zipline_relay_end_index = 0;
+    }
+    ride.Begin(plan);
+    LogInfo << "Action: ZIPLINE hop started." << VAR(plan.landing.x) << VAR(plan.landing.y)
+            << VAR(plan.planned_elevation_deg) << VAR(plan.chain_continues) << VAR(actual_distance);
     // 航点等落地再推进: 起滑那一刻人还在上索点, 这条链就算已经是路线的尾巴也不能在这里收工
     ctx.session->UpdatePhase(NaviPhase::WaitZipline, "zipline_hop_started");
     result.consumed = true;
@@ -429,6 +486,45 @@ Result TickZiplineRide(const Context& ctx)
     ZiplineRideMachine& ride = ctx.runtime_state->zipline_ride;
     if (ride.stage() == ZiplineStage::Idle) {
         return AbandonZipline(ctx, "zipline_ride_idle", "waiting on a ride that is not running");
+    }
+    auto& relay = ctx.runtime_state->zipline_relay;
+    if (relay.required > 0 && !relay.readyForLanding()) {
+        MaaTasker* tasker = ctx.maa_context == nullptr ? nullptr : MaaContextGetTasker(ctx.maa_context);
+        if (tasker == nullptr || MaaTaskerStopping(tasker)) {
+            return AbandonZipline(ctx, "zipline_relay_cancelled", "continuous relay cancelled before another input");
+        }
+        const bool press = relay.canPress();
+        const bool was_waiting_clear = relay.awaiting_clear;
+        bool succeeded = false;
+        const bool visible = RunNodeAndReportHit(
+            ctx.maa_context,
+            press ? "MapNavigatorZiplineRelayPressStart" : "MapNavigatorZiplineRelayObserveStart",
+            press ? "MapNavigatorZiplineRelayPress" : "MapNavigatorZiplineRelayObserve",
+            "{}",
+            &succeeded);
+        if (MaaTaskerStopping(tasker)) {
+            return AbandonZipline(ctx, "zipline_relay_cancelled", "continuous relay cancelled during prompt recognition");
+        }
+        if (!succeeded) {
+            return AbandonZipline(ctx, "zipline_relay_pipeline_failed", "relay recognition or key action failed");
+        }
+        if (press && visible) {
+            relay.commitPress();
+            LogInfo << "ZIPLINE relay E pressed; waiting for prompt disappearance." << VAR(relay.pressed) << VAR(relay.required);
+        }
+        else {
+            relay.observe(visible);
+            if (was_waiting_clear && !visible) {
+                LogInfo << "ZIPLINE relay prompt consumed." << VAR(relay.pressed) << VAR(relay.required);
+            }
+        }
+        if (relay.readyForLanding()) {
+            ctx.position_provider->ResetTracking();
+            LogInfo << "ZIPLINE relay input complete; checking only the segment endpoint." << VAR(relay.pressed);
+        }
+        utils::SleepFor(kZiplineRideRetryIntervalMs);
+        result.stay_in_current_tick = true;
+        return result;
     }
     RuntimeZiplineObserver observer(ctx);
     RuntimeZiplineActuator actuator(ctx);

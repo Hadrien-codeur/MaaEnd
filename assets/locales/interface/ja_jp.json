@@ -2437,5 +2437,7 @@
     "option.AutoCollectValleyIVCommonRoutes.label": "一般採集物",
     "option.AutoCollectWuling.label": "武陵",
     "option.AutoCollectWulingRareRoutes.label": "レア採集物",
-    "option.AutoCollectWulingCommonRoutes.label": "一般採集物"
+    "option.AutoCollectWulingCommonRoutes.label": "一般採集物",
+    "task.AutoDeliveryFixedZipline.label": "設定済みの固定ジップラインルートを使用",
+    "task.AutoDeliveryFixedZipline.description": "Win32 前面操作のみ対応。設定済みの武陵城と実験区域のルートで固定された支柱順を使用し、各ルートに設定された区間では連続滑走します。未設定の目的地は自動経路を使用します。固定ルートが利用不可、または実行に失敗した場合は停止します。無効にすると通常の自動ジップライン経路に戻ります。全体設定でジップラインが禁止されている場合は徒歩ルートを使用します。"
 }

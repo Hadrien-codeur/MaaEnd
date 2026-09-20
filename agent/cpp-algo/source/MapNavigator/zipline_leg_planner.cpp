@@ -15,7 +15,10 @@
 
 #include <MaaUtils/Logger.h>
 
+#include "../Common/JsoncFile.h"
 #include "../Zipline/ZiplineStore.h"
+#include "../utils.h"
+#include "fixed_zipline_route.h"
 #include "navi_controller.h"
 #include "navmesh_path_expander.h"
 
@@ -36,6 +39,22 @@ thread_local bool g_zipline_not_chosen = false;
 // 一次请求里最多额外跑几条 navmesh 规划。候选是成对的，不设上限的话，滑索密集的地图
 // 会把规划耗时抬高一个量级；触顶后只拿已经算出来的候选做决策，并在日志里说明截断。
 constexpr size_t kMaxExtraPlans = 12;
+
+std::optional<FixedZiplineRoute> load_fixed_route(const std::string& route_id)
+{
+    const auto path = get_exe_dir() / ".." / "data" / "MapNavigator" / "fixed_zipline_routes.json";
+    const auto parsed = common::OpenJsoncFile(path);
+    if (!parsed) {
+        LogError << "ZiplineRoute: fixed route file missing or malformed" << VAR(path) << VAR(route_id);
+        return std::nullopt;
+    }
+    std::string error;
+    auto route = ParseFixedZiplineRoute(*parsed, route_id, error);
+    if (!route) {
+        LogError << "ZiplineRoute: fixed route rejected" << VAR(route_id) << VAR(error);
+    }
+    return route;
+}
 
 // 供电结构离架子这么近才谈得上抢走交互面板, 更远的没必要给它让位。
 constexpr double kMountPoleClearPx = 5.0;
@@ -566,7 +585,10 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
     // outcome 指向这条腿该记进哪本账：「这里没滑索可用」和「有滑索但没选中」指向的操作不同，
     // 混成一句会把用户带偏。传 nullptr 表示这条腿不记账，理由见各调用点。
     const auto no_zipline = [&](const char* why, bool* outcome) -> std::optional<ZiplineRoute> {
-        if (walking_baseline_available) {
+        if (!param.fixed_zipline_route.empty()) {
+            LogError << "ZiplineRoute: fixed route unavailable; refusing fallback" << VAR(param.fixed_zipline_route) << VAR(why);
+        }
+        else if (walking_baseline_available) {
             LogInfo << "ZiplineRoute: walking this leg instead." << VAR(why) << VAR(navmesh_zone);
         }
         else {
@@ -596,6 +618,13 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
     // map_id 留空表示这个区还没绑定到具体哪张森空岛地图，此时已导入的标记全部纳入候选：
     // 坐标对不上的那些接不上网格，在规划预算之内就被淘汰掉。
     std::vector<zipline::ZiplineNode> nodes;
+    std::optional<FixedZiplineRoute> fixed_route;
+    if (!param.fixed_zipline_route.empty()) {
+        fixed_route = load_fixed_route(param.fixed_zipline_route);
+        if (!fixed_route || (!frame->map_id.empty() && frame->map_id != fixed_route->map_id)) {
+            return no_zipline("fixed route invalid or on another map", &g_zipline_no_data);
+        }
+    }
     // 供电结构的落点也投一份到像素平面: 通电判定用的是世界坐标, 而让位算的是人站在哪
     std::vector<navmesh::WorldPoint> supply_points;
     size_t unpowered = 0;
@@ -641,6 +670,16 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
         LogDebug << "ZiplineRoute: left out the ziplines no power reaches" << VAR(unpowered) << VAR(nodes.size());
     }
 
+    if (fixed_route) {
+        std::string error;
+        auto ordered = MatchFixedZiplineRoute(*fixed_route, nodes, error);
+        if (!ordered) {
+            return no_zipline(error.c_str(), &g_zipline_no_data);
+        }
+        nodes = std::move(*ordered);
+        LogInfo << "ZiplineRoute: uniquely matched full fixed route" << VAR(param.fixed_zipline_route) << VAR(nodes.size());
+    }
+
     if (nodes.size() < 2) {
         return no_zipline("no powered ziplines recorded in this zone", &g_zipline_no_data);
     }
@@ -650,7 +689,8 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
     // 可比较的基线，任何能把起终两侧可走面接起来的连续链都优先于盲走和作者路径回退。
     const zipline::ZiplineCostModel& cost = data->frames.cost();
     const double baseline_length = walking_baseline_available ? PolylineLength(*walking_path) : 0.0;
-    const double gain_threshold = walking_baseline_available ? baseline_length - cost.min_gain : std::numeric_limits<double>::infinity();
+    const double gain_threshold = walking_baseline_available && !fixed_route ? baseline_length - cost.min_gain
+                                                                                : std::numeric_limits<double>::infinity();
     // 走路短到白送一整段滑行都追不平上索的开销时，下面的吸附和规划都不必做了。
     if (walking_baseline_available && gain_threshold <= cost.mount_penalty) {
         return no_zipline("the walk is too short for any zipline to pay off", &g_zipline_not_chosen);
@@ -760,6 +800,17 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
 
     // 一条路线用几条索由代价决定，不设跳数上限：换乘要收钱，划不来的长链自己就被淘汰了。
     ZipLinkGraph graph = BuildLinks(nodes, span_limit, footprints);
+    if (fixed_route) {
+        for (size_t i = 0; i < graph.all.size(); ++i) {
+            graph.all[i].erase(
+                std::remove_if(graph.all[i].begin(), graph.all[i].end(), [&](size_t j) { return j != i + 1; }),
+                graph.all[i].end());
+            graph.certain[i].erase(
+                std::remove_if(graph.certain[i].begin(), graph.certain[i].end(), [&](size_t j) { return j != i + 1; }),
+                graph.certain[i].end());
+        }
+        LogInfo << "ZiplineRoute: constrained fixed route edges to authored order" << VAR(param.fixed_zipline_route);
+    }
 
     const auto drop_from_graph = [&graph](size_t a, size_t b) {
         DropEdge(graph.all, a, b);
@@ -845,14 +896,15 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
     std::vector<size_t> certain_prev;
     for (size_t i = 0; i < nodes.size(); ++i) {
         // 这根架子连白送一整段滑行都够不着收益门槛，从它起头的所有链就都不必算了。
-        if (!can_board[i] || graph.all[i].empty() || lb_from_start[i] + cost.mount_penalty >= gain_threshold) {
+        if ((fixed_route && i != 0) || !can_board[i] || graph.all[i].empty()
+            || lb_from_start[i] + cost.mount_penalty >= gain_threshold) {
             continue;
         }
 
         SolveZipChains(nodes, graph.certain, cost, i, &certain_cost, &certain_prev);
         SolveZipChains(nodes, graph.all, cost, i, &chain_cost, &chain_prev);
         for (size_t j = 0; j < nodes.size(); ++j) {
-            if (j == i || !can_land[j]) {
+            if ((fixed_route && j + 1 != nodes.size()) || j == i || !can_land[j]) {
                 continue;
             }
             // 两档各记一个候选，不确定那档只在确实更便宜时才多记一条。哪档先用由下面的两趟
@@ -1040,6 +1092,15 @@ std::optional<ZiplineRoute> PlanZiplineRoute(
         }
         if (departure != nullptr && departure->has_value()) {
             best->diagnostics.push_back((*departure)->diagnostic);
+        }
+    }
+    if (fixed_route) {
+        best->relay_hops.assign(best->towers.size() - 1, 0);
+        best->dismount_heading = fixed_route->dismount_heading;
+        for (const auto& segment : fixed_route->continuous_segments) {
+            if (segment.first < best->relay_hops.size()) {
+                best->relay_hops[segment.first] = segment.last - segment.first;
+            }
         }
     }
     // 只有链首那一根要按提示上索, 中途都是从索上落到下一根架子上的

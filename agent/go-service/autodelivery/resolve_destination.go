@@ -110,7 +110,7 @@ func (a *AutoDeliveryResolveDestinationAction) Run(ctx *maa.Context, arg *maa.Cu
 			Msg("failed to resolve delivery destination")
 		return false
 	}
-	if err := ctx.OverridePipeline(buildDestinationNavigationOverride(dest, options.Zip)); err != nil {
+	if err := ctx.OverridePipeline(buildDestinationNavigationOverride(dest, options)); err != nil {
 		log.Error().
 			Err(err).
 			Str("component", resolveDestinationActionName).
@@ -136,7 +136,8 @@ func (a *AutoDeliveryResolveDestinationAction) Run(ctx *maa.Context, arg *maa.Cu
 		Float64("areaRunnerUpSimilarity", match.AreaRunnerUp).
 		Str("area", dest.AreaID).
 		Bool("zip", options.Zip).
-		Str("routeNode", selectRouteNode(dest.RouteNode, dest.ZipRouteNode, options.Zip)).
+		Bool("fixedZipline", options.FixedZipline).
+		Str("routeNode", selectRouteNode(dest.RouteNode, dest.ZipRouteNode, dest.FixedRouteNode, options)).
 		Str("retryRouteNode", dest.RetryRouteNode).
 		Msg("resolved delivery job destination")
 	return true
@@ -150,7 +151,7 @@ func destinationDisplayName(dest destination) string {
 	return localizedName(dest.Names, dest.ID)
 }
 
-func buildDestinationNavigationOverride(dest destination, zip bool) map[string]any {
+func buildDestinationNavigationOverride(dest destination, options navigationOptions) map[string]any {
 	override := map[string]any{
 		afterResolveDestinationNode: map[string]any{
 			"next": defaultDestinationFlow(),
@@ -158,7 +159,7 @@ func buildDestinationNavigationOverride(dest destination, zip bool) map[string]a
 		navigateDestinationNode: map[string]any{
 			"custom_action": "SubTask",
 			"custom_action_param": map[string]any{
-				"sub": []string{selectRouteNode(dest.RouteNode, dest.ZipRouteNode, zip)},
+				"sub": []string{selectRouteNode(dest.RouteNode, dest.ZipRouteNode, dest.FixedRouteNode, options)},
 			},
 		},
 		retryNavigateDestinationNode: map[string]any{

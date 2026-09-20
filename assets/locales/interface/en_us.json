@@ -2437,5 +2437,7 @@
     "option.AutoCollectValleyIVCommonRoutes.label": "Common collectibles",
     "option.AutoCollectWuling.label": "Wuling",
     "option.AutoCollectWulingRareRoutes.label": "Rare collectibles",
-    "option.AutoCollectWulingCommonRoutes.label": "Common collectibles"
+    "option.AutoCollectWulingCommonRoutes.label": "Common collectibles",
+    "task.AutoDeliveryFixedZipline.label": "Use configured fixed zipline routes",
+    "task.AutoDeliveryFixedZipline.description": "Win32 foreground only. Use fixed tower sequences for configured Wuling City and Test Area routes, with continuous riding on each configured segment. Unconfigured destinations use automatic routing. Stop if a fixed route is unavailable or fails. Disable to restore automatic zipline routing. A global zipline ban selects the walking route."
 }

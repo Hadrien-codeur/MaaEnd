@@ -382,6 +382,9 @@
                 },
                 {
                     "name": "Yes",
+                    "option": [
+                        "SeizeDeliveryJobsFixedZipline"
+                    ],
                     "pipeline_override": {
                         "AutoDeliveryNavigateDepot": {
                             "attach": {
@@ -391,6 +394,47 @@
                         "AutoDeliveryNavigateDestination": {
                             "attach": {
                                 "zip": true
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsFixedZipline": {
+            "type": "switch",
+            "label": "$task.AutoDeliveryFixedZipline.label",
+            "description": "$task.AutoDeliveryFixedZipline.description",
+            "controller": [
+                "Win32-Front"
+            ],
+            "default_case": "No",
+            "cases": [
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "AutoDeliveryNavigateDepot": {
+                            "attach": {
+                                "fixed_zipline": false
+                            }
+                        },
+                        "AutoDeliveryNavigateDestination": {
+                            "attach": {
+                                "fixed_zipline": false
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "AutoDeliveryNavigateDepot": {
+                            "attach": {
+                                "fixed_zipline": true
+                            }
+                        },
+                        "AutoDeliveryNavigateDestination": {
+                            "attach": {
+                                "fixed_zipline": true
                             }
                         }
                     }

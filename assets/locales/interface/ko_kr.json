@@ -2437,5 +2437,7 @@
     "option.AutoCollectValleyIVCommonRoutes.label": "일반 채집물",
     "option.AutoCollectWuling.label": "무릉",
     "option.AutoCollectWulingRareRoutes.label": "희귀 채집물",
-    "option.AutoCollectWulingCommonRoutes.label": "일반 채집물"
+    "option.AutoCollectWulingCommonRoutes.label": "일반 채집물",
+    "task.AutoDeliveryFixedZipline.label": "설정된 고정 집라인 경로 사용",
+    "task.AutoDeliveryFixedZipline.description": "Win32 전경에서만 지원합니다. 설정된 무릉성 및 실험 구역 경로에서 고정된 지주 순서를 사용하며, 각 경로에 설정된 구간에서는 연속 이동합니다. 설정되지 않은 목적지는 자동 경로를 사용합니다. 고정 경로를 사용할 수 없거나 실행에 실패하면 중지합니다. 끄면 일반 자동 집라인 경로로 돌아갑니다. 전체 설정에서 집라인을 금지하면 도보 경로를 사용합니다."
 }

@@ -1,6 +1,28 @@
 import {depots, destinations, rawJson} from "./model.mjs";
 
-export function buildRows(routeFileId, id, description, path, routeNode, zipRouteNode, walkOnly = false) {
+function buildFixedPath(path) {
+    return path.map((point) => {
+        if (Array.isArray(point) || point.required !== true) {
+            return point;
+        }
+        const {required, ...movement} = point;
+        return movement;
+    });
+}
+
+export function buildRows(
+    routeFileId,
+    id,
+    description,
+    path,
+    routeNode,
+    zipRouteNode,
+    walkOnly = false,
+    fixedZiplineRoute,
+    fixedRouteNode,
+    fixedApproachPath,
+    fixedDeparturePath,
+) {
     return [
         {
             RouteFileId: routeFileId,
@@ -14,6 +36,22 @@ export function buildRows(routeFileId, id, description, path, routeNode, zipRout
             Description: `${description}，${walkOnly ? "仅允许步行" : "允许使用滑索"}（${id}）`,
             ActionParam: rawJson({path, zip: !walkOnly}),
         },
+        ...(!walkOnly && fixedZiplineRoute && fixedRouteNode
+            ? [
+                  {
+                      RouteFileId: routeFileId,
+                      Node: fixedRouteNode,
+                      Description: `${description}，使用固定滑索（${id}）`,
+                      ActionParam: rawJson({
+                          path: buildFixedPath(path),
+                          zip: true,
+                          fixed_zipline_route: fixedZiplineRoute,
+                          ...(fixedApproachPath ? {fixed_approach_path: fixedApproachPath} : {}),
+                          ...(fixedDeparturePath ? {fixed_departure_path: fixedDeparturePath} : {}),
+                      }),
+                  },
+              ]
+            : []),
     ];
 }
 
@@ -27,6 +65,8 @@ export default [
             depot.routeNode,
             depot.zipRouteNode,
             depot.walkOnly,
+            depot.fixedZiplineRoute,
+            depot.fixedRouteNode,
         ),
         ...(depot.retryRouteNode
             ? [
@@ -48,6 +88,10 @@ export default [
             destination.routeNode,
             destination.zipRouteNode,
             destination.walkOnly,
+            destination.fixedZiplineRoute,
+            destination.fixedRouteNode,
+            destination.fixedApproachPath,
+            destination.fixedDeparturePath,
         ),
         ...(destination.retryRouteNode
             ? [

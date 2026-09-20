@@ -109,38 +109,565 @@
         {
             "source_id": "deliver_target_map02_lv002_01",
             "name": "苏白易",
-            "depot_id": "domain_2_lv002_depot_1"
+            "depot_id": "domain_2_lv002_depot_1",
+            "fixed_zipline_route": "wuling_city_subaiyi",
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    537.86,
+                    1269.57
+                ],
+                [
+                    537.95,
+                    1268.94
+                ],
+                [
+                    538.37,
+                    1267.02
+                ],
+                [
+                    538.79,
+                    1265.18
+                ],
+                [
+                    539.15,
+                    1263.33
+                ],
+                [
+                    539.55,
+                    1261.4
+                ],
+                [
+                    540.01,
+                    1259.53
+                ],
+                [
+                    540.42,
+                    1257.67
+                ],
+                [
+                    540.76,
+                    1255.76
+                ],
+                [
+                    541.19,
+                    1253.86
+                ],
+                [
+                    541.53,
+                    1251.68
+                ],
+                [
+                    541.58,
+                    1251.15
+                ],
+                [
+                    540.56,
+                    1250.9
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        538.75,
+                        1250.66
+                    ],
+                    "strict_arrival": true
+                }
+            ]
         },
         {
             "source_id": "deliver_target_map02_lv002_02",
             "name": "普里莫·林德",
-            "depot_id": "domain_2_lv002_depot_1"
+            "depot_id": "domain_2_lv002_depot_1",
+            "fixed_zipline_route": "wuling_city_lind",
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    952.84,
+                    1832.95
+                ],
+                [
+                    953.86,
+                    1832.9
+                ],
+                [
+                    955.75,
+                    1832.86
+                ],
+                [
+                    957.7,
+                    1832.87
+                ],
+                [
+                    959.55,
+                    1832.83
+                ],
+                [
+                    961.39,
+                    1832.63
+                ],
+                [
+                    961.28,
+                    1831.17
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    473.58,
+                    1718.96
+                ],
+                [
+                    472.05,
+                    1717.99
+                ],
+                [
+                    470.39,
+                    1717.16
+                ],
+                [
+                    468.68,
+                    1716.36
+                ],
+                [
+                    466.99,
+                    1715.5
+                ],
+                [
+                    465.32,
+                    1714.57
+                ],
+                [
+                    463.57,
+                    1713.62
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        462.71,
+                        1713.21
+                    ],
+                    "strict_arrival": true
+                },
+                {
+                    "action": "HEADING",
+                    "target": [
+                        461.93,
+                        1713.43
+                    ]
+                }
+            ]
         },
         {
             "source_id": "deliver_target_map02_lv002_03",
             "name": "于施",
-            "depot_id": "domain_2_lv002_depot_1"
+            "depot_id": "domain_2_lv002_depot_1",
+            "fixed_zipline_route": "wuling_city_yushi",
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    952.84,
+                    1832.95
+                ],
+                [
+                    953.86,
+                    1832.9
+                ],
+                [
+                    955.75,
+                    1832.86
+                ],
+                [
+                    957.7,
+                    1832.87
+                ],
+                [
+                    959.55,
+                    1832.83
+                ],
+                [
+                    961.39,
+                    1832.63
+                ],
+                [
+                    961.28,
+                    1831.17
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    898.4,
+                    1407.4
+                ],
+                [
+                    899.76,
+                    1407.57
+                ],
+                [
+                    900.82,
+                    1409.1
+                ],
+                [
+                    901.32,
+                    1410.87
+                ],
+                [
+                    901.32,
+                    1412.71
+                ],
+                [
+                    900.88,
+                    1414.61
+                ],
+                [
+                    899.87,
+                    1416.11
+                ],
+                [
+                    898.07,
+                    1416.48
+                ],
+                [
+                    896.39,
+                    1415.65
+                ],
+                [
+                    895.18,
+                    1414.2
+                ],
+                [
+                    894.7,
+                    1412.26
+                ],
+                [
+                    894.67,
+                    1410.39
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        894.71,
+                        1409.1
+                    ],
+                    "strict_arrival": true
+                },
+                {
+                    "action": "HEADING",
+                    "target": [
+                        894.97,
+                        1407.6
+                    ]
+                }
+            ]
         },
         {
             "source_id": "deliver_target_map02_lv002_recycle_01",
             "name": "火锅探店达人",
             "depot_id": "domain_2_lv002_depot_1",
-            "yaw": 190
+            "yaw": 190,
+            "fixed_zipline_route": "wuling_city_recycle",
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    952.84,
+                    1832.95
+                ],
+                [
+                    953.86,
+                    1832.9
+                ],
+                [
+                    955.75,
+                    1832.86
+                ],
+                [
+                    957.7,
+                    1832.87
+                ],
+                [
+                    959.55,
+                    1832.83
+                ],
+                [
+                    961.39,
+                    1832.63
+                ],
+                [
+                    961.28,
+                    1831.17
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    510.94,
+                    1652.51
+                ],
+                [
+                    511.5,
+                    1653.55
+                ],
+                [
+                    511.9,
+                    1654.64
+                ],
+                [
+                    513.02,
+                    1654.86
+                ],
+                [
+                    513.23,
+                    1653.47
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        513.33,
+                        1652.14
+                    ],
+                    "strict_arrival": true
+                }
+            ]
         },
         {
             "source_id": "deliver_target_map02_lv005_01",
             "name": "赵昭",
-            "depot_id": "domain_2_lv005_depot_1"
+            "depot_id": "domain_2_lv005_depot_1",
+            "fixed_zipline_route": "test_area_zhaozhao",
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1253.57,
+                    1751.81
+                ],
+                [
+                    1253.52,
+                    1750.49
+                ],
+                [
+                    1253.54,
+                    1748.63
+                ],
+                [
+                    1253.6,
+                    1746.74
+                ],
+                [
+                    1253.45,
+                    1745.95
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1363.8,
+                    1629.58
+                ],
+                [
+                    1364.82,
+                    1629.61
+                ],
+                [
+                    1366.72,
+                    1629.73
+                ],
+                [
+                    1366.58,
+                    1631.1
+                ],
+                [
+                    1366.09,
+                    1632.84
+                ],
+                [
+                    1366.23,
+                    1633.93
+                ],
+                [
+                    1367.84,
+                    1633.96
+                ],
+                [
+                    1369.78,
+                    1633.76
+                ],
+                [
+                    1371.6,
+                    1633.54
+                ],
+                [
+                    1373.49,
+                    1633.39
+                ],
+                [
+                    1375.34,
+                    1633.35
+                ],
+                [
+                    1377.21,
+                    1633.29
+                ],
+                [
+                    1378.91,
+                    1633.21
+                ],
+                [
+                    1380.85,
+                    1633.29
+                ],
+                [
+                    1382.74,
+                    1633.45
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        1383.91,
+                        1633.4
+                    ],
+                    "strict_arrival": true
+                }
+            ]
         },
         {
             "source_id": "deliver_target_map02_lv005_02",
             "name": "裴令容",
-            "depot_id": "domain_2_lv005_depot_1"
+            "depot_id": "domain_2_lv005_depot_1",
+            "fixed_zipline_route": "test_area_pei",
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1253.57,
+                    1751.81
+                ],
+                [
+                    1253.52,
+                    1750.49
+                ],
+                [
+                    1253.54,
+                    1748.63
+                ],
+                [
+                    1253.6,
+                    1746.74
+                ],
+                [
+                    1253.45,
+                    1745.95
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1088.62,
+                    1462.1
+                ],
+                [
+                    1087.36,
+                    1460.64
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        1084.06,
+                        1455.88
+                    ],
+                    "strict_arrival": true
+                }
+            ]
         },
         {
             "source_id": "deliver_target_map02_lv005_03",
             "name": "阿禾",
-            "depot_id": "domain_2_lv005_depot_1"
+            "depot_id": "domain_2_lv005_depot_1",
+            "fixed_zipline_route": "test_area_ahe",
+            "fixed_approach_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1253.57,
+                    1751.81
+                ],
+                [
+                    1253.52,
+                    1750.49
+                ],
+                [
+                    1253.54,
+                    1748.63
+                ],
+                [
+                    1253.6,
+                    1746.74
+                ],
+                [
+                    1253.45,
+                    1745.95
+                ]
+            ],
+            "fixed_departure_path": [
+                {
+                    "action": "ZONE",
+                    "zone_id": "Wuling_Base"
+                },
+                [
+                    1370.25,
+                    1535.55
+                ],
+                [
+                    1369.91,
+                    1534.84
+                ],
+                [
+                    1369.66,
+                    1534.32
+                ],
+                {
+                    "action": "RUN",
+                    "target": [
+                        1369.66,
+                        1534.32
+                    ],
+                    "strict_arrival": true
+                }
+            ]
         }
     ],
     "depots": [
@@ -346,7 +873,8 @@
         },
         {
             "source_id": "domain_2_lv002_depot_1",
-            "name": "武陵城"
+            "name": "武陵城",
+            "fixed_zipline_route": "wuling_city_pickup"
         },
         {
             "source_id": "domain_2_lv005_depot_1",

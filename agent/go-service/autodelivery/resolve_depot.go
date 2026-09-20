@@ -89,7 +89,7 @@ func (a *AutoDeliveryResolveDepotAction) Run(ctx *maa.Context, arg *maa.CustomAc
 			Msg("failed to resolve delivery depot")
 		return false
 	}
-	if err := ctx.OverridePipeline(buildDepotNavigationOverride(route, options.Zip)); err != nil {
+	if err := ctx.OverridePipeline(buildDepotNavigationOverride(route, options)); err != nil {
 		log.Error().
 			Err(err).
 			Str("component", resolveDepotActionName).
@@ -104,19 +104,20 @@ func (a *AutoDeliveryResolveDepotAction) Run(ctx *maa.Context, arg *maa.CustomAc
 		Str("depot", route.ID).
 		Str("areaText", areaText).
 		Str("map", route.Map).
-		Str("routeNode", selectRouteNode(route.RouteNode, route.ZipRouteNode, options.Zip)).
+		Str("routeNode", selectRouteNode(route.RouteNode, route.ZipRouteNode, route.FixedRouteNode, options)).
 		Str("retryRouteNode", route.RetryRouteNode).
 		Bool("zip", options.Zip).
+		Bool("fixedZipline", options.FixedZipline).
 		Msg("configured delivery depot navigation")
 	return true
 }
 
-func buildDepotNavigationOverride(route depot, zip bool) map[string]any {
+func buildDepotNavigationOverride(route depot, options navigationOptions) map[string]any {
 	override := map[string]any{
 		navigateDepotNode: map[string]any{
 			"custom_action": "SubTask",
 			"custom_action_param": map[string]any{
-				"sub": []string{selectRouteNode(route.RouteNode, route.ZipRouteNode, zip)},
+				"sub": []string{selectRouteNode(route.RouteNode, route.ZipRouteNode, route.FixedRouteNode, options)},
 			},
 		},
 		retryNavigateDepotNode: map[string]any{
@@ -133,11 +134,4 @@ func buildDepotNavigationOverride(route depot, zip bool) map[string]any {
 		}
 	}
 	return override
-}
-
-func selectRouteNode(routeNode string, zipRouteNode string, zip bool) string {
-	if zip {
-		return zipRouteNode
-	}
-	return routeNode
 }
