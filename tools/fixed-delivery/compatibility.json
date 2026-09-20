@@ -1,0 +1,102 @@
+{
+    "schema_version": 1,
+    "upstream": {
+        "remote": "origin",
+        "branch": "v2"
+    },
+    "fixed_route_config": {
+        "path": "assets/data/MapNavigator/fixed_zipline_routes.json",
+        "version": 1,
+        "required_route_ids": [
+            "wuling_city_subaiyi",
+            "wuling_city_lind",
+            "wuling_city_yushi",
+            "wuling_city_recycle",
+            "test_area_zhaozhao",
+            "test_area_pei",
+            "test_area_ahe"
+        ]
+    },
+    "delivery_routes": {
+        "path": "tools/pipeline-generate/AutoDelivery/routes.json",
+        "destinations": {
+            "deliver_target_map02_lv002_01": {
+                "fixed_zipline_route": "wuling_city_subaiyi",
+                "fixed_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00201WithFixedZipline"
+            },
+            "deliver_target_map02_lv002_02": {
+                "fixed_zipline_route": "wuling_city_lind",
+                "fixed_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00202WithFixedZipline"
+            },
+            "deliver_target_map02_lv002_03": {
+                "fixed_zipline_route": "wuling_city_yushi",
+                "fixed_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00203WithFixedZipline"
+            },
+            "deliver_target_map02_lv002_recycle_01": {
+                "fixed_zipline_route": "wuling_city_recycle",
+                "fixed_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv002Recycle01WithFixedZipline"
+            },
+            "deliver_target_map02_lv005_01": {
+                "fixed_zipline_route": "test_area_zhaozhao",
+                "fixed_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00501WithFixedZipline"
+            },
+            "deliver_target_map02_lv005_02": {
+                "fixed_zipline_route": "test_area_pei",
+                "fixed_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00502WithFixedZipline"
+            },
+            "deliver_target_map02_lv005_03": {
+                "fixed_zipline_route": "test_area_ahe",
+                "fixed_route_node": "AutoDeliveryRouteDestinationDeliverTargetMap02Lv00503WithFixedZipline"
+            }
+        }
+    },
+    "required_files": [
+        "assets/data/AutoDelivery/catalog.json",
+        "agent/go-service/autodelivery/catalog.go",
+        "agent/go-service/autodelivery/navigation.go",
+        "agent/cpp-algo/source/MapNavigator/fixed_zipline_route.h",
+        "agent/cpp-algo/source/MapNavigator/navi_param_parser.cpp",
+        "tools/pipeline-generate/AutoDelivery/model.mjs",
+        "tools/schema/auto_delivery_routes.schema.json",
+        "tools/schema/components/fixed_zipline.schema.json",
+        "assets/tasks/SeizeDeliveryJobs.json",
+        "assets/tasks/DeliveryJobs.json"
+    ],
+    "required_markers": {
+        "agent/go-service/autodelivery/catalog.go": [
+            "FixedRouteNode",
+            "fixed_route_node"
+        ],
+        "agent/go-service/autodelivery/navigation.go": [
+            "fixedRouteNode"
+        ],
+        "agent/cpp-algo/source/MapNavigator/fixed_zipline_route.h": [
+            "FixedZiplineRoute"
+        ],
+        "agent/cpp-algo/source/MapNavigator/navi_param_parser.cpp": [
+            "fixed_zipline_route"
+        ],
+        "tools/pipeline-generate/AutoDelivery/model.mjs": [
+            "fixed_zipline_routes.json",
+            "fixedRouteNode",
+            "fixed_zipline_route"
+        ],
+        "tools/schema/auto_delivery_routes.schema.json": [
+            "fixed_zipline_route",
+            "fixed_approach_path",
+            "fixed_departure_path"
+        ],
+        "tools/schema/components/fixed_zipline.schema.json": [
+            "fixed_zipline_route",
+            "continuous_segments"
+        ],
+        "assets/tasks/SeizeDeliveryJobs.json": [
+            "SeizeDeliveryJobsFixedZipline",
+            "$task.AutoDeliveryFixedZipline.label"
+        ],
+        "assets/tasks/DeliveryJobs.json": [
+            "DeliveryJobsAutoDeliveryFixedZipline",
+            "$task.AutoDeliveryFixedZipline.label"
+        ]
+    }
+}
