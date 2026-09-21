@@ -112,7 +112,7 @@ enum class ZiplineStage
     Landed,       // 定位回来了, 等停稳
     Classified,   // 停稳的位置查决策表
     ReturnAiming, // 滑错了: 从当前架子瞄回上索架
-    Dismounting,  // 已发下索键, 等定位稳定
+    Dismounting,  // 固定路线先闭环转到下索朝向, 再等下索后的定位稳定
     Handoff,      // 把出口事件交回导航
     Failed,
 };

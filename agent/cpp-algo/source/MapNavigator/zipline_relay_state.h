@@ -11,6 +11,10 @@ constexpr size_t ZiplineRelayPressCount(size_t hop_count)
     return hop_count > 0 ? hop_count - 1 : 0;
 }
 
+static_assert(ZiplineRelayPressCount(0) == 0);
+static_assert(ZiplineRelayPressCount(1) == 0);
+static_assert(ZiplineRelayPressCount(2) == 1);
+
 // 只管理提示消费；没有中间架坐标，也不根据按键数声称抵达末架。
 struct ZiplineRelayCounter
 {

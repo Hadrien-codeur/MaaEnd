@@ -934,9 +934,10 @@ bool NavigationStateMachine::HandleZiplineRecoveryReplan()
     // 剩余展开是按「从链尾落点出发」算的, 实际未抵达该点时它与当前位置无关: 可接入点可能在另
     // 一侧, 沿途会撞上原本要用索越过的障碍。先回作者路线从当前位置重新展开, 判死的那一跳已记入
     // 账本, 规划会绕开它另选链路。
+    const bool fixed_departure_rejoin = runtime_state_.fixed_departure_rejoin_requested;
     bool rejoined = TryReplanRemainingAuthoredRoute("zipline_recovery_reexpand");
     // 重展开失败才退回旧展开: 当前位置有可走面且不在架子上时, 它至少是一条经过规划的路径。
-    if (!rejoined && !on_tower && on_mesh) {
+    if (!rejoined && !fixed_departure_rejoin && !on_tower && on_mesh) {
         const std::optional<DynamicAnchor> anchor =
             ResolveReachableNavmeshAnchor(param_, session_, *position_, session_->current_node_idx(), "zipline_recovery");
         rejoined = anchor && TryApplyDynamicOverlayToAnchor("zipline_recovery", anchor->first, anchor->second);
@@ -989,6 +990,54 @@ bool NavigationStateMachine::HandleZiplineRecoveryReplan()
 // 交给走路侧的恢复。
 bool NavigationStateMachine::TryReplanRemainingAuthoredRoute(const char* reason)
 {
+    if (runtime_state_.fixed_departure_rejoin_requested) {
+        if (param_.fixed_departure_path.empty()) {
+            LogError << "Fixed departure rejoin requested without a departure path." << VAR(reason);
+            return false;
+        }
+
+        NaviParam replan_param = param_;
+        replan_param.zipline_enabled = false;
+        replan_param.fixed_zipline_route.clear();
+        replan_param.fixed_approach_path.clear();
+        replan_param.fixed_departure_path.clear();
+        replan_param.authored_path.clear();
+        replan_param.zipline_ledger.clear();
+        replan_param.path = param_.fixed_departure_path;
+
+        const auto first_movement = std::find_if(
+            replan_param.path.begin(),
+            replan_param.path.end(),
+            [](const Waypoint& waypoint) { return waypoint.action == ActionType::RUN || waypoint.action == ActionType::NAVMESH; });
+        if (first_movement == replan_param.path.end()) {
+            LogError << "Fixed departure rejoin path has no movement anchor." << VAR(reason);
+            return false;
+        }
+        if (first_movement->action == ActionType::RUN) {
+            Waypoint anchor = *first_movement;
+            anchor.action = ActionType::NAVMESH;
+            anchor.strict_arrival = true;
+            *first_movement = anchor;
+        }
+
+        std::vector<Waypoint> replanned;
+        if (!ExpandNavmeshWaypoints(replan_param, *position_, should_stop_, replanned, nullptr, &runtime_state_.virtual_no_go)
+            || replanned.empty()) {
+            LogError << "Fixed departure rejoin failed to expand from measured landing." << VAR(reason) << VAR(position_->x)
+                     << VAR(position_->y) << VAR(position_->zone_id);
+            return false;
+        }
+
+        session_->ReplaceRoute(std::move(replanned), *position_, reason);
+        runtime_state_.fixed_departure_rejoin_requested = false;
+        runtime_state_.route.Reset();
+        runtime_state_.nav_run_dirty = true;
+        runtime_state_.dynamic_replan_requested = false;
+        LogInfo << "Fixed departure path rejoined from measured landing." << VAR(reason) << VAR(position_->x) << VAR(position_->y)
+                << VAR(session_->current_path().size());
+        return true;
+    }
+
     const std::vector<Waypoint>& authored = param_.authored_path;
     if (authored.empty()) {
         return false;

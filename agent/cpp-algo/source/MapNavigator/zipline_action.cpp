@@ -287,6 +287,7 @@ Result FinishHop(const Context& ctx, const HopCompleted& done)
     result.stay_in_current_tick = true;
 
     const size_t relay_end_index = ctx.runtime_state->zipline_relay_end_index;
+    const bool needs_fixed_departure_rejoin = ctx.runtime_state->has_fixed_departure_path && !done.still_on_tower;
     if (ctx.runtime_state->zipline_relay.required > 0 && relay_end_index >= ctx.session->current_node_idx()) {
         ctx.session->SkipPastWaypoint(relay_end_index, "zipline_relay_endpoint_confirmed");
     }
@@ -297,6 +298,13 @@ Result FinishHop(const Context& ctx, const HopCompleted& done)
     ctx.runtime_state->zipline_relay = {};
     ctx.runtime_state->zipline_relay_end_index = 0;
     ctx.runtime_state->OnWaypointAdvance();
+    if (needs_fixed_departure_rejoin && ctx.session->HasCurrentWaypoint()) {
+        ctx.runtime_state->fixed_departure_rejoin_requested = true;
+        ctx.runtime_state->zipline_recovery.Begin(std::chrono::steady_clock::now());
+        ctx.runtime_state->dynamic_replan_requested = true;
+        LogInfo << "Fixed zipline landed; rejoining departure path from measured position." << VAR(done.at.x) << VAR(done.at.y)
+                << VAR(ctx.session->current_node_idx());
+    }
     LogInfo << "Action: ZIPLINE ride landed." << VAR(done.at.x) << VAR(done.at.y) << VAR(done.still_on_tower);
     if (!done.at.zone_id.empty()) {
         ctx.session->UpdateCurrentZone(done.at.zone_id);
@@ -447,10 +455,10 @@ Result StartZiplineHop(const Context& ctx, const Waypoint& waypoint, double actu
     if (plan.relay_hops > 0) {
         const auto& path = ctx.session->current_path();
         const size_t start_index = ctx.session->current_node_idx();
-        const size_t end_index = start_index + plan.relay_hops - 1;
-        if (end_index >= path.size()) {
+        if (start_index >= path.size() || plan.relay_hops > path.size() - start_index) {
             return AbandonZipline(ctx, "zipline_relay_invalid", "continuous segment exceeds the fixed route");
         }
+        const size_t end_index = start_index + plan.relay_hops - 1;
         for (size_t index = start_index; index <= end_index; ++index) {
             if (path[index].action != ActionType::ZIPLINE || !path[index].zipline_hop) {
                 return AbandonZipline(ctx, "zipline_relay_invalid", "continuous segment crosses a non-zipline waypoint");

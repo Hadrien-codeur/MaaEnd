@@ -23,6 +23,7 @@
 #include "../MapNavigator/navi_param_parser.h"
 #include "../MapNavigator/navmesh_path_expander.h"
 #include "../MapNavigator/zipline_leg_planner.h"
+#include "../MapNavigator/zipline_relay_state.h"
 #include "../Navmesh/BaseNavGeometry.h"
 #include "../Navmesh/BaseNavPlanner.h"
 #include "../Navmesh/BaseNavReader.h"
@@ -658,6 +659,12 @@ json::object BuildRoutePreview(const QueryParam& query)
                 spots.emplace_back(json::array { spot.x, spot.y });
             }
             segment.emplace("mount_spots", std::move(spots));
+        }
+        if (hop.relay_hops > 0) {
+            segment.emplace("relay_presses_after_launch", mapnavigator::ZiplineRelayPressCount(hop.relay_hops));
+        }
+        if (hop.dismount_heading) {
+            segment.emplace("dismount_heading", *hop.dismount_heading);
         }
         zipline_segments.emplace_back(std::move(segment));
         AppendDistinct(all_points, landing);

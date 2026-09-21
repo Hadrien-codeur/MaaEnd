@@ -703,6 +703,45 @@ StageResult ZiplineRideMachine::Classify(IZiplineObserver& observer, IZiplineAct
 StageResult ZiplineRideMachine::TickDismounting(const ZiplineObservation& obs, IZiplineActuator& actuator)
 {
     const auto now = obs.at;
+
+    if (dismount_presses_ == 0) {
+        if (!plan_.dismount_heading) {
+            actuator.Dismount();
+            dismount_presses_ = 1;
+            LogInfo << "zipline/dismount/press";
+        }
+        else if (obs.fix) {
+            const double residual = NaviMath::NormalizeAngle(*plan_.dismount_heading - obs.fix->angle);
+            if (std::abs(residual) <= kZiplineAimToleranceDeg) {
+                actuator.Dismount();
+                dismount_presses_ = 1;
+                LogInfo << "zipline/dismount/heading_ready" << VAR(*plan_.dismount_heading) << VAR(obs.fix->angle);
+            }
+            else {
+                const std::optional<double> issued = actuator.TurnYaw(residual);
+                if (!issued) {
+                    LogError << "zipline/dismount/heading_turn_rejected" << VAR(residual) << VAR(obs.fix->angle)
+                             << VAR(*plan_.dismount_heading);
+                    pending_exit_ = ChainAbandoned { "zipline/dismount/heading_turn_rejected" };
+                    EnterStage(ZiplineStage::Failed, now);
+                    return Handoff(now);
+                }
+                LogInfo << "zipline/dismount/turn" << VAR(residual) << VAR(*issued) << VAR(obs.fix->angle)
+                        << VAR(*plan_.dismount_heading);
+            }
+        }
+
+        if (dismount_presses_ == 0 && StageElapsedMs(now) > 2 * kZiplineDismountTimeoutMs) {
+            LogError << "zipline/dismount/heading_timeout" << VAR(StageElapsedMs(now)) << VAR(*plan_.dismount_heading);
+            pending_exit_ = ChainAbandoned { "zipline/dismount/heading_timeout" };
+            EnterStage(ZiplineStage::Failed, now);
+            return Handoff(now);
+        }
+        if (dismount_presses_ == 0) {
+            return {};
+        }
+    }
+
     if (obs.fix) {
         const bool same = dismount_stable_pos_ && DistanceWu(*obs.fix, *dismount_stable_pos_) <= kZiplineRecoveryStableRadiusWu;
         dismount_stable_hits_ = same ? dismount_stable_hits_ + 1 : 1;
@@ -738,8 +777,14 @@ StageResult ZiplineRideMachine::FailAim(IZiplineActuator& actuator, const char* 
 StageResult ZiplineRideMachine::StartDismount(IZiplineActuator& actuator, StageResult exit, Clock::time_point now)
 {
     pending_exit_ = std::move(exit);
-    actuator.Dismount();
-    dismount_presses_ = 1;
+    const bool align_heading = std::holds_alternative<HopCompleted>(pending_exit_) && plan_.dismount_heading.has_value();
+    if (align_heading) {
+        dismount_presses_ = 0;
+    }
+    else {
+        actuator.Dismount();
+        dismount_presses_ = 1;
+    }
     dismount_stable_pos_.reset();
     dismount_stable_hits_ = 0;
     EnterStage(ZiplineStage::Dismounting, now);
