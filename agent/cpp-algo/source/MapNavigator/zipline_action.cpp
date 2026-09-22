@@ -280,6 +280,9 @@ Result FinishHop(const Context& ctx, const HopCompleted& done)
     result.stay_in_current_tick = true;
 
     const size_t relay_end_index = ctx.runtime_state->zipline_relay_end_index;
+    if (ctx.runtime_state->zipline_relay.required > 0 && !ctx.runtime_state->zipline_relay.readyForLanding()) {
+        return AbandonZipline(ctx, "zipline_relay_landed_early", "continuous relay landed before its input budget completed");
+    }
     const bool needs_fixed_departure_rejoin = ctx.runtime_state->has_fixed_departure_path && !done.still_on_tower;
     if (ctx.runtime_state->zipline_relay.required > 0 && relay_end_index >= ctx.session->current_node_idx()) {
         ctx.session->SkipPastWaypoint(relay_end_index, "zipline_relay_endpoint_confirmed");
@@ -461,7 +464,7 @@ Result StartZiplineHop(const Context& ctx, const Waypoint& waypoint, double actu
         plan.chain_continues = false;
         ctx.runtime_state->zipline_relay = { .required = plan.relay_hops - 1 };
         ctx.runtime_state->zipline_relay_end_index = end_index;
-        LogInfo << "ZIPLINE relay started after initial mouse launch; no intermediate localization." << VAR(plan.relay_hops)
+        LogInfo << "ZIPLINE relay configured; waiting for launch confirmation." << VAR(plan.relay_hops)
                 << VAR(ctx.runtime_state->zipline_relay.required) << VAR(end_index);
     }
     else {
@@ -494,6 +497,17 @@ Result TickZiplineRide(const Context& ctx)
         if (tasker == nullptr || MaaTaskerStopping(tasker)) {
             return AbandonZipline(ctx, "zipline_relay_cancelled", "continuous relay cancelled before another input");
         }
+        const auto now = std::chrono::steady_clock::now();
+        if (relay.progress_at.time_since_epoch().count() == 0) {
+            relay.progress_at = now;
+            LogInfo << "ZIPLINE relay monitoring started after launch confirmation." << VAR(relay.pressed) << VAR(relay.required);
+        }
+        const int64_t elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - relay.progress_at).count();
+        if (ZiplineRelayProgressTimedOut(elapsed_ms)) {
+            LogError << "ZIPLINE relay prompt timeout." << VAR(relay.pressed) << VAR(relay.required) << VAR(relay.awaiting_clear)
+                     << VAR(elapsed_ms);
+            return AbandonZipline(ctx, "zipline_relay_prompt_timeout", "next relay prompt or its disappearance was not observed");
+        }
         const bool press = relay.canPress();
         const bool was_waiting_clear = relay.awaiting_clear;
         const NodeRunResult probe = RunNodeAndReportHit(
@@ -509,11 +523,13 @@ Result TickZiplineRide(const Context& ctx)
         }
         if (press && probe.hit) {
             relay.commitPress();
+            relay.progress_at = std::chrono::steady_clock::now();
             LogInfo << "ZIPLINE relay E pressed; waiting for prompt disappearance." << VAR(relay.pressed) << VAR(relay.required);
         }
         else {
             relay.observe(probe.hit);
             if (was_waiting_clear && !probe.hit) {
+                relay.progress_at = std::chrono::steady_clock::now();
                 LogInfo << "ZIPLINE relay prompt consumed." << VAR(relay.pressed) << VAR(relay.required);
             }
         }

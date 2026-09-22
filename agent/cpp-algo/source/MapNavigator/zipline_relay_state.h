@@ -1,6 +1,8 @@
 #pragma once
 
+#include <chrono>
 #include <cstddef>
+#include <cstdint>
 
 #include "zipline_types.h"
 
@@ -23,6 +25,7 @@ struct ZiplineRelayCounter
     size_t required = 0;
     size_t pressed = 0;
     bool awaiting_clear = false;
+    std::chrono::steady_clock::time_point progress_at {};
 
     constexpr bool canPress() const { return required > pressed && !awaiting_clear; }
 
@@ -48,17 +51,23 @@ struct ZiplineRelayCounter
 
 constexpr bool ZiplineRelayShouldPoll(ZiplineStage stage, const ZiplineRelayCounter& relay)
 {
-    const bool launched = stage == ZiplineStage::Fired || stage == ZiplineStage::Riding;
-    return launched && relay.required > 0 && !relay.readyForLanding();
+    return stage == ZiplineStage::Riding && relay.required > 0 && !relay.readyForLanding();
+}
+
+constexpr bool ZiplineRelayProgressTimedOut(int64_t elapsed_ms)
+{
+    return elapsed_ms > kZiplineRideTimeoutMs;
 }
 
 static_assert(!ZiplineRelayShouldPoll(ZiplineStage::Mounting, ZiplineRelayCounter { .required = 1 }));
 static_assert(!ZiplineRelayShouldPoll(ZiplineStage::OnTower, ZiplineRelayCounter { .required = 1 }));
 static_assert(!ZiplineRelayShouldPoll(ZiplineStage::Aiming, ZiplineRelayCounter { .required = 1 }));
-static_assert(ZiplineRelayShouldPoll(ZiplineStage::Fired, ZiplineRelayCounter { .required = 1 }));
+static_assert(!ZiplineRelayShouldPoll(ZiplineStage::Fired, ZiplineRelayCounter { .required = 1 }));
 static_assert(ZiplineRelayShouldPoll(ZiplineStage::Riding, ZiplineRelayCounter { .required = 1 }));
 static_assert(!ZiplineRelayShouldPoll(ZiplineStage::Landed, ZiplineRelayCounter { .required = 1 }));
 static_assert(!ZiplineRelayShouldPoll(ZiplineStage::Riding, ZiplineRelayCounter {}));
 static_assert(!ZiplineRelayShouldPoll(ZiplineStage::Riding, ZiplineRelayCounter { .required = 1, .pressed = 1 }));
+static_assert(!ZiplineRelayProgressTimedOut(kZiplineRideTimeoutMs));
+static_assert(ZiplineRelayProgressTimedOut(kZiplineRideTimeoutMs + 1));
 
 } // namespace mapnavigator
