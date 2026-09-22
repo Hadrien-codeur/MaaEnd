@@ -55,6 +55,8 @@ class ZiplineRideMachine
 public:
     // 开一跳。人已经站在架子上(链中续跳、滑回原架)时直接瞄, 否则由调用方先按上索键再来
     void Begin(const ZiplineHopPlan& plan);
+    // 连续滑索的 E 预算完成后, 将落地分类目标切换到整段末架；首发瞄准仍使用 plan.landing。
+    void SetRelayEndpoint(const ZiplineNodeRef& endpoint);
     StageResult Tick(IZiplineObserver& observer, IZiplineActuator& actuator);
     // 外部要人立刻下来(丢链、换路)。跳还开着就按 Dismounted 记账
     void Dismount(IZiplineActuator& actuator);
@@ -104,6 +106,7 @@ private:
     // 本次发射从 origin_ 瞄 target_。回程时 origin_ 是滑到的那根架子, target_ 是上索架
     ZiplineNodeRef origin_;
     ZiplineNodeRef target_;
+    std::optional<ZiplineNodeRef> relay_endpoint_;
     double seed_elevation_deg_ = 0.0;
     double aim_bias_deg_ = 0.0;
     int pitch_tier_ = 0;

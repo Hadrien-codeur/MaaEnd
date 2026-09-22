@@ -417,6 +417,7 @@ struct NavigationRuntimeState
     bool has_fixed_departure_path = false;
     bool fixed_departure_rejoin_requested = false;
     ZiplineRelayCounter zipline_relay;
+    std::optional<ZiplineNodeRef> zipline_relay_endpoint;
     size_t zipline_relay_end_index = 0;
     // 置于顶层且不参与任何 Reset: 禁区按世界坐标记录障碍, 生命周期为整趟导航, 仅由 BeginNavigation 清空。
     // 若随重规划一并清零, 下一次规划会再次穿过刚判定出障碍的位置。
@@ -461,6 +462,7 @@ struct NavigationRuntimeState
         find.Reset();
         zipline_ride.ResetNavigation();
         zipline_relay = {};
+        zipline_relay_endpoint.reset();
         zipline_relay_end_index = 0;
         fixed_departure_rejoin_requested = false;
         virtual_no_go.clear();
@@ -483,6 +485,7 @@ struct NavigationRuntimeState
         offroute.Reset();
         zipline_recovery.Reset();
         fixed_departure_rejoin_requested = false;
+        zipline_relay_endpoint.reset();
         find.Reset();
         global_reacquire_streak = 0;
         dynamic_replan_requested = false;

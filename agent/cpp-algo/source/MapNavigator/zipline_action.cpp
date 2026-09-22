@@ -460,20 +460,24 @@ Result StartZiplineHop(const Context& ctx, const Waypoint& waypoint, double actu
                 return AbandonZipline(ctx, "zipline_relay_invalid", "continuous segment crosses a non-zipline waypoint");
             }
         }
-        plan.landing = path[end_index].zipline_hop->landing;
+        ctx.runtime_state->zipline_relay_endpoint = path[end_index].zipline_hop->landing;
         plan.chain_continues = false;
         ctx.runtime_state->zipline_relay = { .required = plan.relay_hops - 1 };
         ctx.runtime_state->zipline_relay_end_index = end_index;
         LogInfo << "ZIPLINE relay configured; waiting for launch confirmation." << VAR(plan.relay_hops)
-                << VAR(ctx.runtime_state->zipline_relay.required) << VAR(end_index);
+                << VAR(ctx.runtime_state->zipline_relay.required) << VAR(end_index) << VAR(plan.landing.x) << VAR(plan.landing.y)
+                << VAR(ctx.runtime_state->zipline_relay_endpoint->x) << VAR(ctx.runtime_state->zipline_relay_endpoint->y);
     }
     else {
         ctx.runtime_state->zipline_relay = {};
+        ctx.runtime_state->zipline_relay_endpoint.reset();
         ctx.runtime_state->zipline_relay_end_index = 0;
     }
     ride.Begin(plan);
-    LogInfo << "Action: ZIPLINE hop started." << VAR(plan.landing.x) << VAR(plan.landing.y) << VAR(plan.planned_elevation_deg)
-            << VAR(plan.chain_continues) << VAR(actual_distance);
+    LogInfo << "Action: ZIPLINE hop started." << VAR(plan.landing.x) << VAR(plan.landing.y)
+            << VAR(ctx.runtime_state->zipline_relay_endpoint ? ctx.runtime_state->zipline_relay_endpoint->x : 0.0)
+            << VAR(ctx.runtime_state->zipline_relay_endpoint ? ctx.runtime_state->zipline_relay_endpoint->y : 0.0)
+            << VAR(plan.planned_elevation_deg) << VAR(plan.chain_continues) << VAR(actual_distance);
     // 航点等落地再推进: 起滑那一刻人还在上索点, 这条链就算已经是路线的尾巴也不能在这里收工
     ctx.session->UpdatePhase(NaviPhase::WaitZipline, "zipline_hop_started");
     result.consumed = true;
@@ -534,6 +538,11 @@ Result TickZiplineRide(const Context& ctx)
             }
         }
         if (relay.readyForLanding()) {
+            if (!ctx.runtime_state->zipline_relay_endpoint) {
+                return AbandonZipline(ctx, "zipline_relay_endpoint_missing", "continuous relay has no endpoint for landing classification");
+            }
+            ride.SetRelayEndpoint(*ctx.runtime_state->zipline_relay_endpoint);
+            ctx.runtime_state->zipline_relay_endpoint.reset();
             ctx.position_provider->ResetTracking();
             LogInfo << "ZIPLINE relay input complete; checking only the segment endpoint." << VAR(relay.pressed);
         }

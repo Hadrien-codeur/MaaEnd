@@ -160,6 +160,13 @@ void ZiplineRideMachine::Begin(const ZiplineHopPlan& plan)
     EnterStage(standing ? ZiplineStage::OnTower : ZiplineStage::Mounting, now);
 }
 
+void ZiplineRideMachine::SetRelayEndpoint(const ZiplineNodeRef& endpoint)
+{
+    relay_endpoint_ = endpoint;
+    target_ = endpoint;
+    LogInfo << "zipline/relay_endpoint" << VAR(endpoint.x) << VAR(endpoint.y);
+}
+
 StageResult ZiplineRideMachine::Tick(IZiplineObserver& observer, IZiplineActuator& actuator)
 {
     const auto now = Clock::now();
@@ -235,6 +242,7 @@ void ZiplineRideMachine::Reset()
     hop_open_ = false;
     origin_ = {};
     target_ = {};
+    relay_endpoint_.reset();
     seed_elevation_deg_ = 0.0;
     aim_bias_deg_ = 0.0;
     pitch_tier_ = 0;
@@ -304,6 +312,9 @@ std::vector<ZiplineNodeRef> ZiplineRideMachine::KnownNodes() const
     }
     known.push_back(plan_.mount);
     known.push_back(plan_.landing);
+    if (relay_endpoint_) {
+        known.push_back(*relay_endpoint_);
+    }
     known.insert(known.end(), plan_.siblings.begin(), plan_.siblings.end());
     known.insert(known.end(), discovered_towers_.begin(), discovered_towers_.end());
     for (const ZiplineHopRecord& record : ledger_) {
