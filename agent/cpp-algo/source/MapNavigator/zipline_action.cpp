@@ -294,13 +294,6 @@ Result FinishHop(const Context& ctx, const HopCompleted& done)
     ctx.runtime_state->zipline_relay = {};
     ctx.runtime_state->zipline_relay_end_index = 0;
     ctx.runtime_state->OnWaypointAdvance();
-    if (needs_fixed_departure_rejoin && ctx.session->HasCurrentWaypoint()) {
-        ctx.runtime_state->fixed_departure_rejoin_requested = true;
-        ctx.runtime_state->zipline_recovery.Begin(std::chrono::steady_clock::now());
-        ctx.runtime_state->dynamic_replan_requested = true;
-        LogInfo << "Fixed zipline landed; rejoining departure path from measured position." << VAR(done.at.x) << VAR(done.at.y)
-                << VAR(ctx.session->current_node_idx());
-    }
     LogInfo << "Action: ZIPLINE ride landed." << VAR(done.at.x) << VAR(done.at.y) << VAR(done.still_on_tower);
     if (!done.at.zone_id.empty()) {
         ctx.session->UpdateCurrentZone(done.at.zone_id);
@@ -314,6 +307,16 @@ Result FinishHop(const Context& ctx, const HopCompleted& done)
     ctx.runtime_state->route.startup_anchor_initialized = true;
     ctx.runtime_state->route.startup_motion_confirmed = true;
     ctx.position_provider->ResetTracking();
+
+    // ResetNavigationAssistState above clears recovery bookkeeping. Re-arm the deferred fixed departure
+    // handoff afterwards so the next navigation tick expands from the measured landing, not the nominal tower.
+    if (needs_fixed_departure_rejoin && ctx.session->HasCurrentWaypoint()) {
+        ctx.runtime_state->fixed_departure_rejoin_requested = true;
+        ctx.runtime_state->zipline_recovery.Begin(std::chrono::steady_clock::now());
+        ctx.runtime_state->dynamic_replan_requested = true;
+        LogInfo << "Fixed zipline landed; rejoining departure path from measured position." << VAR(done.at.x) << VAR(done.at.y)
+                << VAR(ctx.session->current_node_idx());
+    }
 
     if (!ctx.session->HasCurrentWaypoint()) {
         LeaveZiplineTower(ctx);

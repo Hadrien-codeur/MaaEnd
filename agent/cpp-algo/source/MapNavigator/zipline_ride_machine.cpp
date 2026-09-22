@@ -164,6 +164,13 @@ void ZiplineRideMachine::SetRelayEndpoint(const ZiplineNodeRef& endpoint)
 {
     relay_endpoint_ = endpoint;
     target_ = endpoint;
+    // E 接力可能耗时超过首跳的 Riding 超时；末架目标确定后重新开启独立的落地观察窗口。
+    const auto now = Clock::now();
+    last_fix_.reset();
+    miss_streak_ = 0;
+    settle_hits_ = 0;
+    unknown_deadline_.reset();
+    EnterStage(ZiplineStage::Riding, now);
     LogInfo << "zipline/relay_endpoint" << VAR(endpoint.x) << VAR(endpoint.y);
 }
 
