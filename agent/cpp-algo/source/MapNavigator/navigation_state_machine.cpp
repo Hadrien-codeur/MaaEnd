@@ -1019,12 +1019,9 @@ bool NavigationStateMachine::TryReplanRemainingAuthoredRoute(const char* reason)
             LogError << "Fixed departure rejoin path has no movement anchor." << VAR(reason);
             return false;
         }
-        if (first_movement->action == ActionType::RUN) {
-            Waypoint anchor = *first_movement;
-            anchor.action = ActionType::NAVMESH;
-            anchor.strict_arrival = true;
-            *first_movement = anchor;
-        }
+        // Preserve authored movement semantics: a recorded RUN starts directly from the measured
+        // landing. Promoting it to NAVMESH can select another deck and introduce a long detour.
+        // Routes that explicitly request NAVMESH still use the normal expansion below.
 
         std::vector<Waypoint> replanned;
         if (!ExpandNavmeshWaypoints(replan_param, *position_, should_stop_, replanned, nullptr, &runtime_state_.virtual_no_go)
