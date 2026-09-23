@@ -55,8 +55,25 @@ NodeRunResult RunNodeAndReportHit(MaaContext* context, const char* entry, const 
     ScopedStringBuffer entry_name;
     MaaSize node_count = 0;
     MaaStatus status = MaaStatus_Invalid;
-    if (entry_name.Get() == nullptr || !MaaTaskerGetTaskDetail(tasker, task_id, entry_name.Get(), nullptr, &node_count, &status)
-        || node_count == 0) {
+    if (entry_name.Get() == nullptr) {
+        return {};
+    }
+    // MaaContextRunTask dispatches an asynchronous subtask. Reading its detail in the
+    // same tick races the task startup and can report zero nodes even when the mount
+    // prompt is visibly present. Wait for the task to reach a terminal state before
+    // inspecting the named recognition node.
+    constexpr int kSubtaskPollLimit = 200;
+    for (int poll = 0; poll < kSubtaskPollLimit; ++poll) {
+        if (!MaaTaskerGetTaskDetail(tasker, task_id, entry_name.Get(), nullptr, &node_count, &status)) {
+            return {};
+        }
+        if (status != MaaStatus_Pending && status != MaaStatus_Running) {
+            break;
+        }
+        utils::SleepFor(10);
+    }
+    if (status == MaaStatus_Pending || status == MaaStatus_Running || node_count == 0) {
+        LogWarn << "Zipline subtask did not reach a terminal state." << VAR(entry) << VAR(status) << VAR(node_count);
         return {};
     }
     std::vector<MaaNodeId> node_ids(node_count);
