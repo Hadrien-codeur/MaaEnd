@@ -153,9 +153,6 @@ func destinationDisplayName(dest destination) string {
 
 func buildDestinationNavigationOverride(dest destination, options navigationOptions) map[string]any {
 	override := map[string]any{
-		afterResolveDestinationNode: map[string]any{
-			"next": defaultDestinationFlow(),
-		},
 		navigateDestinationNode: map[string]any{
 			"custom_action": "SubTask",
 			"custom_action_param": map[string]any{
@@ -186,12 +183,5 @@ func buildRecycleBinResolutionOverride(areaID string) map[string]any {
 				"AutoDeliveryStartTrackingRecycleBin" + areaID,
 			},
 		},
-	}
-}
-
-func defaultDestinationFlow() []string {
-	return []string{
-		"AutoDeliveryCancelCurrentJobTracking",
-		"AutoDeliveryCheckCurrentJobTrackingAlreadyOff",
 	}
 }
