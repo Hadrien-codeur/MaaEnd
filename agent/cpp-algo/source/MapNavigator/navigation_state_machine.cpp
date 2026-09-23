@@ -360,6 +360,7 @@ std::optional<DynamicAnchor> ResolveBootstrapAnchor(const NaviParam& param, Navi
 }
 
 semantic_nodes::Context BuildSemanticContext(
+    const NaviParam& param,
     ActionWrapper* action_wrapper,
     PositionProvider* position_provider,
     NavigationSession* session,
@@ -378,6 +379,7 @@ semantic_nodes::Context BuildSemanticContext(
     ctx.position = position;
     ctx.runtime_state = runtime_state;
     ctx.maa_context = maa_context;
+    ctx.fixed_departure_path_available = !param.fixed_departure_path.empty();
     return ctx;
 }
 
@@ -516,6 +518,7 @@ bool NavigationStateMachine::TickPhase(NaviPhase phase)
     case NaviPhase::WaitFind: {
         const semantic_nodes::Result semantic_result = semantic_nodes::TickSemanticFlow(
             BuildSemanticContext(
+                param_,
                 action_wrapper_,
                 position_provider_,
                 session_,
@@ -870,6 +873,7 @@ bool NavigationStateMachine::GiveUpUnreachableZipline(const char* reason)
     runtime_state_.dynamic_replan_requested = false;
     semantic_nodes::AbandonZipline(
         BuildSemanticContext(
+            param_,
             action_wrapper_,
             position_provider_,
             session_,
@@ -945,6 +949,7 @@ bool NavigationStateMachine::HandleZiplineRecoveryReplan()
     if (!rejoined) {
         if (on_tower) {
             semantic_nodes::LeaveZiplineTower(BuildSemanticContext(
+                param_,
                 action_wrapper_,
                 position_provider_,
                 session_,
@@ -968,6 +973,7 @@ bool NavigationStateMachine::HandleZiplineRecoveryReplan()
     if (runtime_state_.IsZiplineMounted()) {
         semantic_nodes::StartZiplineHop(
             BuildSemanticContext(
+                param_,
                 action_wrapper_,
                 position_provider_,
                 session_,
@@ -1097,6 +1103,7 @@ bool NavigationStateMachine::TryReplanRemainingAuthoredRoute(const char* reason)
     // 用不上这根架子就先下来再走
     if (runtime_state_.IsZiplineMounted()) {
         const semantic_nodes::Context ctx = BuildSemanticContext(
+            param_,
             action_wrapper_,
             position_provider_,
             session_,
@@ -1278,7 +1285,8 @@ bool NavigationStateMachine::TickNavigate()
         return true;
     }
 
-    semantic_nodes::Context semantic_ctx = BuildSemanticContext(
+    const semantic_nodes::Context semantic_ctx = BuildSemanticContext(
+        param_,
         action_wrapper_,
         position_provider_,
         session_,
@@ -1287,9 +1295,6 @@ bool NavigationStateMachine::TickNavigate()
         position_,
         &runtime_state_,
         maa_context_);
-    semantic_ctx.fixed_departure_path_available = !param_.fixed_departure_path.empty();
-    LogDebug << "Navigation fixed departure capability." << VAR(semantic_ctx.fixed_departure_path_available)
-             << VAR(param_.fixed_departure_path.size()) << VAR(param_.fixed_zipline_route);
     const semantic_nodes::Result active_semantic_result = semantic_nodes::TickSemanticFlow(semantic_ctx, NaviPhase::Navigate);
     if (active_semantic_result.request_failure) {
         return FailNavigation(active_semantic_result.failure_reason, active_semantic_result.failure_log_message, 0.0, 0.0, 0);
@@ -1347,6 +1352,7 @@ bool NavigationStateMachine::TickNavigate()
                     << VAR(runtime_state_.dwell.dwell_ms) << VAR(position_->x) << VAR(position_->y);
             semantic_nodes::AbandonZipline(
                 BuildSemanticContext(
+                    param_,
                     action_wrapper_,
                     position_provider_,
                     session_,
@@ -1764,6 +1770,7 @@ bool NavigationStateMachine::TickNavigate()
                             << VAR(waypoint.x) << VAR(waypoint.y) << VAR(position_->x) << VAR(position_->y);
                     semantic_nodes::AbandonZipline(
                         BuildSemanticContext(
+                            param_,
                             action_wrapper_,
                             position_provider_,
                             session_,
