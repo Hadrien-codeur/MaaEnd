@@ -76,11 +76,14 @@ bool NaviController::Navigate(const NaviParam& requested_param)
         LogError << "Refusing to nest navigation: this tasker is already navigating.";
         return false;
     }
+    LogInfo << "Navigation entry guard acquired; initializing input backend.";
 
     NaviParam param = requested_param;
 
     ActionWrapper action_wrapper(ctx_);
+    LogInfo << "Navigation input backend initialized; acquiring map locator.";
     PositionProvider position_provider(action_wrapper.GetCtrl(), maplocator::getOrInitLocator());
+    LogInfo << "Navigation map locator acquired; resetting tracking.";
     position_provider.ResetTracking();
     if (param.normalize_position_via_navmesh) {
         position_provider.SetPositionNormalizer([&param](NaviPosition& pos) { NormalizeLivePositionToBase(param, pos); });

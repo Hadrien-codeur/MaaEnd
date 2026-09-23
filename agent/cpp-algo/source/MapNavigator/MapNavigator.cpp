@@ -39,6 +39,8 @@ MaaBool MAA_CALL MapNavigateActionRun(
     if (!TryParseNaviParam(custom_action_param, param)) {
         return kMaaFalse;
     }
+    LogInfo << "Navigation parameters parsed." << VAR(param.path.size()) << VAR(param.fixed_approach_path.size())
+            << VAR(param.fixed_departure_path.size());
 
     if (param.path.empty()) {
         return kMaaTrue;
@@ -46,9 +48,13 @@ MaaBool MAA_CALL MapNavigateActionRun(
 
     // 文字表指了节点的交互点在这里解析: pipeline 已经问得到, 而且还没开始走。
     ResolveInteractTextNodes(context, param);
+    LogInfo << "Navigation interaction text resolved; reading zipline preference.";
     param.zipline_enabled = ResolveZiplineEnabled(context, param.zipline_enabled);
+    LogInfo << "Navigation zipline preference resolved." << VAR(param.zipline_enabled);
     if (param.zipline_enabled) {
+        LogInfo << "Navigation reading zipline account identity.";
         param.zipline_account_id = ResolveZiplineAccountId(context);
+        LogInfo << "Navigation zipline account resolution completed.";
     }
 
     // Planning runs on the navmesh base mesh, so normalize live fixes onto the navmesh base-pixel
@@ -56,6 +62,7 @@ MaaBool MAA_CALL MapNavigateActionRun(
     param.normalize_position_via_navmesh = true;
 
     NaviController controller(context);
+    LogInfo << "Navigation entering controller.";
     const bool arrived = controller.Navigate(param);
     NoticeZiplineOutcome(context);
     return arrived ? kMaaTrue : kMaaFalse;
