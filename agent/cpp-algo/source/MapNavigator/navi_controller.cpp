@@ -128,13 +128,20 @@ bool NaviController::Navigate(const NaviParam& requested_param)
     std::vector<Waypoint> expanded_path;
     size_t resume_index = 0;
     if (!ExpandNavmeshWaypoints(param, pos, is_stopping, expanded_path)) {
+        LogError << "Initial navigation route expansion failed." << VAR(param.fixed_zipline_route)
+                 << VAR(param.fixed_approach_path.size()) << VAR(param.fixed_departure_path.size()) << VAR(param.path.size())
+                 << VAR(pos.x) << VAR(pos.y) << VAR(pos.zone_id);
         const std::optional<size_t> resume = ResolveRouteResumeIndex(param.path, pos);
         if (!resume) {
+            LogError << "Navigation route expansion failed without a resumable authored waypoint." << VAR(param.path.size());
             return false;
         }
         NaviParam resumed_param = param;
         resumed_param.path.assign(param.path.begin() + static_cast<std::ptrdiff_t>(*resume), param.path.end());
         if (!ExpandNavmeshWaypoints(resumed_param, pos, is_stopping, expanded_path)) {
+            LogError << "Resumed navigation route expansion failed." << VAR(*resume) << VAR(resumed_param.path.size())
+                     << VAR(resumed_param.fixed_zipline_route) << VAR(resumed_param.fixed_approach_path.size())
+                     << VAR(resumed_param.fixed_departure_path.size());
             return false;
         }
         resume_index = *resume;
