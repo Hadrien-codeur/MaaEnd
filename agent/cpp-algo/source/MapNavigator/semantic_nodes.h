@@ -25,6 +25,10 @@ struct Context
     NaviPosition* position = nullptr;
     NavigationRuntimeState* runtime_state = nullptr;
     MaaContext* maa_context = nullptr;
+    // Immutable fact for the current navigation request. This must come from NaviParam,
+    // not from mutable recovery state, because only delivery routes with an authored
+    // fixed departure path may rejoin that path after landing.
+    bool fixed_departure_path_available = false;
 };
 
 struct Result

@@ -283,7 +283,7 @@ Result FinishHop(const Context& ctx, const HopCompleted& done)
     if (ctx.runtime_state->zipline_relay.required > 0 && !ctx.runtime_state->zipline_relay.readyForLanding()) {
         return AbandonZipline(ctx, "zipline_relay_landed_early", "continuous relay landed before its input budget completed");
     }
-    const bool needs_fixed_departure_rejoin = ctx.runtime_state->has_fixed_departure_path && !done.still_on_tower;
+    const bool needs_fixed_departure_rejoin = ctx.fixed_departure_path_available && !done.still_on_tower;
     if (ctx.runtime_state->zipline_relay.required > 0 && relay_end_index >= ctx.session->current_node_idx()) {
         ctx.session->SkipPastWaypoint(relay_end_index, "zipline_relay_endpoint_confirmed");
     }

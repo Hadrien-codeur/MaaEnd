@@ -1278,7 +1278,7 @@ bool NavigationStateMachine::TickNavigate()
         return true;
     }
 
-    const semantic_nodes::Context semantic_ctx = BuildSemanticContext(
+    semantic_nodes::Context semantic_ctx = BuildSemanticContext(
         action_wrapper_,
         position_provider_,
         session_,
@@ -1287,6 +1287,9 @@ bool NavigationStateMachine::TickNavigate()
         position_,
         &runtime_state_,
         maa_context_);
+    semantic_ctx.fixed_departure_path_available = !param_.fixed_departure_path.empty();
+    LogDebug << "Navigation fixed departure capability." << VAR(semantic_ctx.fixed_departure_path_available)
+             << VAR(param_.fixed_departure_path.size()) << VAR(param_.fixed_zipline_route);
     const semantic_nodes::Result active_semantic_result = semantic_nodes::TickSemanticFlow(semantic_ctx, NaviPhase::Navigate);
     if (active_semantic_result.request_failure) {
         return FailNavigation(active_semantic_result.failure_reason, active_semantic_result.failure_log_message, 0.0, 0.0, 0);
