@@ -643,7 +643,8 @@ StageResult ZiplineRideMachine::Classify(IZiplineObserver& observer, IZiplineAct
             CommitRecord(HopOutcome::Completed, now);
             const HopCompleted done { .at = *last_fix_, .still_on_tower = plan_.chain_continues };
             if (plan_.chain_continues) {
-                parked_on_ = plan_.landing;
+                // 连滑时 reached 是整段末架，plan_.landing 仍是首发瞄准的第一架。
+                parked_on_ = reached;
                 pending_exit_ = done;
                 EnterStage(ZiplineStage::Handoff, now);
                 return Handoff(now);
@@ -744,8 +745,7 @@ StageResult ZiplineRideMachine::TickDismounting(const ZiplineObservation& obs, I
                     EnterStage(ZiplineStage::Failed, now);
                     return Handoff(now);
                 }
-                LogInfo << "zipline/dismount/turn" << VAR(residual) << VAR(*issued) << VAR(obs.fix->angle)
-                        << VAR(*plan_.dismount_heading);
+                LogInfo << "zipline/dismount/turn" << VAR(residual) << VAR(*issued) << VAR(obs.fix->angle) << VAR(*plan_.dismount_heading);
             }
         }
 

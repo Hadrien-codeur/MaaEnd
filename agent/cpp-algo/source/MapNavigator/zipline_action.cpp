@@ -300,7 +300,6 @@ Result FinishHop(const Context& ctx, const HopCompleted& done)
     if (ctx.runtime_state->zipline_relay.required > 0 && !ctx.runtime_state->zipline_relay.readyForLanding()) {
         return AbandonZipline(ctx, "zipline_relay_landed_early", "continuous relay landed before its input budget completed");
     }
-    const bool needs_fixed_departure_rejoin = ctx.fixed_departure_path_available && !done.still_on_tower;
     if (ctx.runtime_state->zipline_relay.required > 0 && relay_end_index >= ctx.session->current_node_idx()) {
         ctx.session->SkipPastWaypoint(relay_end_index, "zipline_relay_endpoint_confirmed");
     }
@@ -308,6 +307,17 @@ Result FinishHop(const Context& ctx, const HopCompleted& done)
         ctx.session->NoteCanonicalFinalGoalConsumed(ctx.session->CurrentAbsoluteNodeIndex(), done.at, "zipline_ride_complete");
         ctx.session->AdvanceToNextWaypoint(ActionType::ZIPLINE, "zipline_ride_complete");
     }
+    // 最终离索段不能覆盖尚未执行的固定滑索，即使阶段机意外提前下索也必须停止。
+    const auto& remaining_path = ctx.session->current_path();
+    const bool fixed_hops_remaining =
+        !ctx.runtime_state->fixed_zipline_route.empty()
+        && std::any_of(remaining_path.begin() + ctx.session->current_node_idx(), remaining_path.end(), [](const Waypoint& waypoint) {
+               return waypoint.action == ActionType::ZIPLINE;
+           });
+    if (fixed_hops_remaining && (!done.still_on_tower || !CurrentHopStartsUnderfoot(ctx))) {
+        return AbandonZipline(ctx, "fixed_zipline_segment_handoff_failed", "remaining fixed hops do not start on the confirmed tower");
+    }
+    const bool needs_fixed_departure_rejoin = ctx.fixed_departure_path_available && !done.still_on_tower && !fixed_hops_remaining;
     ctx.runtime_state->zipline_relay = {};
     ctx.runtime_state->zipline_relay_end_index = 0;
     ctx.runtime_state->OnWaypointAdvance();
@@ -480,8 +490,11 @@ Result StartZiplineHop(const Context& ctx, const Waypoint& waypoint, double actu
                 return AbandonZipline(ctx, "zipline_relay_invalid", "continuous segment crosses a non-zipline waypoint");
             }
         }
-        ctx.runtime_state->zipline_relay_endpoint = path[end_index].zipline_hop->landing;
-        plan.chain_continues = false;
+        const ZiplineHopPlan& segment_tail = *path[end_index].zipline_hop;
+        ctx.runtime_state->zipline_relay_endpoint = segment_tail.landing;
+        // 首发仍瞄第一跳；落架后的续跳与下索语义属于本段末跳。
+        plan.chain_continues = segment_tail.chain_continues;
+        plan.dismount_heading = segment_tail.dismount_heading;
         ctx.runtime_state->zipline_relay = { .required = plan.relay_hops - 1 };
         ctx.runtime_state->zipline_relay_end_index = end_index;
         LogInfo << "ZIPLINE relay configured; waiting for launch confirmation." << VAR(plan.relay_hops)

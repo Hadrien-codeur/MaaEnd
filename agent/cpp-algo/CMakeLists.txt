@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.28)
 project(maaend-cpp-agent)
 
 option(MAAEND_BUILD_ICON_RECOGNITION_TESTS "Build IconRecognition tests" OFF)
+option(MAAEND_BUILD_ZIPLINE_TESTS "Build zipline ride state machine tests" OFF)
 
 include(MaaUtils/MaaUtils.cmake)
 add_library(HeaderOnlyLibraries INTERFACE)
@@ -30,3 +31,8 @@ find_package(MaaAgentServer REQUIRED)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/WebView2.cmake)
 
 add_subdirectory(source)
+
+if(MAAEND_BUILD_ZIPLINE_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
