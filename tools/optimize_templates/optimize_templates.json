@@ -2337,5 +2337,10 @@
     "resource/image/TrialOfSwordmancy/AbandonButtonHover": "3b5f804a93a402d5534c62337f8995ee16ebe60c5dd9422c935a29af414dc8fa",
     "resource/image/TrialOfSwordmancy/StartTrialButton": "33c5bf10afa68b6288731dc70843601d74d90d2c55fab47c1aa7ba0e863a747c",
     "resource/image/TrialOfSwordmancy/DrawCardButton": "ecec9442fd5f819bae8e461bcb3f5e45d0b3b7d7edb870e5087f53e1bad8a12f",
-    "resource/image/TrialOfSwordmancy/TrialTrigger": "2bf9939b0e557db9224582e8727be4f0aa90680ad3fd7f8ff4928e2dc9981933"
+    "resource/image/TrialOfSwordmancy/TrialTrigger": "2bf9939b0e557db9224582e8727be4f0aa90680ad3fd7f8ff4928e2dc9981933",
+    "resource/image/SharedZiplineDelete/MapSharedZipLine2": "b4610ead524529870d3c7271c324b76a5f79698ca0dc88fd57a883a68e73986b",
+    "resource/image/SharedZiplineDelete/MapSharedZipLine": "f64337b650ab7e6b4158547ff37a830b78ff617e5b751f2ead06399db048166d",
+    "resource/image/SeizeDeliveryJobs/DepotNodePage/ValleyIVToken": "6c9c901fb5e7e29f550f95bc6177b32f8f278ac90ee90c5ae515dc2c05617c8d",
+    "resource/image/Common/Button/EndChallengeButton": "d11458035b1cd25788586aa89347702326ea1f7b63b3795ace07051fb58ca59e",
+    "resource/image/GiftOperator/Operators/Purrchena": "89c25d2fbbfea9795c6d1ef434904427b80ef08ac9281fe9007e969e5eecd115"
 }

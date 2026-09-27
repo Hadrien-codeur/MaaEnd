@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -14,16 +15,21 @@ import sys
 
 
 MANIFEST = "fixed-delivery-install.json"
-EXCLUDED = {".git", "debug", "cache", MANIFEST}
+EXCLUDED = {".git", "cache", MANIFEST}
 
 
-def excluded(name: str) -> bool:
-    return name.lower() in EXCLUDED or name.lower().endswith(".webview2")
+def excluded(name: str, parent: Path) -> bool:
+    # Imported facilities and account salt live in debug/record and are required for rollback.
+    return (name.lower() in EXCLUDED or name.lower().endswith(".webview2")
+            or (parent.as_posix().lower() == "debug" and name.lower() != "record"))
 
 
 def digest(path: Path) -> str:
     with path.open("rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
+        result = hashlib.sha256()
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            result.update(chunk)
+        return result.hexdigest()
 
 
 def inventory(root: Path) -> dict[str, str]:
@@ -31,7 +37,7 @@ def inventory(root: Path) -> dict[str, str]:
 
     def visit(directory: Path, relative: Path) -> None:
         for item in sorted(directory.iterdir()):
-            if excluded(item.name):
+            if excluded(item.name, relative):
                 continue
             key = relative / item.name
             if item.is_dir():
@@ -46,6 +52,17 @@ def inventory(root: Path) -> dict[str, str]:
 def git(root: Path, *args: str) -> str:
     return subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True,
                           text=True, encoding="utf-8").stdout.strip()
+
+
+def assert_independent(root: Path) -> None:
+    for directory, dirs, files in os.walk(root, followlinks=False):
+        for name in dirs + files:
+            path = Path(directory) / name
+            info = path.lstat()
+            if path.is_symlink() or getattr(info, "st_file_attributes", 0) & 0x400:
+                raise ValueError(f"Snapshot still contains a filesystem link: {path}")
+            if path.is_file() and info.st_nlink > 1:
+                raise ValueError(f"Snapshot still contains a shared hardlink: {path}")
 
 
 def freeze(source: Path, output: Path, repo: Path, upstream: str) -> dict:
@@ -65,7 +82,8 @@ def freeze(source: Path, output: Path, repo: Path, upstream: str) -> dict:
             raise ValueError(f"Incomplete installation: {required}")
     # copy2 creates independent files even when source files are hardlinks; follow junctions.
     shutil.copytree(source, output, symlinks=False,
-                    ignore=lambda directory, names: [name for name in names if excluded(name)])
+                    ignore=lambda directory, names: [name for name in names if excluded(name, Path(directory).relative_to(source))])
+    assert_independent(output)
     copied = inventory(output)
     if copied != before or inventory(source) != before:
         raise ValueError(f"Install changed during snapshot or copy differed; incomplete output retained: {output}")
@@ -85,6 +103,7 @@ def freeze(source: Path, output: Path, repo: Path, upstream: str) -> dict:
 
 
 def verify(root: Path) -> None:
+    assert_independent(root)
     report = json.loads((root / MANIFEST).read_text(encoding="utf-8"))
     if inventory(root) != report["files"]:
         raise ValueError("Snapshot files differ from the frozen manifest")

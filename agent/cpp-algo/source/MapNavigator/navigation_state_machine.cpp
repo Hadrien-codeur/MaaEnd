@@ -564,10 +564,8 @@ void NavigationStateMachine::UpdateDwellWatchdog(bool captured)
     }
 
     const auto now = std::chrono::steady_clock::now();
-    const bool zone_changed =
-        !dwell.center_zone.empty() && !position_->zone_id.empty() && dwell.center_zone != position_->zone_id;
-    if (!dwell.latched || zone_changed
-        || std::hypot(position_->x - dwell.center_x, position_->y - dwell.center_y) > kDwellWatchdogRadius) {
+    const bool zone_changed = !dwell.center_zone.empty() && !position_->zone_id.empty() && dwell.center_zone != position_->zone_id;
+    if (!dwell.latched || zone_changed || std::hypot(position_->x - dwell.center_x, position_->y - dwell.center_y) > kDwellWatchdogRadius) {
         dwell.latched = true;
         dwell.center_x = position_->x;
         dwell.center_y = position_->y;
@@ -591,6 +589,7 @@ bool NavigationStateMachine::HandleLocalizationLoss()
     if (loss.started_at == std::chrono::steady_clock::time_point {}) {
         loss.started_at = now;
     }
+    runtime_state_.offroute.PauseAt(now);
     // River-fall discriminator: a black capture during a loss = fell in water (the locator folds it into a
     // generic TrackingLost). Latch it so the re-acquire below can arm recovery. See navigator-river-fall.
     if (position_provider_->LastCaptureWasBlackScreen()) {
@@ -871,7 +870,7 @@ bool NavigationStateMachine::GiveUpUnreachableZipline(const char* reason)
     LogWarn << "Zipline mount tower unreachable after repeated replans; walking instead." << VAR(reason) << VAR(approach.replans)
             << VAR(anchor->second.x) << VAR(anchor->second.y) << VAR(position_->x) << VAR(position_->y);
     runtime_state_.dynamic_replan_requested = false;
-    semantic_nodes::AbandonZipline(
+    const semantic_nodes::Result semantic_result = semantic_nodes::AbandonZipline(
         BuildSemanticContext(
             param_,
             action_wrapper_,
@@ -884,6 +883,9 @@ bool NavigationStateMachine::GiveUpUnreachableZipline(const char* reason)
             maa_context_),
         "zipline_unreachable",
         reason);
+    if (semantic_result.request_failure) {
+        return FailNavigation(semantic_result.failure_reason, semantic_result.failure_log_message, 0.0, 0.0, 0);
+    }
     return true;
 }
 
@@ -971,7 +973,7 @@ bool NavigationStateMachine::HandleZiplineRecoveryReplan()
     recovery.Reset();
     // 重展开后人还留在架子上, 就是新路线的头一跳从脚下起滑: 直接开跳, 不用再走过去按上索
     if (runtime_state_.IsZiplineMounted()) {
-        semantic_nodes::StartZiplineHop(
+        const semantic_nodes::Result semantic_result = semantic_nodes::StartZiplineHop(
             BuildSemanticContext(
                 param_,
                 action_wrapper_,
@@ -984,6 +986,9 @@ bool NavigationStateMachine::HandleZiplineRecoveryReplan()
                 maa_context_),
             session_->CurrentWaypoint(),
             0.0);
+        if (semantic_result.request_failure) {
+            return FailNavigation(semantic_result.failure_reason, semantic_result.failure_log_message, 0.0, 0.0, 0);
+        }
         return true;
     }
     SelectPhaseForCurrentWaypoint("zipline_recovery");
@@ -1011,10 +1016,9 @@ bool NavigationStateMachine::TryReplanRemainingAuthoredRoute(const char* reason)
         replan_param.zipline_ledger.clear();
         replan_param.path = param_.fixed_departure_path;
 
-        const auto first_movement = std::find_if(
-            replan_param.path.begin(),
-            replan_param.path.end(),
-            [](const Waypoint& waypoint) { return waypoint.action == ActionType::RUN || waypoint.action == ActionType::NAVMESH; });
+        const auto first_movement = std::find_if(replan_param.path.begin(), replan_param.path.end(), [](const Waypoint& waypoint) {
+            return waypoint.action == ActionType::RUN || waypoint.action == ActionType::NAVMESH;
+        });
         if (first_movement == replan_param.path.end()) {
             LogError << "Fixed departure rejoin path has no movement anchor." << VAR(reason);
             return false;
@@ -1345,9 +1349,9 @@ bool NavigationStateMachine::TickNavigate()
         // 索边卡死跟自救超时同一个处置: 先退索走路, 别直接判导航失败。退链后给盘重新计时,
         // 手上已经是走路点, 再攒满那一次才是真失败。
         if (pinned_at.action == ActionType::ZIPLINE) {
-            LogWarn << "Dwell watchdog tripped at a zipline tower; dropping the chain and walking."
-                    << VAR(runtime_state_.dwell.dwell_ms) << VAR(position_->x) << VAR(position_->y);
-            semantic_nodes::AbandonZipline(
+            LogWarn << "Dwell watchdog tripped at a zipline tower; dropping the chain and walking." << VAR(runtime_state_.dwell.dwell_ms)
+                    << VAR(position_->x) << VAR(position_->y);
+            const semantic_nodes::Result semantic_result = semantic_nodes::AbandonZipline(
                 BuildSemanticContext(
                     param_,
                     action_wrapper_,
@@ -1360,18 +1364,28 @@ bool NavigationStateMachine::TickNavigate()
                     maa_context_),
                 "zipline_dwell_watchdog",
                 "never left the tower's dwell radius");
+            if (semantic_result.request_failure) {
+                return FailNavigation(semantic_result.failure_reason, semantic_result.failure_log_message, 0.0, 0.0, 0);
+            }
             runtime_state_.dwell.Reset();
             return true;
         }
         LogError << "Dwell watchdog tripped; the agent never left its dwell radius." << VAR(runtime_state_.dwell.dwell_ms)
-                 << VAR(runtime_state_.dwell.center_x) << VAR(runtime_state_.dwell.center_y) << VAR(position_->x)
-                 << VAR(position_->y) << VAR(session_->current_node_idx());
+                 << VAR(runtime_state_.dwell.center_x) << VAR(runtime_state_.dwell.center_y) << VAR(position_->x) << VAR(position_->y)
+                 << VAR(session_->current_node_idx());
         return FailNavigation(
             "dwell_watchdog",
             "Agent stayed inside the dwell radius past the watchdog budget; terminating so the pipeline can retry.",
             std::hypot(position_->x - pinned_at.x, position_->y - pinned_at.y),
             0.0,
             runtime_state_.dwell.dwell_ms);
+    }
+
+    // 起步前对一次镜头: 位置用上面刚取的那帧, 此刻人是站着的。排在 ConsumeInlineSemantics 之前,
+    // 紧随其后的 HEADING 转身也从对齐后的镜头起算。
+    if (runtime_state_.camera_align_pending) {
+        runtime_state_.camera_align_pending = false;
+        semantic_nodes::AlignCameraToCharacterOnce(semantic_ctx);
     }
 
     if (runtime_state_.cross_tier_escape.active) {
@@ -1636,6 +1650,7 @@ bool NavigationStateMachine::TickNavigate()
 
     if (runtime_state_.river_fall.pending) {
         RiverFallRecoveryState& rf = runtime_state_.river_fall;
+        runtime_state_.offroute.PauseAt(now);
         if (session_->HardStalledMs(now) > kRiverFallRecoveryTimeoutMs) {
             return FailNavigation(
                 "river_fall_recovery_timeout",
@@ -1687,6 +1702,10 @@ bool NavigationStateMachine::TickNavigate()
     if (session_->phase() == NaviPhase::Navigate && waypoint.IsContinuousRun() && !route.on_route && std::isfinite(route.cross_track)
         && !runtime_state_.cross_tier_escape.active) {
         OffRouteWedgeState& wedge = runtime_state_.offroute;
+        if (const int64_t blind_ms = wedge.ResumeAt(now); blind_ms > 0) {
+            LogInfo << "Off-route wedge clock resumed after a blind stretch." << VAR(blind_ms) << VAR(route.progress_distance)
+                    << VAR(wedge.best_distance);
+        }
         const double progress_epsilon = std::max(kNoProgressDistanceEpsilon, kMeasurementDefaultPositionQuantum);
         if (!wedge.active || route.progress_distance + progress_epsilon < wedge.best_distance) {
             wedge.active = true;
@@ -1765,7 +1784,7 @@ bool NavigationStateMachine::TickNavigate()
                 if (waypoint.action == ActionType::ZIPLINE) {
                     LogWarn << "Recovery timed out at a zipline tower; dropping the chain and walking." << VAR(recovery_elapsed_ms)
                             << VAR(waypoint.x) << VAR(waypoint.y) << VAR(position_->x) << VAR(position_->y);
-                    semantic_nodes::AbandonZipline(
+                    const semantic_nodes::Result semantic_result = semantic_nodes::AbandonZipline(
                         BuildSemanticContext(
                             param_,
                             action_wrapper_,
@@ -1778,6 +1797,9 @@ bool NavigationStateMachine::TickNavigate()
                             maa_context_),
                         "zipline_recovery_timeout",
                         "stuck at the tower after recovery ran out");
+                    if (semantic_result.request_failure) {
+                        return FailNavigation(semantic_result.failure_reason, semantic_result.failure_log_message, 0.0, 0.0, 0);
+                    }
                     return true;
                 }
                 return FailNavigation(

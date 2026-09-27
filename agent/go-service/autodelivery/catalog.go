@@ -32,6 +32,8 @@ type destination struct {
 	ZipRouteNode     string
 	FixedRouteNode   string
 	RetryRouteNode   string
+	ZiplineOnly      bool
+	VerifyName       bool
 	SerialID         int
 	Names            map[string]string
 	AreaNames        map[string]string
@@ -51,6 +53,7 @@ type generatedDepot struct {
 	RouteNode      string            `json:"route_node"`
 	ZipRouteNode   string            `json:"zip_route_node"`
 	FixedRouteNode string            `json:"fixed_route_node"`
+	ZiplineOnly    bool              `json:"zipline_only"`
 	RetryRouteNode string            `json:"retry_route_node"`
 }
 
@@ -65,6 +68,8 @@ type generatedDestination struct {
 	RouteNode      string            `json:"route_node"`
 	ZipRouteNode   string            `json:"zip_route_node"`
 	FixedRouteNode string            `json:"fixed_route_node"`
+	ZiplineOnly    bool              `json:"zipline_only"`
+	VerifyName     bool              `json:"verify_name"`
 	RetryRouteNode string            `json:"retry_route_node"`
 }
 
@@ -75,6 +80,7 @@ type depot struct {
 	RouteNode      string
 	ZipRouteNode   string
 	FixedRouteNode string
+	ZiplineOnly    bool
 	RetryRouteNode string
 }
 
@@ -170,6 +176,7 @@ func buildDepots(generated generatedCatalog) (map[string]depot, error) {
 			RouteNode:      source.RouteNode,
 			ZipRouteNode:   source.ZipRouteNode,
 			FixedRouteNode: source.FixedRouteNode,
+			ZiplineOnly:    source.ZiplineOnly,
 			RetryRouteNode: source.RetryRouteNode,
 		}
 	}
@@ -200,6 +207,10 @@ func buildDestinations(generated generatedCatalog, depots map[string]depot) ([]a
 		}
 		if source.Kind == destinationKindRecycleBin && source.SerialID <= 0 {
 			return nil, nil, fmt.Errorf("AutoDelivery recycle bin destination %q has invalid serial id %d", source.ID, source.SerialID)
+		}
+		// 只有 NPC 终点的世界交互提示会显示终点名称，其他终点开启名称复核只会一直失败。
+		if source.VerifyName && source.Kind != destinationKindNPC {
+			return nil, nil, fmt.Errorf("AutoDelivery destination %q enables name check on kind %q", source.ID, source.Kind)
 		}
 		if _, exists := depots[source.DepotID]; !exists {
 			return nil, nil, fmt.Errorf("AutoDelivery destination %q references unknown depot %q", source.ID, source.DepotID)
@@ -234,6 +245,8 @@ func buildDestinations(generated generatedCatalog, depots map[string]depot) ([]a
 			ZipRouteNode:     source.ZipRouteNode,
 			FixedRouteNode:   source.FixedRouteNode,
 			RetryRouteNode:   source.RetryRouteNode,
+			ZiplineOnly:      source.ZiplineOnly,
+			VerifyName:       source.VerifyName,
 			SerialID:         source.SerialID,
 			Names:            source.Name,
 			AreaNames:        source.Area,

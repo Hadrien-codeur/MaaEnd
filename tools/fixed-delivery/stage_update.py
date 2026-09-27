@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -24,6 +25,8 @@ def changed(root: Path, base: str, head: str) -> list[str]:
 
 
 def stage(root: Path, target: str, remote: str, branch: str, candidate: Path | None = None) -> dict:
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", target):
+        raise ValueError("Target must be the reviewed full 40-character upstream commit SHA")
     root = Path(value(root, "rev-parse", "--show-toplevel")).resolve()
     dirty = value(root, "status", "--porcelain=v1", "--untracked-files=all")
     if dirty:

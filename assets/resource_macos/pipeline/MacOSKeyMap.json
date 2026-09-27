@@ -234,6 +234,14 @@
             }
         }
     },
+    "SharedZiplineDeleteDismissNoMapMind": {
+        "action": {
+            "type": "ClickKey",
+            "param": {
+                "key": 53
+            }
+        }
+    },
     "StashBackpackUsableItemsLimitedDrag": {
         "action": {
             "type": "KeyDown",

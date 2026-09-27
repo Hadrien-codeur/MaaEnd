@@ -254,13 +254,36 @@ struct OffRouteWedgeState
 {
     std::chrono::steady_clock::time_point since {};
     std::chrono::steady_clock::time_point last_replan_at {};
+    // First blind tick (localization loss, river-fall recovery) since the watchdog last ran. Those ticks return before
+    // the watchdog and cannot move route progress, so the next watchdog tick shifts `since` past the whole gap.
+    std::chrono::steady_clock::time_point blind_since {};
     double best_distance = std::numeric_limits<double>::max();
     bool active = false;
+
+    void PauseAt(const std::chrono::steady_clock::time_point& now)
+    {
+        if (active && blind_since == std::chrono::steady_clock::time_point {}) {
+            blind_since = now;
+        }
+    }
+
+    // Returns the blind milliseconds taken off the clock, zero when there was no pause.
+    int64_t ResumeAt(const std::chrono::steady_clock::time_point& now)
+    {
+        if (blind_since == std::chrono::steady_clock::time_point {}) {
+            return 0;
+        }
+        const auto blind = now - blind_since;
+        since += blind;
+        blind_since = {};
+        return std::chrono::duration_cast<std::chrono::milliseconds>(blind).count();
+    }
 
     void Reset()
     {
         since = {};
         last_replan_at = {};
+        blind_since = {};
         best_distance = std::numeric_limits<double>::max();
         active = false;
     }
@@ -429,7 +452,12 @@ struct NavigationRuntimeState
     int global_reacquire_streak = 0;
     bool dynamic_replan_requested = false;
     bool nav_run_dirty = true;
+    // 起步前是否先把镜头对回角色朝向。只由站定去干别的事的停车点置位(见 ArmCameraAlign), 刹车、卡住
+    // 重发与脱困路径都不置; 留到下一个 navigate 拍才消费, 因此不进任何 Reset。
+    bool camera_align_pending = false;
     ProgressIdentityState progress_identity;
+
+    void ArmCameraAlign() { camera_align_pending = true; }
 
     void ResetNavigationAssistState()
     {
@@ -470,6 +498,7 @@ struct NavigationRuntimeState
         global_reacquire_streak = 0;
         dynamic_replan_requested = false;
         nav_run_dirty = true;
+        camera_align_pending = true;
         flow.navigate_started_at = now;
         flow.last_auto_sprint_time = {};
         flow.last_tick_started_at = {};

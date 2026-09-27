@@ -4,7 +4,14 @@
             "name": "SeizeDeliveryJobs",
             "description": "$task.SeizeDeliveryJobs.description",
             "label": "$task.SeizeDeliveryJobs.label",
-            "entry": "SeizeDeliveryJobsMain",
+            "entry": "SeizeDeliveryJobsCheckOngoingJob",
+            "pipeline_override": {
+                "AutoDeliveryDeliveryMissionNotFound": {
+                    "anchor": {
+                        "SeizeDeliveryJobsAfterMissionListExhausted": "SeizeDeliveryJobsNoOngoingJob"
+                    }
+                }
+            },
             "option": [
                 "SeizeDeliveryJobsReward",
                 "SeizeDeliveryJobsRefreshLimit",
@@ -51,6 +58,110 @@
             "label": "$task.SeizeDeliveryJobsCommissionSource.label",
             "cases": [
                 {
+                    "name": "AllUnlimited",
+                    "label": "$task.SeizeDeliveryJobsCommissionSource.cases.AllUnlimited.label",
+                    "option": [
+                        "SeizeDeliveryJobsSpecifyDeliveryPointAllUnlimited"
+                    ],
+                    "pipeline_override": {
+                        "__SeizeDeliveryJobsRecoOrigin": {
+                            "expected": [
+                                "武陵城",
+                                "Wuling City",
+                                "무릉성",
+                                "试验园区",
+                                "實驗園區",
+                                "Test Area",
+                                "実験区域",
+                                "실험 구역",
+                                "源石研究园",
+                                "源石研究園",
+                                "Originium Science Park",
+                                "源石研究パーク",
+                                "오리지늄 연구 구역",
+                                "矿脉源区",
+                                "礦脈源區",
+                                "Origin Lodespring",
+                                "鉱山エリア",
+                                "광맥 구역",
+                                "供能高地",
+                                "Power Plateau",
+                                "エネルギー高地",
+                                "에너지 공급 고지"
+                            ]
+                        },
+                        "SeizeDeliveryJobsMain": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterWulingJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyToSeize": {
+                            "next": [
+                                "SeizeDeliveryJobsFailedChanceExhausted",
+                                "SeizeDeliveryJobsPrepareAtDijiang",
+                                "SeizeDeliveryJobsJobListIsAllFilter",
+                                "SeizeDeliveryJobsJobListSelectAllFilterPre"
+                            ]
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterWulingJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyAfterDijiangTeleport": {
+                            "next": [
+                                "SeizeDeliveryJobsJobListIsAllFilter",
+                                "SeizeDeliveryJobsJobListSelectAllFilterPre"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Unlimited",
+                    "label": "$task.SeizeDeliveryJobsCommissionSource.cases.Unlimited.label",
+                    "option": [
+                        "SeizeDeliveryJobsSpecifyDeliveryPointUnlimited"
+                    ],
+                    "pipeline_override": {
+                        "__SeizeDeliveryJobsRecoOrigin": {
+                            "expected": [
+                                "武陵城",
+                                "Wuling City",
+                                "무릉성",
+                                "试验园区",
+                                "實驗園區",
+                                "Test Area",
+                                "実験区域",
+                                "실험 구역"
+                            ]
+                        },
+                        "SeizeDeliveryJobsMain": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterWulingJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyToSeize": {
+                            "next": [
+                                "SeizeDeliveryJobsFailedChanceExhausted",
+                                "SeizeDeliveryJobsPrepareAtDijiang",
+                                "SeizeDeliveryJobsJobListIsWulingFilter",
+                                "SeizeDeliveryJobsJobListSelectWulingFilterPre"
+                            ]
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterWulingJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyAfterDijiangTeleport": {
+                            "next": [
+                                "SeizeDeliveryJobsJobListIsWulingFilter",
+                                "SeizeDeliveryJobsJobListSelectWulingFilterPre"
+                            ]
+                        }
+                    }
+                },
+                {
                     "name": "WulingCity",
                     "label": "$task.SeizeDeliveryJobsCommissionSource.cases.WulingCity.label",
                     "option": [
@@ -62,6 +173,30 @@
                                 "武陵城",
                                 "Wuling City",
                                 "무릉성"
+                            ]
+                        },
+                        "SeizeDeliveryJobsMain": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterWulingJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyToSeize": {
+                            "next": [
+                                "SeizeDeliveryJobsFailedChanceExhausted",
+                                "SeizeDeliveryJobsPrepareAtDijiang",
+                                "SeizeDeliveryJobsJobListIsWulingFilter",
+                                "SeizeDeliveryJobsJobListSelectWulingFilterPre"
+                            ]
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterWulingJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyAfterDijiangTeleport": {
+                            "next": [
+                                "SeizeDeliveryJobsJobListIsWulingFilter",
+                                "SeizeDeliveryJobsJobListSelectWulingFilterPre"
                             ]
                         }
                     }
@@ -77,30 +212,209 @@
                             "expected": [
                                 "试验园区",
                                 "實驗園區",
-                                "実験区域",
                                 "Test Area",
+                                "実験区域",
                                 "실험 구역"
+                            ]
+                        },
+                        "SeizeDeliveryJobsMain": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterWulingJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyToSeize": {
+                            "next": [
+                                "SeizeDeliveryJobsFailedChanceExhausted",
+                                "SeizeDeliveryJobsPrepareAtDijiang",
+                                "SeizeDeliveryJobsJobListIsWulingFilter",
+                                "SeizeDeliveryJobsJobListSelectWulingFilterPre"
+                            ]
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterWulingJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyAfterDijiangTeleport": {
+                            "next": [
+                                "SeizeDeliveryJobsJobListIsWulingFilter",
+                                "SeizeDeliveryJobsJobListSelectWulingFilterPre"
                             ]
                         }
                     }
                 },
                 {
-                    "name": "Unlimited",
-                    "label": "$task.SeizeDeliveryJobsCommissionSource.cases.Unlimited.label",
+                    "name": "ValleyIVUnlimited",
+                    "label": "$task.SeizeDeliveryJobsCommissionSource.cases.ValleyIVUnlimited.label",
                     "option": [
-                        "SeizeDeliveryJobsSpecifyDeliveryPointUnlimited"
+                        "SeizeDeliveryJobsSpecifyDeliveryPointValleyIVUnlimited"
                     ],
                     "pipeline_override": {
                         "__SeizeDeliveryJobsRecoOrigin": {
                             "expected": [
-                                "武陵城",
-                                "试验园区",
-                                "實驗園區",
-                                "Wuling City",
-                                "実験区域",
-                                "Test Area",
-                                "무릉성",
-                                "실험 구역"
+                                "源石研究园",
+                                "源石研究園",
+                                "Originium Science Park",
+                                "源石研究パーク",
+                                "오리지늄 연구 구역",
+                                "矿脉源区",
+                                "礦脈源區",
+                                "Origin Lodespring",
+                                "鉱山エリア",
+                                "광맥 구역",
+                                "供能高地",
+                                "Power Plateau",
+                                "エネルギー高地",
+                                "에너지 공급 고지"
+                            ]
+                        },
+                        "SeizeDeliveryJobsMain": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterValleyIVJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyToSeize": {
+                            "next": [
+                                "SeizeDeliveryJobsFailedChanceExhausted",
+                                "SeizeDeliveryJobsPrepareAtDijiang",
+                                "SeizeDeliveryJobsJobListIsValleyIVFilter",
+                                "SeizeDeliveryJobsJobListSelectValleyIVFilterPre"
+                            ]
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterValleyIVJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyAfterDijiangTeleport": {
+                            "next": [
+                                "SeizeDeliveryJobsJobListIsValleyIVFilter",
+                                "SeizeDeliveryJobsJobListSelectValleyIVFilterPre"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "OriginiumSciencePark",
+                    "label": "$task.SeizeDeliveryJobsCommissionSource.cases.OriginiumSciencePark.label",
+                    "option": [
+                        "SeizeDeliveryJobsSpecifyDeliveryPointOriginiumSciencePark"
+                    ],
+                    "pipeline_override": {
+                        "__SeizeDeliveryJobsRecoOrigin": {
+                            "expected": [
+                                "源石研究园",
+                                "源石研究園",
+                                "Originium Science Park",
+                                "源石研究パーク",
+                                "오리지늄 연구 구역"
+                            ]
+                        },
+                        "SeizeDeliveryJobsMain": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterValleyIVJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyToSeize": {
+                            "next": [
+                                "SeizeDeliveryJobsFailedChanceExhausted",
+                                "SeizeDeliveryJobsPrepareAtDijiang",
+                                "SeizeDeliveryJobsJobListIsValleyIVFilter",
+                                "SeizeDeliveryJobsJobListSelectValleyIVFilterPre"
+                            ]
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterValleyIVJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyAfterDijiangTeleport": {
+                            "next": [
+                                "SeizeDeliveryJobsJobListIsValleyIVFilter",
+                                "SeizeDeliveryJobsJobListSelectValleyIVFilterPre"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "OriginLodespring",
+                    "label": "$task.SeizeDeliveryJobsCommissionSource.cases.OriginLodespring.label",
+                    "option": [
+                        "SeizeDeliveryJobsSpecifyDeliveryPointOriginLodespring"
+                    ],
+                    "pipeline_override": {
+                        "__SeizeDeliveryJobsRecoOrigin": {
+                            "expected": [
+                                "矿脉源区",
+                                "礦脈源區",
+                                "Origin Lodespring",
+                                "鉱山エリア",
+                                "광맥 구역"
+                            ]
+                        },
+                        "SeizeDeliveryJobsMain": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterValleyIVJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyToSeize": {
+                            "next": [
+                                "SeizeDeliveryJobsFailedChanceExhausted",
+                                "SeizeDeliveryJobsPrepareAtDijiang",
+                                "SeizeDeliveryJobsJobListIsValleyIVFilter",
+                                "SeizeDeliveryJobsJobListSelectValleyIVFilterPre"
+                            ]
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterValleyIVJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyAfterDijiangTeleport": {
+                            "next": [
+                                "SeizeDeliveryJobsJobListIsValleyIVFilter",
+                                "SeizeDeliveryJobsJobListSelectValleyIVFilterPre"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "PowerPlateau",
+                    "label": "$task.SeizeDeliveryJobsCommissionSource.cases.PowerPlateau.label",
+                    "option": [
+                        "SeizeDeliveryJobsSpecifyDeliveryPointPowerPlateau"
+                    ],
+                    "pipeline_override": {
+                        "__SeizeDeliveryJobsRecoOrigin": {
+                            "expected": [
+                                "供能高地",
+                                "Power Plateau",
+                                "エネルギー高地",
+                                "에너지 공급 고지"
+                            ]
+                        },
+                        "SeizeDeliveryJobsMain": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterValleyIVJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyToSeize": {
+                            "next": [
+                                "SeizeDeliveryJobsFailedChanceExhausted",
+                                "SeizeDeliveryJobsPrepareAtDijiang",
+                                "SeizeDeliveryJobsJobListIsValleyIVFilter",
+                                "SeizeDeliveryJobsJobListSelectValleyIVFilterPre"
+                            ]
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "next": [
+                                "SeizeDeliveryJobsEnterValleyIVJobList"
+                            ]
+                        },
+                        "SeizeDeliveryJobsReadyAfterDijiangTeleport": {
+                            "next": [
+                                "SeizeDeliveryJobsJobListIsValleyIVFilter",
+                                "SeizeDeliveryJobsJobListSelectValleyIVFilterPre"
                             ]
                         }
                     }
@@ -185,6 +499,315 @@
                 }
             ]
         },
+        "SeizeDeliveryJobsSpecifyDeliveryPointUnlimited": {
+            "type": "switch",
+            "default_case": "No",
+            "label": "$task.SeizeDeliveryJobsSpecifyDeliveryPoint.label",
+            "cases": [
+                {
+                    "name": "No"
+                },
+                {
+                    "name": "Yes",
+                    "option": [
+                        "SeizeDeliveryJobsDeliveryPointWulingCity",
+                        "SeizeDeliveryJobsDeliveryPointTestArea"
+                    ],
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsFindTarget": {
+                            "enabled": false
+                        },
+                        "SeizeDeliveryJobsScanTarget": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsEndpointFilter": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "enabled": true
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsSpecifyDeliveryPointAllUnlimited": {
+            "type": "switch",
+            "default_case": "No",
+            "label": "$task.SeizeDeliveryJobsSpecifyDeliveryPoint.label",
+            "cases": [
+                {
+                    "name": "No"
+                },
+                {
+                    "name": "Yes",
+                    "option": [
+                        "SeizeDeliveryJobsDeliveryPointWulingCity",
+                        "SeizeDeliveryJobsDeliveryPointTestArea",
+                        "SeizeDeliveryJobsDeliveryPointOriginiumSciencePark",
+                        "SeizeDeliveryJobsDeliveryPointOriginLodespring",
+                        "SeizeDeliveryJobsDeliveryPointPowerPlateau"
+                    ],
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsFindTarget": {
+                            "enabled": false
+                        },
+                        "SeizeDeliveryJobsScanTarget": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsEndpointFilter": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "enabled": true
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsSpecifyDeliveryPointValleyIVUnlimited": {
+            "type": "switch",
+            "default_case": "No",
+            "label": "$task.SeizeDeliveryJobsSpecifyDeliveryPoint.label",
+            "cases": [
+                {
+                    "name": "No"
+                },
+                {
+                    "name": "Yes",
+                    "option": [
+                        "SeizeDeliveryJobsDeliveryPointOriginiumSciencePark",
+                        "SeizeDeliveryJobsDeliveryPointOriginLodespring",
+                        "SeizeDeliveryJobsDeliveryPointPowerPlateau"
+                    ],
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsFindTarget": {
+                            "enabled": false
+                        },
+                        "SeizeDeliveryJobsScanTarget": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsEndpointFilter": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "enabled": true
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsPostProcessing": {
+            "type": "select",
+            "default_case": "Disable",
+            "label": "$task.SeizeDeliveryJobsPostProcessing.label",
+            "description": "$task.SeizeDeliveryJobsPostProcessing.description",
+            "cases": [
+                {
+                    "name": "Disable",
+                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.Disable.label"
+                },
+                {
+                    "name": "Tele",
+                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.Tele.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsPostProcessingEntry": {
+                            "enabled": true,
+                            "next": [
+                                "SeizeDeliveryJobsTeleport"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "TeleWalk",
+                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.TeleWalk.label",
+                    "option": [
+                        "SeizeDeliveryJobsPostDeparturePreferZipline"
+                    ],
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsPostProcessingEntry": {
+                            "enabled": true,
+                            "next": [
+                                "SeizeDeliveryJobsTeleportAndWalk"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "TeleWalkFetchDeliver",
+                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.TeleWalkFetchDeliver.label",
+                    "option": [
+                        "SeizeDeliveryJobsPostDepartureRiskAcknowledgement",
+                        "SeizeDeliveryJobsPostDeparturePreferZipline",
+                        "SeizeDeliveryJobsRepeatCount"
+                    ],
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsPostProcessingEntry": {
+                            "enabled": true,
+                            "next": [
+                                "SeizeDeliveryJobsGuard",
+                                "SeizeDeliveryJobsFullDelivery"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsPostDepartureRiskAcknowledgement": {
+            "type": "switch",
+            "label": "$task.AutoDeliveryRiskAcknowledgement.label",
+            "description": "$task.AutoDeliveryRiskAcknowledgement.description",
+            "default_case": "No",
+            "cases": [
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsGuard": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "Yes"
+                }
+            ]
+        },
+        "SeizeDeliveryJobsFixedZipline": {
+            "type": "switch",
+            "label": "$task.AutoDeliveryFixedZipline.label",
+            "description": "$task.AutoDeliveryFixedZipline.description",
+            "controller": [
+                "Win32-Front"
+            ],
+            "default_case": "No",
+            "cases": [
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "AutoDeliveryNavigateDepot": {
+                            "attach": {
+                                "fixed_zipline": false
+                            }
+                        },
+                        "AutoDeliveryNavigateDestination": {
+                            "attach": {
+                                "fixed_zipline": false
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Yes",
+                    "pipeline_override": {
+                        "AutoDeliveryNavigateDepot": {
+                            "attach": {
+                                "fixed_zipline": true
+                            }
+                        },
+                        "AutoDeliveryNavigateDestination": {
+                            "attach": {
+                                "fixed_zipline": true
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsPostDeparturePreferZipline": {
+            "type": "switch",
+            "label": "$task.AutoDeliveryPreferZipline.label",
+            "description": "$task.AutoDeliveryPreferZipline.description",
+            "default_case": "No",
+            "cases": [
+                {
+                    "name": "No",
+                    "pipeline_override": {
+                        "AutoDeliveryNavigateDepot": {
+                            "attach": {
+                                "zip": false
+                            }
+                        },
+                        "AutoDeliveryNavigateDestination": {
+                            "attach": {
+                                "zip": false
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Yes",
+                    "option": [
+                        "SeizeDeliveryJobsFixedZipline"
+                    ],
+                    "pipeline_override": {
+                        "AutoDeliveryNavigateDepot": {
+                            "attach": {
+                                "zip": true
+                            }
+                        },
+                        "AutoDeliveryNavigateDestination": {
+                            "attach": {
+                                "zip": true
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsRefreshLimit": {
+            "type": "input",
+            "label": "$task.SeizeDeliveryJobsRefreshLimit.label",
+            "inputs": [
+                {
+                    "name": "Limit",
+                    "label": "$task.SeizeDeliveryJobsRefreshLimit.inputs.Limit.label",
+                    "default": "100",
+                    "pipeline_type": "int",
+                    "verify": "^([1-9]\\d{0,2}|1\\d{3}|2000)$",
+                    "pattern_msg": "$task.SeizeDeliveryJobsRefreshLimit.inputs.Limit.pattern_msg"
+                }
+            ],
+            "pipeline_override": {
+                "SeizeDeliveryJobsRefreshHit": {
+                    "max_hit": "{Limit}"
+                }
+            }
+        },
+        "SeizeDeliveryJobsRepeatCount": {
+            "type": "select",
+            "default_case": "3",
+            "label": "$task.SeizeDeliveryJobsRepeatCount.label",
+            "description": "$task.SeizeDeliveryJobsRepeatCount.description",
+            "cases": [
+                {
+                    "name": "1",
+                    "label": "$task.SeizeDeliveryJobsRepeatCount.cases.1.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsMain": {
+                            "max_hit": 1
+                        }
+                    }
+                },
+                {
+                    "name": "2",
+                    "label": "$task.SeizeDeliveryJobsRepeatCount.cases.2.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsMain": {
+                            "max_hit": 2
+                        }
+                    }
+                },
+                {
+                    "name": "3",
+                    "label": "$task.SeizeDeliveryJobsRepeatCount.cases.3.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsMain": {
+                            "max_hit": 3
+                        }
+                    }
+                }
+            ]
+        },
         "SeizeDeliveryJobsSpecifyDeliveryPointTestArea": {
             "type": "switch",
             "default_case": "No",
@@ -253,7 +876,7 @@
                 }
             ]
         },
-        "SeizeDeliveryJobsSpecifyDeliveryPointUnlimited": {
+        "SeizeDeliveryJobsSpecifyDeliveryPointOriginiumSciencePark": {
             "type": "switch",
             "default_case": "No",
             "label": "$task.SeizeDeliveryJobsSpecifyDeliveryPoint.label",
@@ -264,8 +887,7 @@
                 {
                     "name": "Yes",
                     "option": [
-                        "SeizeDeliveryJobsDeliveryPointWulingCity",
-                        "SeizeDeliveryJobsDeliveryPointTestArea"
+                        "SeizeDeliveryJobsDeliveryPointOriginiumSciencePark"
                     ],
                     "pipeline_override": {
                         "SeizeDeliveryJobsFindTarget": {
@@ -284,212 +906,235 @@
                 }
             ]
         },
-        "SeizeDeliveryJobsPostProcessing": {
-            "type": "select",
-            "default_case": "Disable",
-            "label": "$task.SeizeDeliveryJobsPostProcessing.label",
-            "description": "$task.SeizeDeliveryJobsPostProcessing.description",
+        "SeizeDeliveryJobsDeliveryPointOriginiumSciencePark": {
+            "type": "checkbox",
+            "label": "$task.SeizeDeliveryJobsDeliveryPointOriginiumSciencePark.label",
+            "default_case": [
+                "DeliverTargetMap01Lv00501",
+                "DeliverTargetMap01Lv00502",
+                "DeliverTargetMap01Lv00503",
+                "DeliverTargetMap01Lv005Recycle02",
+                "DeliverTargetMap01Lv005Recycle03"
+            ],
             "cases": [
                 {
-                    "name": "Disable",
-                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.Disable.label"
-                },
-                {
-                    "name": "Tele",
-                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.Tele.label",
+                    "name": "DeliverTargetMap01Lv00501",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointOriginiumSciencePark.cases.DeliverTargetMap01Lv00501.label",
                     "pipeline_override": {
-                        "SeizeDeliveryJobsPostProcessingEntry": {
-                            "enabled": true,
-                            "next": [
-                                "SeizeDeliveryJobsTeleport"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "TeleWalk",
-                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.TeleWalk.label",
-                    "option": [
-                        "SeizeDeliveryJobsPostDeparturePreferZipline"
-                    ],
-                    "pipeline_override": {
-                        "SeizeDeliveryJobsPostProcessingEntry": {
-                            "enabled": true,
-                            "next": [
-                                "SeizeDeliveryJobsTeleportAndWalk"
-                            ]
-                        }
-                    }
-                },
-                {
-                    "name": "TeleWalkFetchDeliver",
-                    "label": "$task.SeizeDeliveryJobsPostProcessing.cases.TeleWalkFetchDeliver.label",
-                    "option": [
-                        "SeizeDeliveryJobsPostDepartureRiskAcknowledgement",
-                        "SeizeDeliveryJobsPostDeparturePreferZipline",
-                        "SeizeDeliveryJobsRepeatCount"
-                    ],
-                    "pipeline_override": {
-                        "SeizeDeliveryJobsPostProcessingEntry": {
-                            "enabled": true,
-                            "next": [
-                                "SeizeDeliveryJobsFullDelivery"
-                            ]
-                        }
-                    }
-                }
-            ]
-        },
-        "SeizeDeliveryJobsPostDepartureRiskAcknowledgement": {
-            "type": "switch",
-            "label": "$task.AutoDeliveryRiskAcknowledgement.label",
-            "description": "$task.AutoDeliveryRiskAcknowledgement.description",
-            "default_case": "No",
-            "cases": [
-                {
-                    "name": "No",
-                    "pipeline_override": {
-                        "SeizeDeliveryJobsGuard": {
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv00501": {
                             "enabled": true
                         }
                     }
                 },
                 {
-                    "name": "Yes"
+                    "name": "DeliverTargetMap01Lv00502",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointOriginiumSciencePark.cases.DeliverTargetMap01Lv00502.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv00502": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "DeliverTargetMap01Lv00503",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointOriginiumSciencePark.cases.DeliverTargetMap01Lv00503.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv00503": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "DeliverTargetMap01Lv005Recycle02",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointOriginiumSciencePark.cases.DeliverTargetMap01Lv005Recycle02.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv005Recycle02": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "DeliverTargetMap01Lv005Recycle03",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointOriginiumSciencePark.cases.DeliverTargetMap01Lv005Recycle03.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv005Recycle03": {
+                            "enabled": true
+                        }
+                    }
                 }
             ]
         },
-        "SeizeDeliveryJobsPostDeparturePreferZipline": {
+        "SeizeDeliveryJobsSpecifyDeliveryPointOriginLodespring": {
             "type": "switch",
-            "label": "$task.AutoDeliveryPreferZipline.label",
-            "description": "$task.AutoDeliveryPreferZipline.description",
             "default_case": "No",
+            "label": "$task.SeizeDeliveryJobsSpecifyDeliveryPoint.label",
             "cases": [
                 {
-                    "name": "No",
-                    "pipeline_override": {
-                        "AutoDeliveryNavigateDepot": {
-                            "attach": {
-                                "zip": false
-                            }
-                        },
-                        "AutoDeliveryNavigateDestination": {
-                            "attach": {
-                                "zip": false
-                            }
-                        }
-                    }
+                    "name": "No"
                 },
                 {
                     "name": "Yes",
                     "option": [
-                        "SeizeDeliveryJobsFixedZipline"
+                        "SeizeDeliveryJobsDeliveryPointOriginLodespring"
                     ],
                     "pipeline_override": {
-                        "AutoDeliveryNavigateDepot": {
-                            "attach": {
-                                "zip": true
-                            }
+                        "SeizeDeliveryJobsFindTarget": {
+                            "enabled": false
                         },
-                        "AutoDeliveryNavigateDestination": {
-                            "attach": {
-                                "zip": true
-                            }
+                        "SeizeDeliveryJobsScanTarget": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsEndpointFilter": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "enabled": true
                         }
                     }
                 }
             ]
         },
-        "SeizeDeliveryJobsFixedZipline": {
-            "type": "switch",
-            "label": "$task.AutoDeliveryFixedZipline.label",
-            "description": "$task.AutoDeliveryFixedZipline.description",
-            "controller": [
-                "Win32-Front"
+        "SeizeDeliveryJobsDeliveryPointOriginLodespring": {
+            "type": "checkbox",
+            "label": "$task.SeizeDeliveryJobsDeliveryPointOriginLodespring.label",
+            "default_case": [
+                "DeliverTargetMap01Lv00601",
+                "DeliverTargetMap01Lv00602",
+                "DeliverTargetMap01Lv00603",
+                "DeliverTargetMap01Lv006Recycle01",
+                "DeliverTargetMap01Lv006Recycle03"
             ],
-            "default_case": "No",
             "cases": [
                 {
-                    "name": "No",
+                    "name": "DeliverTargetMap01Lv00601",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointOriginLodespring.cases.DeliverTargetMap01Lv00601.label",
                     "pipeline_override": {
-                        "AutoDeliveryNavigateDepot": {
-                            "attach": {
-                                "fixed_zipline": false
-                            }
-                        },
-                        "AutoDeliveryNavigateDestination": {
-                            "attach": {
-                                "fixed_zipline": false
-                            }
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv00601": {
+                            "enabled": true
                         }
                     }
+                },
+                {
+                    "name": "DeliverTargetMap01Lv00602",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointOriginLodespring.cases.DeliverTargetMap01Lv00602.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv00602": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "DeliverTargetMap01Lv00603",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointOriginLodespring.cases.DeliverTargetMap01Lv00603.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv00603": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "DeliverTargetMap01Lv006Recycle01",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointOriginLodespring.cases.DeliverTargetMap01Lv006Recycle01.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv006Recycle01": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "DeliverTargetMap01Lv006Recycle03",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointOriginLodespring.cases.DeliverTargetMap01Lv006Recycle03.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv006Recycle03": {
+                            "enabled": true
+                        }
+                    }
+                }
+            ]
+        },
+        "SeizeDeliveryJobsSpecifyDeliveryPointPowerPlateau": {
+            "type": "switch",
+            "default_case": "No",
+            "label": "$task.SeizeDeliveryJobsSpecifyDeliveryPoint.label",
+            "cases": [
+                {
+                    "name": "No"
                 },
                 {
                     "name": "Yes",
+                    "option": [
+                        "SeizeDeliveryJobsDeliveryPointPowerPlateau"
+                    ],
                     "pipeline_override": {
-                        "AutoDeliveryNavigateDepot": {
-                            "attach": {
-                                "fixed_zipline": true
-                            }
+                        "SeizeDeliveryJobsFindTarget": {
+                            "enabled": false
                         },
-                        "AutoDeliveryNavigateDestination": {
-                            "attach": {
-                                "fixed_zipline": true
-                            }
+                        "SeizeDeliveryJobsScanTarget": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsEndpointFilter": {
+                            "enabled": true
+                        },
+                        "SeizeDeliveryJobsPrepareAtDijiang": {
+                            "enabled": true
                         }
                     }
                 }
             ]
         },
-        "SeizeDeliveryJobsRefreshLimit": {
-            "type": "input",
-            "label": "$task.SeizeDeliveryJobsRefreshLimit.label",
-            "inputs": [
-                {
-                    "name": "Limit",
-                    "label": "$task.SeizeDeliveryJobsRefreshLimit.inputs.Limit.label",
-                    "default": "100",
-                    "pipeline_type": "int",
-                    "verify": "^([1-9]\\d{0,2}|1\\d{3}|2000)$",
-                    "pattern_msg": "$task.SeizeDeliveryJobsRefreshLimit.inputs.Limit.pattern_msg"
-                }
+        "SeizeDeliveryJobsDeliveryPointPowerPlateau": {
+            "type": "checkbox",
+            "label": "$task.SeizeDeliveryJobsDeliveryPointPowerPlateau.label",
+            "default_case": [
+                "DeliverTargetMap01Lv00701",
+                "DeliverTargetMap01Lv00702",
+                "DeliverTargetMap01Lv00703",
+                "DeliverTargetMap01Lv007Recycle02",
+                "DeliverTargetMap01Lv007Recycle03"
             ],
-            "pipeline_override": {
-                "SeizeDeliveryJobsRefreshHit": {
-                    "max_hit": "{Limit}"
-                }
-            }
-        },
-        "SeizeDeliveryJobsRepeatCount": {
-            "type": "select",
-            "default_case": "3",
-            "label": "$task.SeizeDeliveryJobsRepeatCount.label",
-            "description": "$task.SeizeDeliveryJobsRepeatCount.description",
             "cases": [
                 {
-                    "name": "1",
-                    "label": "$task.SeizeDeliveryJobsRepeatCount.cases.1.label",
+                    "name": "DeliverTargetMap01Lv00701",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointPowerPlateau.cases.DeliverTargetMap01Lv00701.label",
                     "pipeline_override": {
-                        "SeizeDeliveryJobsMain": {
-                            "max_hit": 1
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv00701": {
+                            "enabled": true
                         }
                     }
                 },
                 {
-                    "name": "2",
-                    "label": "$task.SeizeDeliveryJobsRepeatCount.cases.2.label",
+                    "name": "DeliverTargetMap01Lv00702",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointPowerPlateau.cases.DeliverTargetMap01Lv00702.label",
                     "pipeline_override": {
-                        "SeizeDeliveryJobsMain": {
-                            "max_hit": 2
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv00702": {
+                            "enabled": true
                         }
                     }
                 },
                 {
-                    "name": "3",
-                    "label": "$task.SeizeDeliveryJobsRepeatCount.cases.3.label",
+                    "name": "DeliverTargetMap01Lv00703",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointPowerPlateau.cases.DeliverTargetMap01Lv00703.label",
                     "pipeline_override": {
-                        "SeizeDeliveryJobsMain": {
-                            "max_hit": 3
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv00703": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "DeliverTargetMap01Lv007Recycle02",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointPowerPlateau.cases.DeliverTargetMap01Lv007Recycle02.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv007Recycle02": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "DeliverTargetMap01Lv007Recycle03",
+                    "label": "$task.SeizeDeliveryJobsDeliveryPointPowerPlateau.cases.DeliverTargetMap01Lv007Recycle03.label",
+                    "pipeline_override": {
+                        "SeizeDeliveryJobsEndpointFilterDeliverTargetMap01Lv007Recycle03": {
+                            "enabled": true
                         }
                     }
                 }

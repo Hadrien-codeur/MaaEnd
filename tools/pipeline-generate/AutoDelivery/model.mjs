@@ -3,6 +3,8 @@ import {readFileSync} from "node:fs";
 import {BASE_NAV_ZONE_IMAGE_PARTS} from "../../MapNavigator/web/static/js/model.js";
 
 const catalogSource = JSON.parse(readFileSync(new URL("../data/delivery_destinations.json", import.meta.url), "utf8"));
+export const mapSources = catalogSource.maps ?? {};
+
 const routeSource = JSON.parse(readFileSync(new URL("./routes.json", import.meta.url), "utf8"));
 const fixedRoutes = JSON.parse(
     readFileSync(new URL("../../../assets/data/MapNavigator/fixed_zipline_routes.json", import.meta.url), "utf8"),
@@ -25,12 +27,12 @@ function assertNonEmptyString(value, label) {
     return value;
 }
 
-function readWalkOnly(value, label) {
+function readRouteModeFlag(value, label, key) {
     if (value === undefined) {
         return false;
     }
     if (typeof value !== "boolean") {
-        throw new TypeError(`[AutoDelivery] ${label}.walk_only 必须是布尔值`);
+        throw new TypeError(`[AutoDelivery] ${label}.${key} 必须是布尔值`);
     }
     return value;
 }
@@ -44,6 +46,18 @@ function readFixedZiplineRoute(value, walkOnly, label) {
         throw new Error(`[AutoDelivery] ${label} 固定滑索路线无唯一配置或与 walk_only 冲突：${id}`);
     }
     return id;
+}
+
+// walk_only 与 zipline_only 是对同一条主路线滑索策略的两个相反约束：
+// walk_only 在用户启用滑索时仍走作者录制的步行路线；zipline_only 表示步行根本到不了，
+// 用户选择步行时运行时必须报错而不是静默退化成一条走不通的路线。两者同时声明无解。
+function readRouteMode(override, label) {
+    const walkOnly = readRouteModeFlag(override?.walk_only, label, "walk_only");
+    const ziplineOnly = readRouteModeFlag(override?.zipline_only, label, "zipline_only");
+    if (walkOnly && ziplineOnly) {
+        throw new Error(`[AutoDelivery] ${label} 同时声明了 walk_only 与 zipline_only，二者互斥`);
+    }
+    return {walkOnly, ziplineOnly};
 }
 
 // 数据源的 yaw 是游戏内实测的实体朝向，部分 NPC 面向墙或缺失朝向（缺省 0），
@@ -69,6 +83,22 @@ function readOffset(value, label) {
     }
     if (value[0] === 0 && value[1] === 0) {
         throw new Error(`[AutoDelivery] ${label}.offset 是全零偏移，没有作用对象`);
+    }
+    return value;
+}
+
+// 交货图标模板只有十几像素，目标周围还有别的角色时，图标匹配可能命中别人的交互提示。
+// verify_name 让到达判定额外复核交互提示中的角色名，只有提示里出现该终点的名称才算到位；
+// 提示文本随游戏语言变化，运行时用目录里的五语言名称匹配。
+function readVerifyName(value, label, kind) {
+    if (value === undefined) {
+        return false;
+    }
+    if (typeof value !== "boolean") {
+        throw new TypeError(`[AutoDelivery] ${label}.verify_name 必须是布尔值`);
+    }
+    if (value && kind !== "npc") {
+        throw new Error(`[AutoDelivery] ${label}.verify_name 只支持 NPC 终点，${kind} 终点的交互提示不显示终点名称`);
     }
     return value;
 }
@@ -291,7 +321,7 @@ export const depots = assertArray(catalogSource.depots, "delivery_destinations.d
     const id = assertNonEmptyString(source.id, `depots[${index}].id`);
     const override = depotOverrides.get(id);
     assertAutoGenerationOverrideUsed(override, `仓储 ${id}`);
-    const walkOnly = readWalkOnly(override?.walk_only, `仓储 ${id}`);
+    const {walkOnly, ziplineOnly} = readRouteMode(override, `仓储 ${id}`);
     const defaultPath = buildNavmeshPath(source, `仓储 ${id}`, {
         withApproachPoint: true,
         yaw: readYawOverride(override?.yaw, `仓储 ${id}`),
@@ -315,6 +345,7 @@ export const depots = assertArray(catalogSource.depots, "delivery_destinations.d
         departurePath: override?.departure_path ?? [],
         walkOnly,
         fixedZiplineRoute: readFixedZiplineRoute(override?.fixed_zipline_route, walkOnly, `仓储 ${id}`),
+        ziplineOnly,
         routeNode: buildRouteNode("Depot", id),
         zipRouteNode: buildRouteNode("Depot", id, true),
         fixedRouteNode: override?.fixed_zipline_route ? `${buildRouteNode("Depot", id)}WithFixedZipline` : undefined,
@@ -351,7 +382,8 @@ export const destinations = assertArray(catalogSource.destinations, "delivery_de
         }
         const override = destinationOverrides.get(id);
         assertAutoGenerationOverrideUsed(override, `终点 ${id}`);
-        const walkOnly = readWalkOnly(override?.walk_only, `终点 ${id}`);
+        const {walkOnly, ziplineOnly} = readRouteMode(override, `终点 ${id}`);
+        const verifyName = readVerifyName(override?.verify_name, `终点 ${id}`, source.kind);
         const yaw = readYawOverride(override?.yaw, `终点 ${id}`);
         const offset = readOffset(override?.offset, `终点 ${id}`);
         const withApproachPoint = source.kind === "recycle_bin";
@@ -403,6 +435,8 @@ export const destinations = assertArray(catalogSource.destinations, "delivery_de
             fixedZiplineRoute: readFixedZiplineRoute(override?.fixed_zipline_route, walkOnly, `终点 ${id}`),
             fixedApproachPath: override?.fixed_approach_path,
             fixedDeparturePath: override?.fixed_departure_path,
+            ziplineOnly,
+            verifyName,
             routeNode: buildRouteNode("Destination", id),
             zipRouteNode: buildRouteNode("Destination", id, true),
             fixedRouteNode: override?.fixed_zipline_route
@@ -434,6 +468,7 @@ export const runtimeCatalog = {
         route_node: item.routeNode,
         zip_route_node: item.zipRouteNode,
         ...(item.fixedRouteNode ? {fixed_route_node: item.fixedRouteNode} : {}),
+        ...(item.ziplineOnly ? {zipline_only: true} : {}),
         ...(item.retryRouteNode ? {retry_route_node: item.retryRouteNode} : {}),
     })),
     destinations: destinations.map((item) => ({
@@ -447,6 +482,8 @@ export const runtimeCatalog = {
         route_node: item.routeNode,
         zip_route_node: item.zipRouteNode,
         ...(item.fixedRouteNode ? {fixed_route_node: item.fixedRouteNode} : {}),
+        ...(item.ziplineOnly ? {zipline_only: true} : {}),
+        ...(item.verifyName ? {verify_name: true} : {}),
         ...(item.retryRouteNode ? {retry_route_node: item.retryRouteNode} : {}),
     })),
 };

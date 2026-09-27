@@ -568,12 +568,7 @@ json::object BuildRoutePreview(const QueryParam& query)
     mapnavigator::ResetZiplineOutcome();
     std::vector<mapnavigator::Waypoint> expanded;
     std::vector<mapnavigator::NavmeshRouteDiagnostic> diagnostics;
-    if (!mapnavigator::ExpandNavmeshWaypoints(
-            param,
-            position,
-            [] { return false; },
-            expanded,
-            &diagnostics)) {
+    if (!mapnavigator::ExpandNavmeshWaypoints(param, position, [] { return false; }, expanded, &diagnostics)) {
         const mapnavigator::NavmeshExpansionFailure failure = mapnavigator::CurrentNavmeshExpansionFailure();
         json::object result = Fail(failure.message.empty() ? "路线展开失败" : failure.message);
         json::object detail {
@@ -616,6 +611,7 @@ json::object BuildRoutePreview(const QueryParam& query)
     std::vector<navmesh::WorldPoint> current_walk;
     json::array walk_segments;
     json::array zipline_segments;
+    json::array headings;
     const navmesh::WorldPoint start { .x = position.x, .y = position.y };
     AppendDistinct(all_points, start);
     AppendDistinct(current_walk, start);
@@ -628,6 +624,11 @@ json::object BuildRoutePreview(const QueryParam& query)
     };
 
     for (const mapnavigator::Waypoint& waypoint : expanded) {
+        if (waypoint.action == mapnavigator::ActionType::HEADING) {
+            headings.emplace_back(
+                waypoint.heading_uses_target ? json::object { { "target", json::array { waypoint.x, waypoint.y } } }
+                                             : json::object { { "angle", waypoint.heading_angle } });
+        }
         if (!waypoint.HasPosition()) {
             continue;
         }
@@ -647,7 +648,9 @@ json::object BuildRoutePreview(const QueryParam& query)
         const navmesh::WorldPoint landing { .x = hop.landing.x, .y = hop.landing.y };
         json::object segment {
             { "from", json::array { point.x, point.y } },
+            { "mount", json::array { hop.mount.x, hop.mount.y } },
             { "to", json::array { landing.x, landing.y } },
+            { "chain_continues", hop.chain_continues },
             { "from_height", waypoint.target_deck_y ? json::value(*waypoint.target_deck_y) : json::value() },
             { "to_height", hop.landing.height },
             { "elevation_deg", hop.planned_elevation_deg },
@@ -683,6 +686,7 @@ json::object BuildRoutePreview(const QueryParam& query)
         { "points", PointsToJson(all_points) },
         { "walk_segments", std::move(walk_segments) },
         { "zipline_segments", std::move(zipline_segments) },
+        { "headings", std::move(headings) },
         { "diagnostics", std::move(diagnostic_items) },
         { "expanded_waypoints", expanded.size() },
         { "zipline",

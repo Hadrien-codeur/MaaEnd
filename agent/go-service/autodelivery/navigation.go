@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/pkg/i18n"
+	"github.com/MaaXYZ/MaaEnd/agent/go-service/pkg/maafocus"
 	"github.com/MaaXYZ/MaaEnd/agent/go-service/pkg/pienv"
 	maa "github.com/MaaXYZ/maa-framework-go/v4"
 	"github.com/rs/zerolog/log"
@@ -35,7 +37,7 @@ func loadNavigationOptions(ctx *maa.Context, nodeName string) (navigationOptions
 	if err != nil {
 		return navigationOptions{}, err
 	}
-	if options.Zip && options.FixedZipline {
+	if options.Zip {
 		preference, err := ctx.GetNodeJSON("MapNavigatorZiplinePreference")
 		if err != nil {
 			return navigationOptions{}, fmt.Errorf("load global zipline preference: %w", err)
@@ -46,7 +48,7 @@ func loadNavigationOptions(ctx *maa.Context, nodeName string) (navigationOptions
 		}
 		if !options.Zip {
 			log.Info().Str("component", "AutoDelivery").Str("node", nodeName).
-				Str("reason", "global_zipline_never").Msg("using walking route instead of fixed zipline")
+				Str("reason", "global_zipline_never").Msg("global zipline preference disables zipline routing")
 		}
 	}
 	if options.Zip && options.FixedZipline && pienv.ControllerName() != "Win32-Front" {
@@ -104,4 +106,15 @@ func parseDestinationSelection(paramJSON string) (destinationSelection, error) {
 	}
 	selection.DestinationID = strings.TrimSpace(selection.DestinationID)
 	return selection, nil
+}
+
+// ensureZiplineSelected 拦截「只能通过滑索抵达、但用户选择步行」的路线。
+// 这类目标（如裴令容）没有可用的步行路线，静默按步行执行只会走到不可达处再超时，
+// 所以这里把原因讲给用户并让动作失败；是否记日志由调用方决定。
+func ensureZiplineSelected(ctx *maa.Context, ziplineOnly bool, zip bool, focusKey string, displayName string) bool {
+	if !ziplineOnly || zip {
+		return true
+	}
+	maafocus.Print(ctx, i18n.T(focusKey, displayName))
+	return false
 }

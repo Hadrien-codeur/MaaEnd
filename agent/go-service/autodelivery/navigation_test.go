@@ -3,6 +3,8 @@ package autodelivery
 import (
 	"encoding/json"
 	"os"
+	"reflect"
+	"regexp"
 	"testing"
 )
 
@@ -85,6 +87,54 @@ func TestFixedRouteDispatch(t *testing.T) {
 					dest.RouteNode, dest.ZipRouteNode, dest.FixedRouteNode)
 			}
 		})
+	}
+}
+
+func TestZiplineOnlyHonorsGlobalBan(t *testing.T) {
+	for _, fixed := range []bool{false, true} {
+		for _, mode := range []string{"auto", "always", "never"} {
+			options, err := applyZiplinePreference(navigationOptions{Zip: true, FixedZipline: fixed},
+				`{"attach":{"zipline":"`+mode+`"}}`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := ensureZiplineSelected(nil, true, options.Zip, destinationZiplineRequiredFocusKey, "test"); got != (mode != "never") {
+				t.Fatalf("fixed=%v mode=%s: zipline-only gate=%v", fixed, mode, got)
+			}
+			if !ensureZiplineSelected(nil, false, options.Zip, destinationZiplineRequiredFocusKey, "test") {
+				t.Fatal("ordinary destinations must retain walking")
+			}
+		}
+	}
+}
+
+func TestFixedDispatchKeepsTargetNameVerification(t *testing.T) {
+	options := navigationOptions{Zip: true, FixedZipline: true}
+	for _, verify := range []bool{true, false, true} {
+		dest := destination{RouteNode: "walk", ZipRouteNode: "automatic", FixedRouteNode: "fixed", VerifyName: verify,
+			Names: map[string]string{"zh_cn": "目标(一)", "en_us": "Target+One"}}
+		override := buildDestinationNavigationOverride(dest, options)
+		want := []string{submitGoodsButtonNode}
+		if verify {
+			want = append(want, submitGoodsNameNode)
+			patterns := override[submitGoodsNameNode].(map[string]any)["expected"].([]string)
+			for _, name := range dest.Names {
+				matched := false
+				for _, pattern := range patterns {
+					matched = matched || regexp.MustCompile("^(?:"+pattern+")$").MatchString(name)
+				}
+				if !matched {
+					t.Fatalf("localized target name missing: %q", name)
+				}
+			}
+		}
+		if got := override[submitGoodsTargetNode].(map[string]any)["all_of"]; !reflect.DeepEqual(got, want) {
+			t.Fatalf("verify=%v: got %v, want %v", verify, got, want)
+		}
+		params := override[navigateDestinationNode].(map[string]any)["custom_action_param"].(map[string]any)
+		if !reflect.DeepEqual(params["sub"], []string{"fixed"}) {
+			t.Fatal("name verification changed fixed route dispatch")
+		}
 	}
 }
 
